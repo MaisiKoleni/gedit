@@ -1,0 +1,3 @@
+# Debugging options for the gedit plugin
+
+gedit/debug = true

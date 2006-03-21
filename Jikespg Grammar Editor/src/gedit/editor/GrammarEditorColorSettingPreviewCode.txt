@@ -1,0 +1,19 @@
+%Options gp=true,es=$
+$Define
+$mymacro /. do something ./
+
+$Terminals  -- the terminals
+id PLUS STAR LPAREN RPAREN
+
+$Alias
+'+' ::= PLUS
+'*' ::= STAR
+'(' ::= LPAREN
+')' ::= RPAREN
+
+$Rules
+Add -> Add + Mult | Mult
+Mult -> Mult * Braced | Braced
+Braced -> ( Add ) | id
+
+$End

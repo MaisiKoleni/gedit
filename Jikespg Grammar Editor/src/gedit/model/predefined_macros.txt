@@ -1,0 +1,10 @@
+%rule_text
+%rule_number
+%num_rules
+%rule_size
+%num_terminals
+%num_non_terminals
+%num_symbols
+%input_file
+%current_line
+%next_line

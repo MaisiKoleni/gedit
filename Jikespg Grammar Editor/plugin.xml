@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.editors">
+      <editor
+            class="gedit.editor.GrammarEditor"
+            contributorClass="gedit.editor.GrammarEditorActionContributor"
+            extensions="g"
+            icon="icons/sample.gif"
+            id="gedit.editor.GrammarEditor"
+            name="Grammar Editor"
+            symbolicFontName="gedit.GrammarEditorTextFont">
+         <contentTypeBinding contentTypeId="gedit.grammarContentType"/>
+      </editor>
+   </extension>
+   <extension
+         point="org.eclipse.ui.contexts">
+      <context
+            parentId="org.eclipse.ui.textEditorScope"
+            name="Editing Grammars"
+            id="gedit.context"/>
+   </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <category
+            name="Grammar Editing"
+            id="gedit.category"/>
+      <command
+            category="gedit.category"
+            name="Show Outline"
+            id="gedit.ShowOutline"/>
+      <keyBinding
+            contextId="gedit.context"
+            command="gedit.ShowOutline"
+            string="Ctrl+O"
+            configuration="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+      <command
+            category="gedit.category"
+            name="Goto Declaration"
+            id="gedit.GotoDeclaration"/>
+      <keyBinding
+            contextId="gedit.context"
+            command="gedit.GotoDeclaration"
+            string="F3"
+            configuration="org.eclipse.ui.defaultAcceleratorConfiguration"/>
+      <command
+            category="gedit.category"
+            id="gedit.ShowDeclaration"
+            name="Show Declaration"/>
+      <keyBinding
+            command="gedit.ShowDeclaration"
+            configuration="org.eclipse.ui.defaultAcceleratorConfiguration"
+            contextId="gedit.context"
+            string="F2"/>
+      <command
+            category="gedit.category"
+            id="gedit.ToggleComment"
+            name="Toggle Comment"/>
+      <keyBinding
+            command="gedit.ToggleComment"
+            configuration="org.eclipse.ui.defaultAcceleratorConfiguration"
+            contextId="gedit.context"
+            string="Ctrl+Shift+7"/>
+   </extension>
+   <extension
+         point="org.eclipse.core.runtime.contentTypes">
+      <content-type
+            base-type="org.eclipse.core.runtime.text"
+            file-extensions="g"
+            id="grammarContentType"
+            name="Grammar File"
+            priority="normal"/>
+      <file-association
+            content-type="gedit.grammarContentType"
+            file-extensions="g"/>
+   </extension>
+   <extension
+         point="org.eclipse.core.filebuffers.documentSetup">
+      <participant
+            class="gedit.editor.GrammarDocumentSetupParticipant"
+            contentTypeId="gedit.grammarContentType"/>
+   </extension>
+   <extension
+         point="org.eclipse.compare.contentMergeViewers">
+      <viewer
+            class="gedit.editor.GrammarMergeViewerCreator"
+            id="gedit.GrammarMergeViewerCreator"/>
+      <contentTypeBinding
+            contentMergeViewerId="gedit.GrammarMergeViewerCreator"
+            contentTypeId="gedit.grammarContentType"/>
+   </extension>
+   <extension
+         point="org.eclipse.compare.contentViewers">
+      <viewer
+            class="gedit.editor.GrammarTextViewerCreator"
+            id="gedit.GrammarTextViewerCreator"/>
+      <contentTypeBinding
+            contentTypeId="gedit.grammarContentType"
+            contentViewerId="gedit.GrammarTextViewerCreator"/>
+   </extension>
+   <extension
+         point="org.eclipse.ui.themes">
+      <themeElementCategory
+            id="gedit.themeCategory"
+            label="Grammar"/>
+      <fontDefinition
+            categoryId="org.eclipse.compare.contentmergeviewer.TextMergeViewer"
+            defaultsTo="gedit.GrammarEditorTextFont"
+            id="gedit.editor.GrammarMergeViewer"
+            label="Grammar compare font"/>
+      <fontDefinition
+            categoryId="gedit.themeCategory"
+            defaultsTo="org.eclipse.jface.textfont"
+            id="gedit.GrammarEditorTextFont"
+            label="Grammar editor font"/>
+   </extension>
+   <extension
+         point="org.eclipse.core.runtime.preferences">
+      <initializer class="gedit.GrammarEditorPluginPreferenceInitializer"/>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            category="org.eclipse.ui.preferencePages.Editors"
+            class="gedit.editor.GrammarEditorPreferencePage"
+            id="gedit.editorPreferencePage"
+            name="Grammar Editor">
+         <keywordReference id="gedit.grammarKeyword"/>
+      </page>
+      <page
+            category="gedit.editorPreferencePage"
+            class="gedit.editor.FoldingPreferencePage"
+            id="gedit.foldingPreferencePage"
+            name="Folding">
+         <keywordReference id="gedit.grammarKeyword"/>
+         <keywordReference id="gedit.foldingKeyword"/>
+      </page>
+   </extension>
+   <extension
+         point="org.eclipse.ui.keywords">
+      <keyword
+            id="gedit.grammarKeyword"
+            label="grammar"/>
+      <keyword
+            id="gedit.foldingKeyword"
+            label="folding"/>
+   </extension>
+   <extension
+         point="org.eclipse.ui.actionSetPartAssociations">
+      <actionSetPartAssociation targetID="org.eclipse.ui.edit.text.actionSet.annotationNavigation">
+         <part id="gedit.editor.GrammarEditor"/>
+      </actionSetPartAssociation>
+   </extension>
+
+</plugin>
