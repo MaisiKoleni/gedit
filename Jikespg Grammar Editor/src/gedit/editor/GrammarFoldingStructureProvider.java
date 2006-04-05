@@ -5,6 +5,7 @@
 package gedit.editor;
 
 import gedit.GrammarEditorPlugin;
+import gedit.model.Comment;
 import gedit.model.Document;
 import gedit.model.ModelBase;
 import gedit.model.ModelType;
@@ -45,7 +46,7 @@ public class GrammarFoldingStructureProvider {
 			return true;
 		}
 
-		public List getSections(Document document) {
+		public List getElements(Document document) {
 			document.getRoot().accept(this);
 			return fResult;
 		}
@@ -62,6 +63,7 @@ public class GrammarFoldingStructureProvider {
 						? new Object() : null); 
 			}
 			fFoldRules = store.getBoolean(PreferenceConstants.EDITOR_FOLD_RULES);
+			fFoldComments = store.getBoolean(PreferenceConstants.EDITOR_FOLD_COMMENTS);
 		}
 		boolean isEnabledFor(ModelBase node) {
 			if (!(node instanceof Section))
@@ -71,6 +73,7 @@ public class GrammarFoldingStructureProvider {
 		}
 		Map fFoldSections;
 		boolean fFoldRules;
+		boolean fFoldComments;
 	};
 
 	private IDocument fDocument;
@@ -94,8 +97,9 @@ public class GrammarFoldingStructureProvider {
 			Object position = it.next();
 			ModelBase node = (ModelBase) fPositionToElement.get(position);
 			boolean collapseRules = initial && node instanceof Rule && options.fFoldRules;
+			boolean collapseComments = initial && node instanceof Comment && options.fFoldComments;
 			boolean collapseSections = initial && options.isEnabledFor(node);
-			boolean collapse = collapseRules || collapseSections;
+			boolean collapse = collapseRules || collapseComments || collapseSections;
 			additionsMap.put(new ProjectionAnnotation(collapse), position);
 		}
 
@@ -130,37 +134,33 @@ public class GrammarFoldingStructureProvider {
 				return;
 			
 			RegionFinder finder = new RegionFinder(document, ModelType.SECTION.getType() |
-					ModelType.RULE.getType());
-			List sections = finder.getSections(document);
+					ModelType.RULE.getType() | ModelType.COMMENT.getType());
+			List elements = finder.getElements(document);
 
 			Set currentRegions = new HashSet();
-			addFoldingRegions(currentRegions, sections);//Arrays.asList(document.getSections()));
+			addFoldingRegions(currentRegions, elements);
 			updateFoldingRegions(model, currentRegions, initial, options);
 		} catch (BadLocationException ignore) {
 		}
 	}
 
-	private void addFoldingRegions(Set regions, /*List children*/List sections) throws BadLocationException {
+	private void addFoldingRegions(Set regions, List children) throws BadLocationException {
 
-//		for (Iterator it = children.iterator(); it.hasNext(); ) {
-		for (int i = 0; i < sections.size(); i++) {
+		for (Iterator it = children.iterator(); it.hasNext(); ) {
 			
-//			ModelBase element = (ModelBase) it.next();
-			ModelBase element = (ModelBase) sections.get(i);
+			ModelBase element = (ModelBase) it.next();
 			Node node = (Node) element.getUserData("node");
-			int startLine = fDocument.getLineOfOffset(node.getOffset());//element.getOffset());
-			int endLine = fDocument.getLineOfOffset(node.getOffset()//element.getOffset()
-					+ node.getLength());//element.getLengthWithChildren());
+			if (node == null)
+				continue;
+			int startLine = fDocument.getLineOfOffset(node.getOffset());
+			int endLine = fDocument.getLineOfOffset(node.getOffset() + node.getLength());
 			if (startLine < endLine) {
 				int start = fDocument.getLineOffset(startLine);
-				int end = fDocument.getLineOffset(endLine)
-						+ fDocument.getLineLength(endLine);
+				int end = fDocument.getLineOffset(endLine) + fDocument.getLineLength(endLine);
 				Position position = new Position(start, end - start);
 				regions.add(position);
 				fPositionToElement.put(position, element);
 			}
-
-//			addFoldingRegions(regions, new ArrayList(Arrays.asList(element.getChildren(element))));
 		}
 	}
 
