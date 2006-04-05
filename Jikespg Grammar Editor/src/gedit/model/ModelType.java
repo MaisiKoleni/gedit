@@ -20,6 +20,7 @@ public class ModelType {
 	public final static ModelType EMPTY_TOK = new ModelType(0x1000, "EmptyToken");
 	public final static ModelType EOL_TOK = new ModelType(0x2000, "EOLToken");
 	public final static ModelType EOF_TOK = new ModelType(0x4000, "EOFToken");
+	public final static ModelType COMMENT = new ModelType(0x8000, "Comment");
 
 	private int type;
 	private String string;
