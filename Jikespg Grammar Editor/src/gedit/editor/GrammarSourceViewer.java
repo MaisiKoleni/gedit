@@ -9,6 +9,7 @@ import gedit.NonUISafeRunnable;
 import gedit.model.Document;
 import gedit.model.IProblemRequestor;
 import gedit.model.ModelBase;
+import gedit.model.ModelType;
 import gedit.model.Problem;
 
 import org.eclipse.core.runtime.Platform;
@@ -30,6 +31,7 @@ import org.eclipse.jface.util.ListenerList;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -42,6 +44,7 @@ import org.eclipse.ui.texteditor.AbstractTextEditor;
 
 public class GrammarSourceViewer extends ProjectionViewer implements IPropertyChangeListener, IReconcilingListener {
 	private IInformationPresenter fOutlinePresenter;
+	private SemanticHighLighter fSemanticHighLighter;
 	private IPreferenceStore fPreferenceStore;
 	private ListenerList fReconcilingListeners;
 	private Color fForegroundColor;
@@ -64,7 +67,11 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 			fOutlinePresenter = grammarSourceViewerConfiguration.getOutlinePresenter(this);
 			fOutlinePresenter.install(this);
 			
-			addReconcilingListener(grammarSourceViewerConfiguration.getSemanticHighlighter(this));
+			fSemanticHighLighter = grammarSourceViewerConfiguration.getSemanticHighlighter(this);
+			addReconcilingListener(fSemanticHighLighter);
+			addTextInputListener(fSemanticHighLighter);
+			if (!grammarSourceViewerConfiguration.isUseReconciling())
+				addTextPresentationListener(fSemanticHighLighter);
 		}
 		if (fPreferenceStore != null) {
 			fPreferenceStore.addPropertyChangeListener(this);
@@ -142,6 +149,9 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
     public void unconfigure() {
 		if (fOutlinePresenter != null)
 			fOutlinePresenter.uninstall();
+		removeReconcilingListener(fSemanticHighLighter);
+		removeTextInputListener(fSemanticHighLighter);
+		removeTextPresentationListener(fSemanticHighLighter);
 		if (fPreferenceStore != null)
 			fPreferenceStore.removePropertyChangeListener(this);
 		disposeColor(fForegroundColor);
@@ -175,6 +185,7 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 	public void doOperation(int operation) {
 		switch (operation) {
 		case SHOW_OUTLINE:
+			getModel(true);
 			fOutlinePresenter.showInformation();
 			return;
 		case GOTO_DECLARATION:
@@ -226,10 +237,25 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 		if (model == null || model.getOffset() < 0)
 			return;
 		getTextWidget().setRedraw(false);
-		setRangeIndication(model.getRangeOffset(), model.getRangeLength(), true);
+		setRangeIndication(model, true);
 		revealRange(model.getOffset(), model.getLength());
 		setSelectedRange(model.getOffset(), model.getLength());
 		getTextWidget().setRedraw(true);
+	}
+	
+	public void setRangeIndication(ModelBase model, boolean moveCursor) {
+		ModelBase element = model;
+		while (element != null && element.getType() != ModelType.RULE)
+			element = (ModelBase) element.getParent(element);
+		if (element == null) {
+			element = model;
+			while (element != null && element.getType() != ModelType.SECTION)
+				element = (ModelBase) element.getParent(element);
+		}
+		if (element == null)
+			element = model.getParent(model) != null ? (ModelBase) model.getParent(model) : model;
+		if (element != null)
+			setRangeIndication(element.getRangeOffset(), element.getRangeLength(), moveCursor);
 	}
 
 	public void selectWord(IRegion region) {
@@ -271,8 +297,7 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 		
 		try {
 			String contentType = getContentType(document, anchor);
-			if (!IDocument.DEFAULT_CONTENT_TYPE.equals(contentType) &&
-					!GrammarPartitionScanner.GRAMMAR_STRING.equals(contentType))
+			if (!IDocument.DEFAULT_CONTENT_TYPE.equals(contentType))
 				return null;
 
 			int offset = anchor;
@@ -314,7 +339,8 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 	}
 	
 	public Problem[] getSelectedProblems() {
-		return getModel(false).getProblems(widgetOffset2ModelOffset(getTextWidget().getCaretOffset()));
+		Point selection = widgetSelection2ModelSelection(getTextWidget().getSelectionRange());
+		return getModel(false).getProblems(selection.x, selection.y);
 	}
 	
 	public void propertyChange(PropertyChangeEvent event) {
