@@ -44,7 +44,8 @@ public class FoldingPreferencePage extends PreferencePage implements IWorkbenchP
 	};
 	
 	private Button fEnable;
-	private Button fFoldSubElements;
+	private Button fFoldProductions;
+	private Button fFoldComments;
 	private Button fFoldSelectedSection;
 	private TableViewer fSectionsViewer;
 	
@@ -92,8 +93,10 @@ public class FoldingPreferencePage extends PreferencePage implements IWorkbenchP
 				handleFoldSectionSelected();
 			}
 		});
-		fFoldSubElements = new Button(contents, SWT.CHECK);
-		fFoldSubElements.setText("Initially fold &productions");
+		fFoldProductions = new Button(contents, SWT.CHECK);
+		fFoldProductions.setText("Initially fold &productions");
+		fFoldComments = new Button(contents, SWT.CHECK);
+		fFoldComments.setText("Initially fold &comments");
 	}
 
 	private TableViewer createSectionsViewer(Group group) {
@@ -118,7 +121,8 @@ public class FoldingPreferencePage extends PreferencePage implements IWorkbenchP
 		IPreferenceStore store = getPreferenceStore();
 		
 		fEnable.setSelection(store.getBoolean(PreferenceConstants.EDITOR_FOLDING_ENABLED));
-		fFoldSubElements.setSelection(store.getBoolean(PreferenceConstants.EDITOR_FOLD_RULES));
+		fFoldProductions.setSelection(store.getBoolean(PreferenceConstants.EDITOR_FOLD_RULES));
+		fFoldComments.setSelection(store.getBoolean(PreferenceConstants.EDITOR_FOLD_COMMENTS));
 		initializeSections(store, false);
 		updateButtonEnablement();
 	}
@@ -137,8 +141,9 @@ public class FoldingPreferencePage extends PreferencePage implements IWorkbenchP
 
 	private void updateButtonEnablement() {
 		boolean enable = fEnable.getSelection();
-		fFoldSubElements.setEnabled(enable);
-		fFoldSelectedSection.setEnabled(enable);
+		fFoldProductions.setEnabled(enable);
+		fFoldComments.setEnabled(enable);
+		fFoldSelectedSection.setEnabled(enable && !fSectionsViewer.getSelection().isEmpty());
 		fSectionsViewer.getControl().setEnabled(enable);
 	}
 	
@@ -165,7 +170,8 @@ public class FoldingPreferencePage extends PreferencePage implements IWorkbenchP
 		IPreferenceStore store = getPreferenceStore();
 		
 		store.setValue(PreferenceConstants.EDITOR_FOLDING_ENABLED, fEnable.getSelection());
-		store.setValue(PreferenceConstants.EDITOR_FOLD_RULES, fFoldSubElements.getSelection());
+		store.setValue(PreferenceConstants.EDITOR_FOLD_RULES, fFoldProductions.getSelection());
+		store.setValue(PreferenceConstants.EDITOR_FOLD_COMMENTS, fFoldComments.getSelection());
 		
 		SectionTableEntry[] entries = (SectionTableEntry[]) fSectionsViewer.getInput();
 		for (int i = 0; i < entries.length; i++) {
@@ -180,7 +186,8 @@ public class FoldingPreferencePage extends PreferencePage implements IWorkbenchP
 		IPreferenceStore store = getPreferenceStore();
 		
 		fEnable.setSelection(store.getDefaultBoolean(PreferenceConstants.EDITOR_FOLDING_ENABLED));
-		fFoldSubElements.setSelection(store.getDefaultBoolean(PreferenceConstants.EDITOR_FOLD_RULES));
+		fFoldProductions.setSelection(store.getDefaultBoolean(PreferenceConstants.EDITOR_FOLD_RULES));
+		fFoldComments.setSelection(store.getDefaultBoolean(PreferenceConstants.EDITOR_FOLD_COMMENTS));
 
 		initializeSections(store, true);
 
