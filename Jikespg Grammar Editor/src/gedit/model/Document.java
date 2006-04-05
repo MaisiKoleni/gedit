@@ -18,6 +18,7 @@ import java.util.TreeMap;
 
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.jface.text.Position;
 import org.eclipse.jface.util.ListenerList;
 
 public class Document extends ModelBase implements IAdaptable {
@@ -152,20 +153,32 @@ public class Document extends ModelBase implements IAdaptable {
 		return new String[] { blockb, hblockb };
 	}
 
+	public String[] getBlockEnds() {
+		return new String[] { blocke, hblocke };
+	}
+
 	public Problem[] getProblems(ModelBase model) {
 		if (model.node == null)
 			return new Problem[0];
-		return getProblems(model.node.offset);
+		int offset = model.getOffset();
+		int length = model.getLength();
+		ModelType modelType = model.getType();
+		if (modelType == ModelType.RULE || modelType == ModelType.ALIAS || modelType == ModelType.NAME
+				|| (modelType == ModelType.SECTION && ((Section) model).getChildType() != ModelType.OPTION)) {
+			offset = model.getRangeOffset();
+			length = model.getRangeLength();
+		}
+		return getProblems(offset, length);
 	}
 	
-	public Problem[] getProblems(int offset) {
+	public Problem[] getProblems(int offset, int length) {
+		Position position = new Position(offset, length);
 		SortedMap result = new TreeMap(Collections.reverseOrder());
 		for (int i = 0; problems != null && i < problems.size(); i++) {
 			Problem problem = (Problem) problems.get(i);
 			if (problem.getOffset() == offset)
 				result.put(new Integer(2 * problem.getType()), problem);
-			else if (problem.getOffset() <= offset &&
-					problem.getOffset() + problem.getLength() >= offset)
+			else if (position.overlapsWith(problem.getOffset(), problem.getLength()))
 				result.put(new Integer(problem.getType()), problem);
 		}
 		return (Problem[]) result.values().toArray(new Problem[result.size()]);
@@ -217,7 +230,11 @@ public class Document extends ModelBase implements IAdaptable {
 	}
 
 	public ModelBase getElementAt(int offset) {
-		ModelBase element = ElementFinder.findElementAt(this, offset);
+		return getElementAt(offset, true);
+	}
+
+	public ModelBase getElementAt(int offset, boolean restrictToLeafs) {
+		ModelBase element = ElementFinder.findElementAt(this, offset, restrictToLeafs);
 		if (GrammarEditorPlugin.getDefault().isDebugging())
 			System.out.println("Element at: " + offset + ": " + element + (element instanceof Reference ? " referrer: " + ((Reference) element).getReferer() : ""));
 		return element;
