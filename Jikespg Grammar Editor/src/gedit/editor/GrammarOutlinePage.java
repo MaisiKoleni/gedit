@@ -113,6 +113,8 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 	}
 	
 	protected void refreshWithoutSelectionChangePropagation() {
+		if (getTreeViewer().getControl().isDisposed())
+			return;
 		getTreeViewer().getControl().getDisplay().asyncExec(new Runnable() {
 			public void run() {
 				fSuppressSelectionChangePropagation = true;
