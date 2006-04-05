@@ -84,6 +84,8 @@ public class GrammarDocumentProvider extends TextFileDocumentProvider {
 	public static final String ANNOTATION_ERROR = "org.eclipse.ui.workbench.texteditor.error";
 	public static final String ANNOTATION_TASK = "org.eclipse.ui.workbench.texteditor.task";
 	public static final String ANNOTATION_BOOKMARK = "org.eclipse.ui.workbench.texteditor.bookmark";
+	public static final String ANNOTATION_SEARCH_RESULT = "org.eclipse.search.results";
+	public static final String ANNOTATION_OCCURRENCE = "org.eclipse.jdt.ui.occurrences";
 	
 	public GrammarDocumentProvider() {
 		IDocumentProvider provider = new TextFileDocumentProvider();
