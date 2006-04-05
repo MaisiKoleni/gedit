@@ -23,7 +23,6 @@ public class GrammarDocumentSetupParticipant implements IDocumentSetupParticipan
 				GrammarPartitionScanner.GRAMMAR_COMMENT,
 				GrammarPartitionScanner.GRAMMAR_OPTION,
 				GrammarPartitionScanner.GRAMMAR_MACRO,
-				GrammarPartitionScanner.GRAMMAR_STRING,
 				GrammarPartitionScanner.GRAMMAR_OPERATOR,
 		});
 	}
