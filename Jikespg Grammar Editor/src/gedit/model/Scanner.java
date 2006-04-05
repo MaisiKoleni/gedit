@@ -3,62 +3,38 @@
  * All Rights Reserved.
  */
 package gedit.model;
-import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 
-class Scanner implements jpgsym
-{
+class Scanner implements jpgsym {
 	protected Token current;
 	protected int currentTokenOffset;
-	protected int currentLine = 1;
 	protected String errorMessage;
 	protected int scanPos;
-	private int peekLine;
+	protected boolean tokenizeLbr;
+	private boolean tokenizeComments;
 	private int peekPos;
-	private String[] eol;
 	private char[] buf;
 	private Document document;
 
 	private static final char EOF = (char) -1;
+	private static final char EOL = (char) -2;
+	
+	public final static int TK_EOL = 9998;
+	public final static int TK_COMMENT = 9999;
 
-	public Scanner(Document document, String text, String eol) {
+	public Scanner(Document document, String text, boolean tokenizeComments) {
 		this.document = document;
+		this.tokenizeComments = tokenizeComments;
 		buf = text.toCharArray();
-		String defaultEol = System.getProperty("line.separator", Character.toString((char) 10));
-		if (eol == null)
-			eol = defaultEol;
-		this.eol = new String[eol.length()];
-		for (int i = 0; i < this.eol.length; i++) {
-			this.eol[i] = Character.toString(eol.charAt(i));
-		}
 	}
 
-	public Scanner(Document document, Reader in, String eol) throws IOException {
-		this(document, readComplete(in), eol);
-    }
-
-	private static String readComplete(Reader in) throws IOException {
-		char[] chars = new char[4000];
-		StringBuffer sb = new StringBuffer();
-		for (;;) {
-			int count = in.read(chars);
-			if (count == -1)
-				break;
-			sb.append(chars, 0, count);
-		} 
-		return sb.toString();
-	}
-
-    public Token scanToken()
-    {
+    public Token scanToken() {
     	peekPos = scanPos;
-    	peekLine = currentLine;
+    	errorMessage = null;
     	current = doScan();
     	
     	scanPos = peekPos;
-    	currentLine = peekLine;
     	
     	current.offset = currentTokenOffset;
     	current.length = peekPos - currentTokenOffset;
@@ -77,19 +53,30 @@ class Scanner implements jpgsym
 	        token.kind = TK_EOF;
 			token.name = "";
 			break;
+		case EOL:
+			if (!tokenizeLbr)
+				return doScan();
+			token.kind = TK_EOL;
+			break;
 		case '-':
 			switch (peekChar(peekPos + 1)) {
 			case '>':
+				if (!Character.isWhitespace(peekChar(peekPos + 2)))
+					errorMessage = "Whitespace required after arrow";
 	    		token.kind = TK_ARROW;
 	    		peekPos += 2;
 	    		break;
 			case '-':
-				return scanComment();
+				token.kind = scanComment();
+				if (!tokenizeComments)
+					return doScan();
 			}
 			break;
 		case ':':
 			if (peekChar(peekPos + 1) == ':' && peekChar(peekPos + 2) == '=') {
-	    		token.kind = TK_EQUIVALENCE;
+				if (!Character.isWhitespace(peekChar(peekPos + 3)))
+					errorMessage = "Whitespace required after equivalence";
+				token.kind = TK_EQUIVALENCE;
 	    		peekPos += 3;
 			}
 			break;
@@ -100,8 +87,7 @@ class Scanner implements jpgsym
 		default:
 			if (c == Document.DEFAULT_ESCAPE && matches("options", 1)) { //$NON-NLS-1$
 				peekPos += 8;
-	    		processOptionLine();
-				return doScan();
+	    		token.kind = processOptionLine();
 			} else if (c == document.getEsape()) {
 				token.kind = scanKeyword();
 	        } else if (matches(document.hblockb, 0)) {
@@ -119,11 +105,11 @@ class Scanner implements jpgsym
         return token;
 	}
 
-    private Token scanComment() {
+    private int scanComment() {
     	char c = peekChar(peekPos);
     	while (c != EOF && c != '\n')
 			c = peekChar(++peekPos);
-		return doScan();
+		return TK_COMMENT;
 	}
 
 	private boolean isTokenSeparatorChar(char c) {
@@ -223,28 +209,30 @@ class Scanner implements jpgsym
 		return true;
 	}
 
-	private void processOptionLine() {
+	private int processOptionLine() {
 		List options = new ArrayList();
 		char c;
+		int eolOffset = 0;
 		do {
 			c = peekChar(peekPos);
 			while (c != EOF && c == ' ')
 				c = peekChar(++peekPos);
 			int start = peekPos;
-			while (c != EOF && c != 13 && c != '\n' && c != ' ' && c != ',' && c != '=')
+			while (c != EOF && (eolOffset = isEol(c, peekPos)) == 0 && c != ' ' && c != ',' && c != '=')
 				c = peekChar(++peekPos);
 			String option = new String(buf, start, peekPos - start);
 			if (c == EOF)
-				return;
-			if (option.length() == 0 || "=".equals(option) || ",".equals(option))
-				peekPos++;
-			else
-				options.add(option);
-		} while (c != EOF && !isLineBreakChar(c));
+				return TK_OPTION_LINE;
+			if (option.length() == 0 || "=".equals(option) || ",".equals(option)) {
+				if (eolOffset == 0)
+					peekPos++;
+			} else
+				options.add(option.toLowerCase());
+		} while (eolOffset == 0);
 		for (int i = 0; i < options.size(); i++) {
 			String option = (String) options.get(i);
 			String value = i + 1 < options.size() ? (String) options.get(i + 1) : null;
-			if (option.toLowerCase().startsWith("es")) {
+			if (option.startsWith("es")) {
 				if (value != null && value.length() > 0) {
 					document.escape = value.charAt(0);
 					i++;
@@ -271,17 +259,32 @@ class Scanner implements jpgsym
 				}
 			}
 		}
+		return TK_OPTION_LINE;
 	}
 	
     private char handleInitialWhitespace() {
 		char c = peekChar(peekPos);
-		while ((c == '\n' && ++peekLine > 0) || Character.isWhitespace(c))
+		while (Character.isWhitespace(c)) {
+			if (tokenizeLbr) {
+				int pos = isEol(c, peekPos);
+				peekPos += pos;
+				if (pos > 0)
+					return EOL;
+			}
 			c = peekChar(++peekPos);
+		}
 		return c;
     }
-
-    private boolean isLineBreakChar(char c) {
-    	return (c == EOF) || (c == '\n' && ++peekLine > 0);
+    
+    private int isEol(char c, int pos) {
+    	switch (c) {
+    	default:
+    		return 0;
+    	case '\r':
+    		return peekChar(pos + 1) == '\n' ? 2 : 1;
+    	case '\n':
+    		return 1;
+    	}
     }
 
     private char peekChar(int p) {
