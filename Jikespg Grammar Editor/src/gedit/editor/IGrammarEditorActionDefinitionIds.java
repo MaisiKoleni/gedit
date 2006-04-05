@@ -14,4 +14,9 @@ public interface IGrammarEditorActionDefinitionIds {
 
 	public final static String TOGGLE_COMMENT = "gedit.ToggleComment";
 	
+	public final static String FIND_OCCURRENCES = "gedit.FindOccurrences";
+
+	public final static String TOGGLE_MARK_OCCURRENCES = "gedit.ToggleMarkOccurrences";
+
+	public final static String RENAME_IN_FILE = "gedit.RenameInFile";
 }
