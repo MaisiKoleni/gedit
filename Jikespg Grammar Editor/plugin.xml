@@ -62,6 +62,33 @@
             configuration="org.eclipse.ui.defaultAcceleratorConfiguration"
             contextId="gedit.context"
             string="Ctrl+Shift+7"/>
+      <command
+            category="gedit.category"
+            id="gedit.FindOccurrences"
+            name="Find Occurrences"/>
+      <keyBinding
+            command="gedit.FindOccurrences"
+            configuration="org.eclipse.ui.defaultAcceleratorConfiguration"
+            contextId="gedit.context"
+            string="Ctrl+Shift+U"/>
+      <command
+            category="gedit.category"
+            id="gedit.ToggleMarkOccurrences"
+            name="Toggle Grammar Mark Occurrences"/>
+      <keyBinding
+            command="gedit.ToggleMarkOccurrences"
+            configuration="org.eclipse.ui.defaultAcceleratorConfiguration"
+            contextId="gedit.context"
+            string="Alt+Shift+O"/>
+      <command
+            category="gedit.category"
+            id="gedit.RenameInFile"
+            name="Rename in File"/>
+      <keyBinding
+            command="gedit.RenameInFile"
+            configuration="org.eclipse.ui.defaultAcceleratorConfiguration"
+            contextId="gedit.context"
+            string="Alt+Shift+R"/>
    </extension>
    <extension
          point="org.eclipse.core.runtime.contentTypes">
@@ -85,6 +112,7 @@
          point="org.eclipse.compare.contentMergeViewers">
       <viewer
             class="gedit.editor.GrammarMergeViewerCreator"
+            extensions="g"
             id="gedit.GrammarMergeViewerCreator"/>
       <contentTypeBinding
             contentMergeViewerId="gedit.GrammarMergeViewerCreator"
@@ -98,6 +126,13 @@
       <contentTypeBinding
             contentTypeId="gedit.grammarContentType"
             contentViewerId="gedit.GrammarTextViewerCreator"/>
+   </extension>
+   <extension
+         point="org.eclipse.compare.structureMergeViewers">
+      <viewer
+            class="gedit.editor.GrammarStructureDiffViewerCreator"
+            extensions="g"
+            id="gedit.GrammarStructureMergeViewerCreator"/>
    </extension>
    <extension
          point="org.eclipse.ui.themes">
@@ -147,8 +182,39 @@
             label="folding"/>
    </extension>
    <extension
+         point="org.eclipse.ui.actionSets">
+      <actionSet
+            id="gedit.editorActionSet"
+            label="Grammar Editor Actions">
+         <action
+               allowLabelUpdate="true"
+               definitionId="gedit.FindOccurrences"
+               id="gedit.FindOccurrences"
+               label="Occurrences In File"
+               menubarPath="org.eclipse.search.menu/contextMenuActionsGroup"
+               retarget="true"
+               style="push"/>
+         <action
+               allowLabelUpdate="true"
+               definitionId="gedit.ToggleMarkOccurrences"
+               icon="icons/mark_occurrences.gif"
+               id="gedit.ToggleMarkOccurrences"
+               label="Toggle Grammar Mark Occurrences"
+               retarget="true"
+               style="toggle"
+               toolbarPath="org.eclipse.ui.edit.text.actionSet.presentation/Presentation"
+               tooltip="Toggle Grammar Mark Occurrences"/>
+      </actionSet>
+   </extension>
+   <extension
          point="org.eclipse.ui.actionSetPartAssociations">
       <actionSetPartAssociation targetID="org.eclipse.ui.edit.text.actionSet.annotationNavigation">
+         <part id="gedit.editor.GrammarEditor"/>
+      </actionSetPartAssociation>
+      <actionSetPartAssociation targetID="gedit.editorActionSet">
+         <part id="gedit.editor.GrammarEditor"/>
+      </actionSetPartAssociation>
+      <actionSetPartAssociation targetID="org.eclipse.ui.edit.text.actionSet.presentation">
          <part id="gedit.editor.GrammarEditor"/>
       </actionSetPartAssociation>
    </extension>
