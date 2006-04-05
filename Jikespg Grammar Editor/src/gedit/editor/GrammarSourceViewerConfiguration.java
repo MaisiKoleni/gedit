@@ -81,7 +81,6 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 			GrammarPartitionScanner.GRAMMAR_OPTION,
 			GrammarPartitionScanner.GRAMMAR_MACRO,
 			GrammarPartitionScanner.GRAMMAR_OPERATOR,
-			GrammarPartitionScanner.GRAMMAR_STRING,
 		};
 	}
 	
@@ -98,7 +97,6 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 		presenter.setInformationProvider(provider, GrammarPartitionScanner.GRAMMAR_MACRO);
 		presenter.setInformationProvider(provider, GrammarPartitionScanner.GRAMMAR_OPTION);
 		presenter.setInformationProvider(provider, GrammarPartitionScanner.GRAMMAR_OPERATOR);
-		presenter.setInformationProvider(provider, GrammarPartitionScanner.GRAMMAR_STRING);
 		presenter.setSizeConstraints(40, 20, true, false);
 		presenter.setRestoreInformationControlBounds(getSettingsSection("outlinePresenterBounds"), true, true);
 		return presenter;
@@ -114,7 +112,6 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 		ContentAssistant fContentAssistant = new ContentAssistant();
 		GrammarCompletionProcessor processor = new GrammarCompletionProcessor();
 		fContentAssistant.setContentAssistProcessor(processor, IDocument.DEFAULT_CONTENT_TYPE);
-		fContentAssistant.setContentAssistProcessor(processor, GrammarPartitionScanner.GRAMMAR_STRING);
 		fContentAssistant.setContentAssistProcessor(processor, GrammarPartitionScanner.GRAMMAR_MACRO);
 		fContentAssistant.setDocumentPartitioning(GrammarDocumentSetupParticipant.GRAMMAR_PARTITION);
 		fContentAssistant.setAutoActivationDelay(500);
@@ -157,12 +154,8 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 	}
 	
 	public SemanticHighLighter getSemanticHighlighter(GrammarSourceViewer viewer) {
-		if (fSemanticHighlighter == null) {
+		if (fSemanticHighlighter == null)
 			fSemanticHighlighter = new SemanticHighLighter(viewer, fUtils);
-			if (!fUseReconciling)
-				viewer.addTextPresentationListener(fSemanticHighlighter);
-		}
-
 		return fSemanticHighlighter;
 	}
 	
@@ -194,7 +187,6 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 				getAnnotationHover(), getModelContentHover(), 	
 		});
 		presenter.setInformationProvider(provider, IDocument.DEFAULT_CONTENT_TYPE);
-		presenter.setInformationProvider(provider, GrammarPartitionScanner.GRAMMAR_STRING);
 		presenter.setSizeConstraints(60, 10, true, true);
 		return presenter;
 		
@@ -233,8 +225,8 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 		return new MonoReconciler(new GrammarReconcilingStrategy(sourceViewer, reconcilingListener), false);
 	}
 	
-	public void setUseReconciling(boolean useReconciling) {
-		fUseReconciling = useReconciling;
+	public boolean isUseReconciling() {
+		return fUseReconciling;
 	}
 	
 	private ITokenScanner getDefaultScanner() {
@@ -271,6 +263,15 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 				|| fOperatorDr.affectsTextPresentation(event)
 				|| fOptionDr.affectsTextPresentation(event)
 				|| fSemanticHighlighter.affectsTextPresentation(event);
+	}
+
+	public void dispose() {
+		fDefaultScanner = null;
+		fMacroScanner = null;
+		fCommentDr = null;
+		fOptionDr = null;
+		fOperatorDr = null;
+		fSemanticHighlighter = null;
 	}
 
 }
