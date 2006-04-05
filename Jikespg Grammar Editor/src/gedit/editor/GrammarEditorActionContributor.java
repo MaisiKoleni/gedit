@@ -32,7 +32,7 @@ public class GrammarEditorActionContributor extends TextEditorActionContributor 
 
 		public void run() {
 			GrammarEditor editor = (GrammarEditor) getTextEditor();
-			editor.gotoAnnotation(fForward);
+			editor.gotoError(fForward);
 		}
 
 		public void setEditor(ITextEditor editor) {
