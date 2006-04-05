@@ -19,7 +19,6 @@ import java.util.Map;
 public class DocumentAnalyzer {
 	private String text;
 	private IProblemRequestor probemRequestor;
-	private String[] eol;
 	private Map elementToNode = new HashMap();
 
 	protected static String trimQuotes(String text) {
@@ -28,19 +27,8 @@ public class DocumentAnalyzer {
 	}
 
 	public DocumentAnalyzer(String text, IProblemRequestor probemRequestor) {
-		this(text, probemRequestor, null);
-	}
-
-	public DocumentAnalyzer(String text, IProblemRequestor probemRequestor, String eol) {
 		this.text = text;
 		this.probemRequestor = probemRequestor;
-		String defaultEol = System.getProperty("line.separator", Character.toString((char) 10));
-		if (eol == null)
-			eol = defaultEol;
-		this.eol = new String[eol.length()];
-		for (int i = 0; i < this.eol.length; i++) {
-			this.eol[i] = Character.toString(eol.charAt(i));
-		}
 	}
 	
 	public Document analyze(Document document) {
@@ -100,7 +88,7 @@ public class DocumentAnalyzer {
 				continue;
 			if (rulesLookup.containsKey(rhs))
 				continue;
-			createProblem(document, alias.getRhs(), Problem.WARNING, "Alias reference " + rhs + " is not defined");
+			createProblem(document, alias.getRhs(), Problem.ERROR, "Alias reference " + rhs + " is not defined");
 		}
 		
 		for (int i = 0; rules != null && i < rules.length; i++) {
@@ -127,6 +115,8 @@ public class DocumentAnalyzer {
 					ModelBase referred = lookup(label, rulesLookup, aliasLookup);
 					if (referred != null) {
 						markAsReferenced(referred);
+						if (parts.length == 1 && referred.equals(rule))
+							createProblem(document, ref, Problem.WARNING, "The production " + rule.label + " -> " + ref.label + " may lead to a recursion");
 						continue;
 					}
 					referred = lookup(label, terminalsLookup, aliasLookup);
@@ -138,14 +128,21 @@ public class DocumentAnalyzer {
 				}
 			}
 		}
+
+		for (Iterator it = document.startTokens.iterator(); it.hasNext(); ) {
+			Reference startToken = (Reference) it.next();
+			ModelBase referrer = startToken.getReferer();
+			if (referrer != null)
+				markAsReferenced(referrer);
+			else
+				createProblem(document, startToken, Problem.ERROR, "The start token " + startToken.label + " is not defined");
+		}
+
 		for (Iterator it = rulesLookup.values().iterator(); it.hasNext(); ) {
 			ModelBase model = (ModelBase) it.next();
 			if (hasBeenReferenced(model))
 				continue;
-			String lhs = model.label;
-			if (document.startTokens.contains(lhs))
-				continue;
-			createProblem(document, model, Problem.WARNING, "The production " + lhs + " is never used");
+			createProblem(document, model, Problem.WARNING, "The production " + model.label + " is never used");
 		}
 
 		for (Iterator it = terminalsLookup.values().iterator(); it.hasNext(); ) {
