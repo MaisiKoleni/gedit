@@ -5,6 +5,7 @@
 package gedit.editor;
 
 import gedit.GrammarEditorPlugin;
+import gedit.editor.actions.ToggleMarkOccurrencesAction;
 
 import java.util.ResourceBundle;
 
@@ -31,7 +32,7 @@ public class GrammarEditorActionContributor extends TextEditorActionContributor 
 
 		public void run() {
 			GrammarEditor editor = (GrammarEditor) getTextEditor();
-			editor.gotoError(fForward);
+			editor.gotoAnnotation(fForward);
 		}
 
 		public void setEditor(ITextEditor editor) {
@@ -50,6 +51,8 @@ public class GrammarEditorActionContributor extends TextEditorActionContributor 
 	private RetargetTextEditorAction fToggleCommentAction;
 	private GotoAnnotationAction fPreviousAnnotationAction;
 	private GotoAnnotationAction fNextAnnotationAction;
+	private RetargetTextEditorAction fFindOccurrencesAction;
+	private ToggleMarkOccurrencesAction fToggleMarkOccurrencesAction;
 	
 	public GrammarEditorActionContributor() {
 		ResourceBundle bundle = GrammarEditorPlugin.getDefault().getResourceBundle();
@@ -66,6 +69,10 @@ public class GrammarEditorActionContributor extends TextEditorActionContributor 
 		fPreviousAnnotationAction.setActionDefinitionId("org.eclipse.ui.navigate.previous"); //$NON-NLS-1$
 		fNextAnnotationAction = new GotoAnnotationAction(bundle, "nextAnnotation.", true); //$NON-NLS-1$
 		fNextAnnotationAction.setActionDefinitionId("org.eclipse.ui.navigate.next"); //$NON-NLS-1$
+		fFindOccurrencesAction = new RetargetTextEditorAction(bundle, "findOccurrences."); //$NON-NLS-1$
+		fFindOccurrencesAction.setActionDefinitionId(IGrammarEditorActionDefinitionIds.FIND_OCCURRENCES);
+		fToggleMarkOccurrencesAction = new ToggleMarkOccurrencesAction();
+		fToggleMarkOccurrencesAction.setActionDefinitionId(IGrammarEditorActionDefinitionIds.TOGGLE_MARK_OCCURRENCES);
 	}
 	
 	public void init(IActionBars bars) {
@@ -76,6 +83,15 @@ public class GrammarEditorActionContributor extends TextEditorActionContributor 
 		bars.setGlobalActionHandler(ActionFactory.PREVIOUS.getId(), fPreviousAnnotationAction);
 		bars.setGlobalActionHandler(IGrammarEditorActionDefinitionIds.SHOW_DECLARATION, fShowDeclarationAction);
 		bars.setGlobalActionHandler(IGrammarEditorActionDefinitionIds.TOGGLE_COMMENT, fToggleCommentAction);
+		bars.setGlobalActionHandler(IGrammarEditorActionDefinitionIds.FIND_OCCURRENCES, fFindOccurrencesAction);
+		bars.setGlobalActionHandler(IGrammarEditorActionDefinitionIds.TOGGLE_MARK_OCCURRENCES, fToggleMarkOccurrencesAction);
+	}
+	
+	public void dispose() {
+		fPreviousAnnotationAction.setEditor(null);
+		fNextAnnotationAction.setEditor(null);
+		fToggleMarkOccurrencesAction.setEditor(null);
+		super.dispose();
 	}
 
 	public void contributeToMenu(IMenuManager menu) {
@@ -91,6 +107,12 @@ public class GrammarEditorActionContributor extends TextEditorActionContributor 
 			editMenu.add(fContentAssistProposal);
 			editMenu.add(new Separator());
 		}
+
+		IMenuManager searchMenu = menu.findMenuUsingPath("org.eclipse.search.menu");
+		if (searchMenu != null) {
+			searchMenu.add(new Separator());
+			searchMenu.add(fFindOccurrencesAction);
+		}
 	}
 
 	public void setActiveEditor(IEditorPart part) {
@@ -102,6 +124,8 @@ public class GrammarEditorActionContributor extends TextEditorActionContributor 
 			fToggleCommentAction.setAction(getAction(editor, GrammarEditor.ACTION_TOGGLE_COMMENT));
 			fPreviousAnnotationAction.setEditor(editor);
 			fNextAnnotationAction.setEditor(editor);
+			fFindOccurrencesAction.setAction(getAction(editor, GrammarEditor.ACTION_FIND_OCCURRENCES));
+			fToggleMarkOccurrencesAction.setEditor(editor);
 		}
 		super.setActiveEditor(part);
 	}
