@@ -8,17 +8,21 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 public class ElementFinder {
-	static class OffsetFinder extends NodeVisitor {
+	public static class OffsetFinder extends NodeVisitor {
 		private SortedMap result;
 		private int offset;
-		public OffsetFinder(Document document, int offset) {
+		private boolean restrictToLeafs;
+		public OffsetFinder(Document document, int offset, boolean restrictToLeafs) {
 			super(document);
 			this.offset = offset;
+			this.restrictToLeafs = restrictToLeafs;
 			result = new TreeMap();
 		}
 		
 		public boolean visit(Node node) {
-			ModelBase element = element = getElement(node);
+			if (restrictToLeafs && node.spansMultipleNodes())
+				return true;
+			ModelBase element = getElement(node);
 			if (offset >= node.offset && offset <= node.offset + node.length)
 				result.put(new Integer(node.length), element);
 
@@ -30,7 +34,7 @@ public class ElementFinder {
 		}
 	};
 
-	static class IdFinder extends NodeVisitor {
+	public static class IdFinder extends NodeVisitor {
 		private String id;
 		private String trimmedId;
 		private ModelBase firstHit;
@@ -56,16 +60,16 @@ public class ElementFinder {
 			return true;
 		}
 		
-		private boolean matches(String text) {
+		protected boolean matches(String text) {
 			return text.equals(id) || text.equals(trimmedId)
 				|| DocumentAnalyzer.trimQuotes(text).equals(trimmedId != null ? trimmedId : id);
 		}
 
 	};
 
-	public static ModelBase findElementAt(ModelBase start, int offset) {
+	public static ModelBase findElementAt(ModelBase start, int offset, boolean restrictToLeafs) {
 		Document document = start.getDocument();
-		OffsetFinder finder = new OffsetFinder(document, offset);
+		OffsetFinder finder = new OffsetFinder(document, offset, restrictToLeafs);
 		if (start.node != null)
 			start.node.accept(finder);
 		return finder.getNearest();
