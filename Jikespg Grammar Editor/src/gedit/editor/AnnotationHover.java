@@ -4,9 +4,8 @@
  */
 package gedit.editor;
 
-import gedit.editor.GrammarDocumentProvider.ProblemAnnotation;
-
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -26,10 +25,24 @@ import org.eclipse.jface.text.source.ISourceViewer;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.texteditor.ITextEditor;
-import org.eclipse.ui.texteditor.MarkerAnnotation;
 
 public class AnnotationHover implements IAnnotationHover, ITextHover {
 	private List fAnnotations = new ArrayList(1);
+	
+	protected final static Map SHOW_IN_OVERVIEW;
+	protected final static Map SHOW_IN_TEXT;
+	
+	static {
+		Map map = new HashMap();
+		map.put(GrammarDocumentProvider.ANNOTATION_BOOKMARK, null);
+		map.put(GrammarDocumentProvider.ANNOTATION_ERROR, null);
+		map.put(GrammarDocumentProvider.ANNOTATION_TASK, null);
+		map.put(GrammarDocumentProvider.ANNOTATION_WARNING, null);
+		SHOW_IN_TEXT = Collections.unmodifiableMap(new HashMap(map));
+		map.put(GrammarDocumentProvider.ANNOTATION_SEARCH_RESULT, null);
+		map.put(GrammarDocumentProvider.ANNOTATION_OCCURRENCE, null);
+		SHOW_IN_OVERVIEW = Collections.unmodifiableMap(map);
+	}
 
 	protected void findAnnotations(IAnnotationModel model, IRegion region) {
 		fAnnotations.clear();
@@ -52,7 +65,7 @@ public class AnnotationHover implements IAnnotationHover, ITextHover {
 		}
 	}
 
-	protected String getHoverText(IAnnotationModel model, IRegion region) {
+	protected String getHoverText(IAnnotationModel model, IRegion region, Map shownTypes) {
 
 		if (fAnnotations.size() == 0)
 			findAnnotations(model, region);
@@ -62,7 +75,7 @@ public class AnnotationHover implements IAnnotationHover, ITextHover {
 		Map posMessages = new HashMap();
 		for (int i = 0; i < fAnnotations.size(); i++) {
 			Annotation annotation = (Annotation) fAnnotations.get(i);
-			if (!(annotation instanceof ProblemAnnotation) && !(annotation instanceof MarkerAnnotation))
+			if (!shownTypes.containsKey(annotation.getType()))
 				continue;
 			String msg = annotation.getText();
 			if (msg == null)
@@ -102,6 +115,10 @@ public class AnnotationHover implements IAnnotationHover, ITextHover {
 			return "Bookmark";
 		if (GrammarDocumentProvider.ANNOTATION_TASK.equals(type))
 			return "Task";
+		if (GrammarDocumentProvider.ANNOTATION_SEARCH_RESULT.equals(type))
+			return "Search";
+		if (GrammarDocumentProvider.ANNOTATION_OCCURRENCE.equals(type))
+			return "Occurrence";
 		return null;
 	}
 
@@ -136,12 +153,12 @@ public class AnnotationHover implements IAnnotationHover, ITextHover {
 		} catch (BadLocationException ignore) {
 			return null;
 		}
-		return getHoverText(sourceViewer.getAnnotationModel(), region);
+		return getHoverText(sourceViewer.getAnnotationModel(), region, SHOW_IN_OVERVIEW);
 	}
 
 	public String getHoverInfo(ITextViewer textViewer, IRegion hoverRegion) {
 		IAnnotationModel model = textViewer instanceof ISourceViewer ? ((ISourceViewer) textViewer).getAnnotationModel() : null;
-		return getHoverText(model, hoverRegion); 
+		return getHoverText(model, hoverRegion, SHOW_IN_TEXT); 
 	}
 
 	public IRegion getHoverRegion(ITextViewer textViewer, int offset) {
@@ -150,7 +167,7 @@ public class AnnotationHover implements IAnnotationHover, ITextHover {
 		findAnnotations(model, new Region(offset, 0));
 		for (int i = 0; i < fAnnotations.size(); i++) {
 			Annotation annotation = (Annotation) fAnnotations.get(i);
-			if (!(annotation instanceof ProblemAnnotation) && !(annotation instanceof MarkerAnnotation))
+			if (!SHOW_IN_TEXT.containsKey(annotation.getType()))
 				continue;
 			Position position = model.getPosition(annotation);
 			if (position.includes(offset))
