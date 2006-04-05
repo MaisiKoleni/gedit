@@ -9,6 +9,7 @@ import gedit.GrammarEditorPlugin;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
+import org.eclipse.compare.IEncodedStreamContentAccessor;
 import org.eclipse.compare.IStreamContentAccessor;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.text.Document;
@@ -62,13 +63,21 @@ public class GrammarTextViewer extends Viewer {
 	public void refresh() {
 	}
 	
-	private static String getString(Object input) {
+	static String getString(Object input) {
 		
 		if (input instanceof IStreamContentAccessor) {
+			String charSet = null;
 			IStreamContentAccessor accessor = (IStreamContentAccessor) input;
+			if (accessor instanceof IEncodedStreamContentAccessor) {
+				try {
+					charSet = ((IEncodedStreamContentAccessor) accessor).getCharset();
+				} catch (Exception e) {
+				}
+			}
 			StringBuffer sb = new StringBuffer();
 			try {
-				Reader reader = new InputStreamReader(accessor.getContents());
+				Reader reader = charSet == null ? new InputStreamReader(accessor.getContents())
+						: new InputStreamReader(accessor.getContents(), charSet);
 				char[] buf = new char[1024];
 				for (int count = reader.read(buf); count != -1; count = reader.read(buf)) {
 					sb.append(buf, 0, count);
