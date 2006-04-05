@@ -47,11 +47,10 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		List proposals = new ArrayList();
 		Document model = fViewer.getModel(true);
 
-		if (IDocument.DEFAULT_CONTENT_TYPE.equals(contentType))
+		if (IDocument.DEFAULT_CONTENT_TYPE.equals(contentType)) {
 			computeRulesProposals(model, word, end, proposals);
-		if (IDocument.DEFAULT_CONTENT_TYPE.equals(contentType) ||
-				GrammarPartitionScanner.GRAMMAR_STRING.equals(contentType))
 			computeTerminalProposals(model, word, end, proposals);
+		}
 		if (GrammarPartitionScanner.GRAMMAR_MACRO.equals(contentType))
 			computeMacroProposals(model, word, end, proposals);
 		if (IDocument.DEFAULT_CONTENT_TYPE.equals(contentType))
@@ -108,20 +107,23 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		String[] blockb = model.getBlockBeginnings();
 		for (int i = 0; i < definitions.length; i++) {
 			String name = definitions[i].getName();
-			boolean startsWithBlockb = false;
+			name = escape + name.substring(1);
 			for (int j = 0; j < blockb.length; j++) {
-				if (blockb[j].equals(word))
-					startsWithBlockb = true;
+				if (!word.startsWith(blockb[j]))
+					continue;
+				word = word.substring(blockb[j].length());
 			}
-			if (!startsWithBlockb && !startsWithIgnoreCase(name, word) && !startsWithIgnoreCase(name, escape + word))
+			boolean withEscape = startsWithIgnoreCase(name, word);
+			boolean withoutEscape = startsWithIgnoreCase(name, escape + word);
+			if (!withEscape && !withoutEscape)
 				continue;
 			
-			name = escape + name.substring(1);
-			int length = (endOffset - fOffset);
-			String replacement = name.substring(word.length());
+			int offset = withEscape ? fOffset : fOffset - word.length();
+			int length = (endOffset - offset);
+			String replacement = withEscape ? name.substring(word.length()) : name;
 			proposals.add(new GrammarCompletionProposal(replacement, name,
 					GrammarEditorPlugin.getImage("icons/definition.gif"), //$NON-NLS-1$
-					fOffset, length, replacement.length()));
+					offset, length, replacement.length()));
 		}
 	}
 
@@ -172,8 +174,9 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 	}
 	
 	private boolean startsWithIgnoreCase(String string, String prefix) {
-		int len = Math.min(prefix.length(), string.length());
-		for (int i = 0; i < len; i++) {
+		if (prefix.length() > string.length())
+			return false;
+		for (int i = 0; i < prefix.length(); i++) {
 			if (Character.toLowerCase(string.charAt(i)) != Character.toLowerCase(prefix.charAt(i)))
 				return false;
 		}
