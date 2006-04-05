@@ -5,10 +5,16 @@
 package gedit.editor;
 
 import gedit.GrammarEditorPlugin;
-import gedit.editor.GrammarDocumentProvider.ProblemAnnotation;
+import gedit.editor.actions.FindOccurrencesInFileAction;
+import gedit.editor.actions.FoldingActionGroup;
+import gedit.editor.actions.RenameInFileAction;
+import gedit.editor.actions.ToggleCommentAction;
+import gedit.model.Document;
 import gedit.model.ModelBase;
+import gedit.model.Node;
 import gedit.model.Problem;
 import gedit.model.Reference;
+import gedit.model.ElementFinder.IdFinder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,11 +25,13 @@ import java.util.ResourceBundle;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.Preferences;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.dialogs.IMessageProvider;
+import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.preference.PreferenceConverter;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IInformationControl;
@@ -74,7 +82,9 @@ import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchPart;
+import org.eclipse.ui.editors.text.EditorsUI;
 import org.eclipse.ui.editors.text.TextEditor;
+import org.eclipse.ui.texteditor.AnnotationPreference;
 import org.eclipse.ui.texteditor.ContentAssistAction;
 import org.eclipse.ui.texteditor.ITextEditorActionConstants;
 import org.eclipse.ui.texteditor.ITextEditorActionDefinitionIds;
@@ -424,27 +434,72 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 		}
 	};
 
+	private class EditorSelectionChangeListener implements ISelectionChangedListener {
+		public void selectionChanged(SelectionChangedEvent event) {
+			handleEditorSelectionChanged();
+		}
+
+		public void install() {
+			ISelectionProvider selectionProvider = getSelectionProvider();
+			if (selectionProvider instanceof IPostSelectionProvider)
+				((IPostSelectionProvider) selectionProvider).addPostSelectionChangedListener(this);
+			else
+				selectionProvider.addSelectionChangedListener(this);
+		}
+
+		public void uninstall() {
+			ISelectionProvider selectionProvider = getSelectionProvider();
+			if (selectionProvider instanceof IPostSelectionProvider)
+				((IPostSelectionProvider) selectionProvider).removePostSelectionChangedListener(this);
+			else
+				selectionProvider.removeSelectionChangedListener(this);
+		}
+	};
+	
+	private class OccurrencesFinder extends IdFinder {
+		private List fResult = new ArrayList();
+		public OccurrencesFinder(Document document, String id, int filter) {
+			super(document, id, filter);
+		}
+		
+		protected boolean doVisit(Node node, ModelBase element) {
+			if (!node.spansMultipleNodes() && matches(element.getLabel(element)))
+				fResult.add(node);
+			return true;
+		}
+		
+		public Node[] findOccurrences() {
+			document.getRoot().accept(this);
+			return (Node[]) fResult.toArray(new Node[fResult.size()]);
+		}
+	};
+
 	private GrammarOutlinePage fOutlinePage;
 	private ISelectionChangedListener fOutlineSelectionChangedListener;
+	private EditorSelectionChangeListener fEditorSelectionChangedListener;
 	private Listener fListener;
 	private ProjectionSupport fProjectionSupport;
 	private GrammarFoldingStructureProvider fFoldingStructureProvider;
     private FoldingActionGroup fFoldingGroup;
 	private ColorManager fColorManager;
+	private boolean fMarkOccurrenceAnnotations;
+	private ModelBase fLastSelectedElement;
 
 	public final static String ACTION_SHOW_OUTLINE = "showOutline";
 	public final static String ACTION_CONTENT_ASSIST = "contentAssist";
 	public final static String ACTION_GOTO_DECLARATION = "gotoDeclaration";
 	public final static String ACTION_SHOW_DECLARATION = "showDeclaraion";
 	public final static String ACTION_TOGGLE_COMMENT = "toggleComment";
+	public final static String ACTION_FIND_OCCURRENCES = "findOccurrences";
+	public final static String ACTION_RENAME_IN_FILE = "renameInFile";
+	public final static String ACTION_FOLDING_TOGGLE = "foldingToggle";
+	public final static String ACTION_FOLDING_EXPAND_ALL = "foldingExpandAll";
 	
 	private final static String PREFERENCE_COLOR_LINK = PreferenceConstants.GRAMMAR_COLORING_LINK;
 
 	public GrammarEditor() {
 		super();
 		fColorManager = GrammarEditorPlugin.getColorManager();
-		setPreferenceStore(GrammarEditorPlugin.getDefault().getCombinedPreferenceStore());
-
 		setDocumentProvider(new GrammarDocumentProvider());
 	}
 	
@@ -472,6 +527,12 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 		setAction(ACTION_TOGGLE_COMMENT, action);
 		markAsStateDependentAction(ACTION_TOGGLE_COMMENT, true);
 		configureToggleCommentAction();
+		action = new FindOccurrencesInFileAction(bundle, "findOccurrences.", this);
+		action.setActionDefinitionId(IGrammarEditorActionDefinitionIds.FIND_OCCURRENCES);
+		setAction(ACTION_FIND_OCCURRENCES, action);
+		action = new RenameInFileAction(this);
+		action.setActionDefinitionId(IGrammarEditorActionDefinitionIds.RENAME_IN_FILE);
+		setAction(ACTION_RENAME_IN_FILE, action);
 		
 		fFoldingGroup = new FoldingActionGroup(this, getSourceViewer());
 	}
@@ -501,13 +562,16 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 		getSourceViewer().getTextWidget().addKeyListener(fListener);
 		getSourceViewer().getTextWidget().addPaintListener(fListener);
 		((ITextViewerExtension4) getSourceViewer()).addTextPresentationListener(fListener);
-		ISelectionProvider selectionProvider = getSelectionProvider();
-		if (selectionProvider instanceof IPostSelectionProvider) {
-			IPostSelectionProvider provider = (IPostSelectionProvider) selectionProvider;
-			provider.addPostSelectionChangedListener(getSelectionChangedListener());
-		} else  {
-			selectionProvider.addSelectionChangedListener(getSelectionChangedListener());
-		}
+		fEditorSelectionChangedListener = new EditorSelectionChangeListener();
+		fEditorSelectionChangedListener.install();
+	}
+	
+	protected void initializeEditor() {
+		super.initializeEditor();
+		IPreferenceStore store = GrammarEditorPlugin.getDefault().getCombinedPreferenceStore();
+		setPreferenceStore(store);
+		fMarkOccurrenceAnnotations = store.getBoolean(PreferenceConstants.EDITOR_MARK_OCCURRENCES);
+		updateOccurrencesAnnotations();
 	}
 	
 	protected void initializeKeyBindingScopes() {
@@ -519,6 +583,11 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 		menu.appendToGroup(ITextEditorActionConstants.GROUP_SAVE, new Separator("group.open"));
 		IAction action = getAction(ACTION_GOTO_DECLARATION);
 		menu.appendToGroup("group.open", action);
+		menu.appendToGroup(ITextEditorActionConstants.GROUP_COPY, new Separator("group.search"));
+		action = getAction(ACTION_FIND_OCCURRENCES);
+		menu.appendToGroup("group.search", action);
+		action = getAction(ACTION_RENAME_IN_FILE);
+		menu.appendToGroup(ITextEditorActionConstants.GROUP_EDIT, action);
 	}
 	
 	protected String[] collectContextMenuPreferencePages() {
@@ -551,6 +620,16 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 			if (getSourceViewer()== null)
 				return;
 			((GrammarSourceViewerConfiguration) getSourceViewerConfiguration()).adaptToPreferenceChange(event);
+
+			if (PreferenceConstants.EDITOR_MARK_OCCURRENCES.equals(event.getProperty())) {
+				boolean newValue = ((Boolean) event.getNewValue()).booleanValue();
+				if (newValue != fMarkOccurrenceAnnotations) {
+					fMarkOccurrenceAnnotations = newValue;
+					fLastSelectedElement = null;
+					updateOccurrencesAnnotations();
+				}
+				return;
+			}
 		} finally {
 			super.handlePreferenceStoreChanged(event);
 		}
@@ -577,20 +656,25 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 			menu.appendToGroup(IWorkbenchActionConstants.MB_ADDITIONS, new Separator());
 			menu.appendToGroup(IWorkbenchActionConstants.MB_ADDITIONS, foldingMenu);
 		}
-		IAction action = getAction("FoldingToggle"); //$NON-NLS-1$
+		IAction action = getAction(ACTION_FOLDING_TOGGLE);
 		foldingMenu.add(action);
 		foldingMenu.add(new Separator());
-		action = getAction("FoldingExpandAll"); //$NON-NLS-1$
+		action = getAction(ACTION_FOLDING_EXPAND_ALL);
 		foldingMenu.add(action);
 		fFoldingGroup.update();
 	}
 
 	public void dispose() {
+		getGrammarSourceViewer().removeReconcilingListener(this);
 		if (fOutlinePage != null) {
 			fOutlinePage.removeSelectionChangedListener(fOutlineSelectionChangedListener);
 			fOutlinePage.dispose();
 		}
+		fEditorSelectionChangedListener.uninstall();
+		((ITextViewerExtension4) getSourceViewer()).removeTextPresentationListener(fListener);
 		fListener.dispose();
+		fFoldingStructureProvider = null;
+		((GrammarSourceViewerConfiguration) getSourceViewerConfiguration()).dispose();
 		super.dispose();
 	}
 	
@@ -637,6 +721,17 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 		return (GrammarSourceViewer) getSourceViewer();
 	}
 	
+	public ISourceViewer getViewer() {
+		return getSourceViewer();
+	}
+	
+	public ModelBase getSelectedElement() {
+		GrammarSourceViewer viewer = getGrammarSourceViewer();
+		if (viewer == null)
+			return null;
+		return viewer.getSelectedElement();
+	}
+	
 	private void handleOutlineSelectionChanged() {
 		IStructuredSelection selection = (IStructuredSelection) fOutlinePage.getSelection();
 		if (selection.size() != 1)
@@ -645,18 +740,19 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 		getGrammarSourceViewer().selectElement(model);
 	}
 	
-	protected void handleCursorPositionChanged() {
-		super.handleCursorPositionChanged();
+	protected void handleEditorSelectionChanged() {
 		GrammarSourceViewer viewer = getGrammarSourceViewer();
 		if (viewer == null)
 			return;
-		ModelBase element = viewer.getSelectedElement();
+		ModelBase element = getSelectedElement();
 		if (element != null)
-			viewer.setRangeIndication(element.getRangeOffset(), element.getRangeLength(), false);
+			viewer.setRangeIndication(element, false);
 		if (element instanceof Reference)
 			element = (ModelBase) ((Reference) element).getParent(element);
 		updateProblemStatus(viewer);
 		synchronizeOutlineSelection(element);
+		if (fMarkOccurrenceAnnotations)
+			updateOccurrencesAnnotations();
 	}
 
 	protected boolean isActivePart() {
@@ -666,6 +762,7 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 	
 	private void updateProblemStatus(GrammarSourceViewer viewer) {
 		Problem[] problems = viewer.getSelectedProblems();
+		setStatusMessage(null, IMessageProvider.ERROR);
 		if (problems.length == 0)
 			setStatusMessage(null, IMessageProvider.WARNING);
 		for (int i = 0; i < problems.length; i++) {
@@ -733,7 +830,7 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 		IAnnotationModel model = getDocumentProvider().getAnnotationModel(getEditorInput());
 		for (Iterator it = model.getAnnotationIterator(); it.hasNext(); ) {
 			Annotation annotation = (Annotation) it.next();
-			if (!(annotation instanceof ProblemAnnotation))
+			if (!isNavigationTarget(annotation))
 				continue;
 			Position p = model.getPosition(annotation);
 			if (!p.includes(offset)) {
@@ -764,6 +861,13 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 		return nextError;
 	}
 
+	protected boolean isNavigationTarget(Annotation annotation) {
+		Preferences preferences = EditorsUI.getPluginPreferences();
+		AnnotationPreference preference = getAnnotationPreferenceLookup().getAnnotationPreference(annotation);
+		String key = preference == null ? null : preference.getIsGoToNextNavigationTargetKey();
+		return (key != null && preferences.getBoolean(key));
+	}
+
 	protected boolean isFoldingEnabled() {
 		return GrammarEditorPlugin.getDefault().getPreferenceStore().getBoolean(PreferenceConstants.EDITOR_FOLDING_ENABLED);
 	}
@@ -788,15 +892,50 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 
 	public void reconciled() {
 		GrammarSourceViewer viewer = getGrammarSourceViewer();
-		if (viewer != null)
+		if (viewer == null)
 			return;
     	if (fFoldingStructureProvider != null) {
     		fFoldingStructureProvider.updateFoldingRegions(viewer.getModel(false), false);
     	}
     	getSite().getShell().getDisplay().asyncExec(new Runnable() {
     		public void run() {
-    	    	handleCursorPositionChanged();
+    	    	handleEditorSelectionChanged();
     		}
     	});
+	}
+
+	public boolean isMarkingOccurrences() {
+		return fMarkOccurrenceAnnotations;
+	}
+	
+	public Node[] findOccurrences(String id) {
+		OccurrencesFinder occurrencesFinder = new OccurrencesFinder(getGrammarSourceViewer().
+				getModel(true), id, -1);
+		return occurrencesFinder.findOccurrences();
+	}
+
+	private void updateOccurrencesAnnotations() {
+		ModelBase element = getSelectedElement();
+		if (fMarkOccurrenceAnnotations && (element == null || element == fLastSelectedElement))
+			return;
+		fLastSelectedElement = element;
+		Node[] occurrences = null;
+		if (fMarkOccurrenceAnnotations)
+			occurrences = findOccurrences(element.getLabel(element));
+		if (getDocumentProvider() == null)
+			return;
+		IAnnotationModel annotationModel = getDocumentProvider().getAnnotationModel(getEditorInput());
+		for (Iterator it = annotationModel.getAnnotationIterator(); it.hasNext(); ) {
+			Annotation annotation = (Annotation) it.next();
+			if (GrammarDocumentProvider.ANNOTATION_OCCURRENCE.equals(annotation.getType()))
+				annotationModel.removeAnnotation(annotation);
+		}
+		if (occurrences == null)
+			return;
+		for (int i = 0; i < occurrences.length; i++) {
+			Node occurrence = occurrences[i];
+			annotationModel.addAnnotation(new Annotation(GrammarDocumentProvider.ANNOTATION_OCCURRENCE,
+					false, element.getLabel(element)), new Position(occurrence.getOffset(), occurrence.getLength()));
+		}
 	}
 }
