@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-Name: GEdit Grammar Editor
 Bundle-SymbolicName: gedit;singleton=true
-Bundle-Version: 1.0.1
+Bundle-Version: 1.0.2
 Bundle-Activator: gedit.GrammarEditorPlugin
 Bundle-Vendor: Uwe Voigt
 Bundle-Localization: plugin
