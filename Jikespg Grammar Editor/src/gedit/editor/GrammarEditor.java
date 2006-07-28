@@ -11,13 +11,17 @@ import gedit.editor.actions.RenameInFileAction;
 import gedit.editor.actions.ToggleCommentAction;
 import gedit.model.Document;
 import gedit.model.ModelBase;
+import gedit.model.ModelUtils;
 import gedit.model.Node;
 import gedit.model.Problem;
 import gedit.model.Reference;
+import gedit.model.Section;
 import gedit.model.ElementFinder.IdFinder;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -77,11 +81,16 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.IEditorDescriptor;
 import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IEditorRegistry;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchPart;
+import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.editors.text.EditorsUI;
 import org.eclipse.ui.editors.text.TextEditor;
 import org.eclipse.ui.texteditor.AnnotationPreference;
@@ -92,7 +101,7 @@ import org.eclipse.ui.texteditor.MarkerAnnotation;
 import org.eclipse.ui.texteditor.TextOperationAction;
 import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
 
-public class GrammarEditor extends TextEditor implements IProjectionListener, IReconcilingListener {
+public class GrammarEditor extends TextEditor implements IProjectionListener, IReconcilingListener, IDocumentOpener {
 	private final class Listener implements MouseListener, MouseMoveListener,
 			KeyListener, ITextPresentationListener, PaintListener {
 		private boolean fActive;
@@ -135,7 +144,7 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 
 			if (wasActive) {
 				getSourceViewer().setSelectedRange(region.getOffset(), region.getLength());
-				getGrammarSourceViewer().selectWord(region);
+				getGrammarSourceViewer().selectReferringWord(region);
 			}
 		}
 
@@ -458,12 +467,12 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 	
 	private class OccurrencesFinder extends IdFinder {
 		private List fResult = new ArrayList();
-		public OccurrencesFinder(Document document, String id, int filter) {
+		public OccurrencesFinder(Document document, String id, BitSet filter) {
 			super(document, id, filter);
 		}
 		
 		protected boolean doVisit(Node node, ModelBase element) {
-			if (!node.spansMultipleNodes() && matches(element.getLabel(element)))
+			if (!node.spansMultipleNodes() && matches(element.getLabel()))
 				fResult.add(node);
 			return true;
 		}
@@ -594,6 +603,7 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 		String[] ids = super.collectContextMenuPreferencePages();
 		List more = new ArrayList();
 		more.add("gedit.editorPreferencePage"); //$NON-NLS-1$
+		more.add("gedit.syntaxColoringPreferencePage"); //$NON-NLS-1$
 		more.add("gedit.foldingPreferencePage"); //$NON-NLS-1$
 		more.addAll(Arrays.asList(ids));
 		return (String[]) more.toArray(new String[more.size()]);
@@ -629,7 +639,10 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 					updateOccurrencesAnnotations();
 				}
 				return;
-			}
+			} else if (PreferenceConstants.GRAMMAR_INCLUDE_DIRECTORIES.equals(event.getProperty())) {
+				getGrammarSourceViewer().getModel(true);
+			} else if (fOutlinePage != null)
+				fOutlinePage.adaptToPreferenceChange(event);
 		} finally {
 			super.handlePreferenceStoreChanged(event);
 		}
@@ -639,7 +652,8 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 		fProjectionSupport = new ProjectionSupport(projectionViewer, getAnnotationAccess(), getSharedColors());
     	fProjectionSupport.setHoverControlCreator(new IInformationControlCreator() {
 			public IInformationControl createInformationControl(Shell shell) {
-				return new GrammarInformationControl(shell);
+				return new GrammarInformationControl(shell,
+						getGrammarSourceViewer().getModel(false));
 			}
 		});
         fProjectionSupport.install();
@@ -708,7 +722,7 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
         	Object object = fProjectionSupport.getAdapter(getSourceViewer(), adapter);
         	if (object != null)
         		return object;
-        }			
+        }
 		return super.getAdapter(adapter);
 	}
 	
@@ -747,12 +761,17 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 		ModelBase element = getSelectedElement();
 		if (element != null)
 			viewer.setRangeIndication(element, false);
-		if (element instanceof Reference)
-			element = (ModelBase) ((Reference) element).getParent(element);
+		if (element instanceof Reference && !(element.getParent() instanceof Section))
+			element = element.getParent();
 		updateProblemStatus(viewer);
 		synchronizeOutlineSelection(element);
 		if (fMarkOccurrenceAnnotations)
 			updateOccurrencesAnnotations();
+	}
+	
+	protected void handleElementContentReplaced() {
+		super.handleElementContentReplaced();
+		getGrammarSourceViewer().getModel(true);
 	}
 
 	protected boolean isActivePart() {
@@ -828,6 +847,8 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 		int distance = 0;
 
 		IAnnotationModel model = getDocumentProvider().getAnnotationModel(getEditorInput());
+		if (model == null)
+			return null;
 		for (Iterator it = model.getAnnotationIterator(); it.hasNext(); ) {
 			Annotation annotation = (Annotation) it.next();
 			if (!isNavigationTarget(annotation))
@@ -910,7 +931,7 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 	
 	public Node[] findOccurrences(String id) {
 		OccurrencesFinder occurrencesFinder = new OccurrencesFinder(getGrammarSourceViewer().
-				getModel(true), id, -1);
+				getModel(false), id, ModelUtils.getAllFilter());
 		return occurrencesFinder.findOccurrences();
 	}
 
@@ -921,7 +942,7 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 		fLastSelectedElement = element;
 		Node[] occurrences = null;
 		if (fMarkOccurrenceAnnotations)
-			occurrences = findOccurrences(element.getLabel(element));
+			occurrences = findOccurrences(element.getLabel());
 		if (getDocumentProvider() == null)
 			return;
 		IAnnotationModel annotationModel = getDocumentProvider().getAnnotationModel(getEditorInput());
@@ -935,7 +956,25 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 		for (int i = 0; i < occurrences.length; i++) {
 			Node occurrence = occurrences[i];
 			annotationModel.addAnnotation(new Annotation(GrammarDocumentProvider.ANNOTATION_OCCURRENCE,
-					false, element.getLabel(element)), new Position(occurrence.getOffset(), occurrence.getLength()));
+					false, element.getLabel()), new Position(occurrence.getOffset(), occurrence.getLength()));
 		}
+	}
+	
+	public void open(Document document, Document parentDocument, IRegion selectedRegion) {
+		IEditorPart editor = null;
+		IEditorRegistry registry = PlatformUI.getWorkbench().getEditorRegistry();
+		IEditorDescriptor descriptor = registry.getDefaultEditor(document.getFilePath());
+		try {
+			String id = descriptor != null ? descriptor.getId() : EditorsUI.DEFAULT_TEXT_EDITOR_ID;
+			editor = getSite().getPage().openEditor(new GrammarFileEditorInput(
+					new File(document.getFilePath()), parentDocument), id);
+		} catch (PartInitException e) {
+			GrammarEditorPlugin.logError("Cannot open the external reference file", e);
+		}
+		if (!(editor instanceof GrammarEditor))
+			return;
+		GrammarSourceViewer viewer = ((GrammarEditor) editor).getGrammarSourceViewer();
+		if (selectedRegion != null)
+			viewer.selectElement(document.getElementAt(selectedRegion.getOffset()));
 	}
 }
