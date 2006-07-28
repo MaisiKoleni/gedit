@@ -5,10 +5,14 @@
 package gedit.editor;
 
 import gedit.GrammarEditorPlugin;
+import gedit.model.Document;
 
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.IInformationControl;
+import org.eclipse.jface.text.IInformationControlCreator;
+import org.eclipse.jface.text.IInformationControlCreatorExtension;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.ITextViewerExtension2;
@@ -17,6 +21,7 @@ import org.eclipse.jface.text.Region;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.jface.text.contentassist.ICompletionProposalExtension;
 import org.eclipse.jface.text.contentassist.ICompletionProposalExtension2;
+import org.eclipse.jface.text.contentassist.ICompletionProposalExtension3;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
@@ -24,8 +29,10 @@ import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.widgets.Shell;
 
-public class GrammarCompletionProposal implements ICompletionProposal, ICompletionProposalExtension, ICompletionProposalExtension2 {
+public class GrammarCompletionProposal implements ICompletionProposal, ICompletionProposalExtension,
+		ICompletionProposalExtension2, ICompletionProposalExtension3, Comparable {
 	private String fReplacement;
 	private String fDisplayString;
 	private int fReplacementOffset;
@@ -34,14 +41,25 @@ public class GrammarCompletionProposal implements ICompletionProposal, ICompleti
 	private boolean fToggleEating;
 	private StyleRange fRememberedStyleRange;
 	private Image fImage;
+	private String fAdditionalProposalInfo;
+	private Document fParentDocument;
+	private String fEscapeToValidate;
 
-	public GrammarCompletionProposal(String replacement, String displayString, Image image, int offset, int length, int cursorPosition) {
+	public GrammarCompletionProposal(String replacement, String displayString,
+			Image image, int offset, int length, int cursorPosition,
+			String additionalProposalInfo, Document parentDocument,
+			char escapeToValidate) {
+
 		fReplacement = replacement;
 		fDisplayString = displayString;
 		fImage = image;
 		fReplacementOffset = offset;
 		fReplacementLength = length;
 		fCursorPosition = cursorPosition;
+		fAdditionalProposalInfo = additionalProposalInfo;
+		fParentDocument = parentDocument;
+		if (escapeToValidate != 0)
+			fEscapeToValidate = String.valueOf(escapeToValidate);
 	}
 
 	public void apply(ITextViewer viewer, char trigger, int stateMask, int offset) {
@@ -154,6 +172,7 @@ public class GrammarCompletionProposal implements ICompletionProposal, ICompleti
 	}
 
 	public boolean validate(IDocument document, int offset, DocumentEvent event) {
+
 		if (offset < fReplacementOffset)
 			return false;
 				
@@ -173,6 +192,8 @@ public class GrammarCompletionProposal implements ICompletionProposal, ICompleti
 			text = text.substring(pointIndex + 1);
 		
 		boolean validated= startsWith(document, offset, fReplacement);
+		if (!validated && fEscapeToValidate != null && fReplacement.startsWith(fEscapeToValidate))
+			validated = startsWith(document, offset, fReplacement.substring(1));
 
 		if (validated && event != null) {
 			// adapt replacement range to document change
@@ -211,7 +232,7 @@ public class GrammarCompletionProposal implements ICompletionProposal, ICompleti
 	}
 
 	public String getAdditionalProposalInfo() {
-		return null;
+		return fAdditionalProposalInfo;
 	}
 
 	public String getDisplayString() {
@@ -224,6 +245,35 @@ public class GrammarCompletionProposal implements ICompletionProposal, ICompleti
 
 	public IContextInformation getContextInformation() {
 		return null;
+	}
+	
+	public IInformationControlCreator getInformationControlCreator() {
+		class InformationControlCreator implements IInformationControlCreator, IInformationControlCreatorExtension {
+			public IInformationControl createInformationControl(Shell parent) {
+				return new GrammarInformationControl(parent, SWT.NONE, SWT.NONE, new SimpleTextPresenter(), fParentDocument);
+			}
+
+			public boolean canReuse(IInformationControl control) {
+				return control != null;
+			}
+
+			public boolean canReplace(IInformationControlCreator creator) {
+				return true;
+			}
+		};
+		return new InformationControlCreator();
+	}
+	
+	public int getPrefixCompletionStart(IDocument document, int completionOffset) {
+		return completionOffset;
+	}
+	
+	public CharSequence getPrefixCompletionText(IDocument document, int completionOffset) {
+		return null;
+	}
+	
+	public int compareTo(Object o) {
+		return o instanceof GrammarCompletionProposal ? fDisplayString.compareToIgnoreCase(((GrammarCompletionProposal) o).fDisplayString) : 0;
 	}
 
 }
