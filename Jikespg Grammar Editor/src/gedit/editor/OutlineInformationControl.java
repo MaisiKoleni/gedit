@@ -18,6 +18,7 @@ import java.util.Map;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.text.IInformationControl;
 import org.eclipse.jface.text.IInformationControlExtension2;
 import org.eclipse.jface.text.IInformationControlExtension3;
@@ -122,16 +123,18 @@ public class OutlineInformationControl implements IInformationControl,
 	private Shell fShell;
 	private TreeViewer fTreeViewer;
 	private PatternFilter fPatternFilter = new PatternFilter();
-	private ModelSectionFilter fSectionFilter;
+	private ModelFilter fSectionFilter;
 	private Text fText;
 	private ToolBar fToolBar;
 	private StringMatcher fMatcher;
 	private GrammarSourceViewer fGrammarViewer;
 	private MenuManager fMenuManager;
+	private FilterAction fFilterAction;
 	
 	private final static String PREFERENCE_SORTER = "quick_outline_sorted";
-	private final static String PREFERENCE_FILTERS = PreferenceConstants.SECTION_FILTERS + "_quick_outline";
-	private final static String PREFERENCE_FILTERS_RECENTLY_USED = PreferenceConstants.SECTION_FILTERS_RECENTLY_USED + "_quick_outline";
+	private final static String PREFERENCE_SECTION_FILTERS = PreferenceConstants.SECTION_FILTERS + "_quick_outline";
+	private final static String PREFERENCE_SECTION_FILTERS_RECENTLY_USED = PreferenceConstants.SECTION_FILTERS_RECENTLY_USED + "_quick_outline";
+	private final static String PREFERENCE_FILTER_MACROS = PreferenceConstants.FILTER_MACROS + "_quick_outline";
 	
 	public OutlineInformationControl(GrammarSourceViewer viewer, Shell parent) {
 		fGrammarViewer = viewer;
@@ -189,9 +192,11 @@ public class OutlineInformationControl implements IInformationControl,
 	}
 
 	protected void fillMenuManager(MenuManager menuManager) {
-		FilterAction filterAction = new FilterAction(fTreeViewer, fSectionFilter, PREFERENCE_FILTERS, PREFERENCE_FILTERS_RECENTLY_USED);
-		menuManager.add(filterAction.getMostRecentlyUsedContributionItem());
-		menuManager.add(filterAction);
+		fFilterAction = new FilterAction(fTreeViewer, fSectionFilter,
+				PREFERENCE_SECTION_FILTERS, PREFERENCE_SECTION_FILTERS_RECENTLY_USED,
+				PREFERENCE_FILTER_MACROS);
+		menuManager.add(fFilterAction.getMostRecentlyUsedContributionItem());
+		menuManager.add(fFilterAction);
 		menuManager.add(new Separator());
 		menuManager.add(new SortAction());
 	}
@@ -240,10 +245,12 @@ public class OutlineInformationControl implements IInformationControl,
 				handleTreeKeyReleased(e);
 			}
 		});
+		IPreferenceStore store = GrammarEditorPlugin.getDefault().getPreferenceStore();
 		viewer.addFilter(fPatternFilter);
-		viewer.addFilter(fSectionFilter = new ModelSectionFilter(ModelUtils.
-				createBitSetFromString(GrammarEditorPlugin.getDefault().getPreferenceStore().
-						getString(PREFERENCE_FILTERS), PreferenceConstants.SECTION_FILTERS_SEPARATOR)));
+		viewer.addFilter(fSectionFilter = new ModelFilter(ModelUtils.
+				createBitSetFromString(store.getString(PREFERENCE_SECTION_FILTERS),
+						PreferenceConstants.SECTION_FILTERS_SEPARATOR),
+				store.getBoolean(PREFERENCE_FILTER_MACROS)));
 		return viewer;
 	}
 
@@ -379,7 +386,7 @@ public class OutlineInformationControl implements IInformationControl,
 
 	public boolean isFocusControl() {
 		return fTreeViewer.getControl().isFocusControl() ||
-				fText.isFocusControl();
+				fText.isFocusControl() || fFilterAction.isDialogActive();
 	}
 
 	public void setFocus() {

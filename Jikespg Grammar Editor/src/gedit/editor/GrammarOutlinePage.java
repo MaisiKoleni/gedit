@@ -15,6 +15,7 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.action.IToolBarManager;
+import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.util.ListenerList;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.util.SafeRunnable;
@@ -69,21 +70,24 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 
 	private boolean fSuppressSelectionChangePropagation;
     private ListenerList selectionChangedListeners = new ListenerList();
-    private ModelSectionFilter fFilter;
+    private ModelFilter fFilter;
 
 	private final static String PREFERENCE_SORTER = "outline_sorted";
 	private final static String PREFERENCE_LINKED = "outline_linked";
-	private final static String PREFERENCE_FILTERS_RECENTLY_USED = PreferenceConstants.SECTION_FILTERS_RECENTLY_USED + "_outline_page";
-	private static final String PREFERENCE_FILTERS= PreferenceConstants.SECTION_FILTERS + "_outline_page";
+	private final static String PREFERENCE_SECTION_FILTERS_RECENTLY_USED = PreferenceConstants.SECTION_FILTERS_RECENTLY_USED + "_outline_page";
+	private static final String PREFERENCE_SECTION_FILTERS= PreferenceConstants.SECTION_FILTERS + "_outline_page";
+	private static final String PREFERENCE_FILTER_MACROS = PreferenceConstants.FILTER_MACROS + "_outline_page";
 
 	public void createControl(Composite parent) {
 		super.createControl(parent);
 		getTreeViewer().setContentProvider(new ModelContentProvider());
 		getTreeViewer().setLabelProvider(new ModelLabelProvider());
 		getTreeViewer().setSorter(new ModelSorter(PREFERENCE_SORTER));
-		getTreeViewer().addFilter(fFilter = new ModelSectionFilter(ModelUtils.
-				createBitSetFromString(GrammarEditorPlugin.getDefault().getPreferenceStore().
-						getString(PREFERENCE_FILTERS), PreferenceConstants.SECTION_FILTERS_SEPARATOR)));
+		IPreferenceStore store = GrammarEditorPlugin.getDefault().getPreferenceStore();
+		getTreeViewer().addFilter(fFilter = new ModelFilter(ModelUtils.
+				createBitSetFromString(store.getString(PREFERENCE_SECTION_FILTERS),
+						PreferenceConstants.SECTION_FILTERS_SEPARATOR),
+				store.getBoolean(PREFERENCE_FILTER_MACROS)));
 	}
 	
 	public void makeContributions(IMenuManager menuManager, IToolBarManager toolBarManager,
@@ -92,7 +96,9 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 		toolBarManager.add(new SortAction());
 		toolBarManager.add(new LinkAction());
 		
-		FilterAction filterAction = new FilterAction(getTreeViewer(), fFilter, PREFERENCE_FILTERS, PREFERENCE_FILTERS_RECENTLY_USED);
+		FilterAction filterAction = new FilterAction(getTreeViewer(), fFilter,
+				PREFERENCE_SECTION_FILTERS, PREFERENCE_SECTION_FILTERS_RECENTLY_USED,
+				PREFERENCE_FILTER_MACROS);
 		menuManager.add(filterAction.getMostRecentlyUsedContributionItem());
 		menuManager.add(filterAction);
 	}
@@ -150,8 +156,6 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 	public void adaptToPreferenceChange(PropertyChangeEvent event) {
 		if (PREFERENCE_SORTER.equals(event.getProperty()))
 				((ModelSorter) getTreeViewer().getSorter()).adaptToPreferenceChange(event);
-//		else if (PREFERENCE_FILTERS.equals(event.getProperty()))
-//			fFilter.setFilter(ModelSectionFilter.createBitSetFromString((String) event.getNewValue()));
 		getTreeViewer().refresh();
 	}
 }
