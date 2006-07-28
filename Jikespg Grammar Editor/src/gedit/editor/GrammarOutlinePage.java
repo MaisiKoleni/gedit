@@ -5,7 +5,9 @@
 package gedit.editor;
 
 import gedit.GrammarEditorPlugin;
+import gedit.editor.actions.FilterAction;
 import gedit.model.Document;
+import gedit.model.ModelUtils;
 import gedit.model.Document.IModelListener;
 
 import org.eclipse.core.runtime.Platform;
@@ -14,14 +16,12 @@ import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.util.ListenerList;
+import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.util.SafeRunnable;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
-import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.ui.model.BaseWorkbenchContentProvider;
 import org.eclipse.ui.views.contentoutline.ContentOutlinePage;
 
 public class GrammarOutlinePage extends ContentOutlinePage {
@@ -30,12 +30,12 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 			super("Link with Editor");
 			setToolTipText("Link with the active editor");
 			setImageDescriptor(GrammarEditorPlugin.getImageDescriptor("icons/synced.gif"));
-			setChecked(GrammarEditorPlugin.getDefault().getPreferenceStore().getBoolean(PROPERTY_LINKED));
+			setChecked(GrammarEditorPlugin.getDefault().getPreferenceStore().getBoolean(PREFERENCE_LINKED));
 		}
 		
 		public void run() {
 			boolean checked = isChecked();
-			GrammarEditorPlugin.getDefault().getPreferenceStore().setValue(PROPERTY_LINKED, checked);
+			GrammarEditorPlugin.getDefault().getPreferenceStore().setValue(PREFERENCE_LINKED, checked);
 		}
 	};
 	private class SortAction extends Action {
@@ -43,13 +43,13 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 			super("Sort");
 			setToolTipText("Sort the elements");
 			setImageDescriptor(GrammarEditorPlugin.getImageDescriptor("icons/alphab_sort_co.gif"));
-			setChecked(GrammarEditorPlugin.getDefault().getPreferenceStore().getBoolean(PROPERTY_SORTER));
+			setChecked(GrammarEditorPlugin.getDefault().getPreferenceStore().getBoolean(PREFERENCE_SORTER));
 		}
 		
 		public void run() {
 			boolean checked = isChecked();
-			GrammarEditorPlugin.getDefault().getPreferenceStore().setValue(PROPERTY_SORTER, checked);
-			((Sorter) getTreeViewer().getSorter()).enable(checked);
+			GrammarEditorPlugin.getDefault().getPreferenceStore().setValue(PREFERENCE_SORTER, checked);
+			((ModelSorter) getTreeViewer().getSorter()).setEnabled(checked);
 			refreshWithoutSelectionChangePropagation();
 		}
 	};
@@ -66,34 +66,24 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 			fSuppressSelectionChangePropagation = false;
 		}
 	};
-	
-	private class Sorter extends ViewerSorter {
-		private boolean enabled = GrammarEditorPlugin.getDefault().getPreferenceStore().getBoolean(PROPERTY_SORTER);
-
-		public int compare(Viewer viewer, Object e1, Object e2) {
-			if (!enabled)
-				return 0;
-			if (e1 instanceof Comparable)
-				return ((Comparable) e1).compareTo(e2);
-			return super.compare(viewer, e1, e2);
-		}
-
-		public void enable(boolean enabled) {
-			this.enabled = enabled;
-		}
-	};
 
 	private boolean fSuppressSelectionChangePropagation;
-    protected ListenerList selectionChangedListeners = new ListenerList();
+    private ListenerList selectionChangedListeners = new ListenerList();
+    private ModelSectionFilter fFilter;
 
-	private final static String PROPERTY_SORTER = "outline_sorted";
-	private final static String PROPERTY_LINKED = "outline_linked";
+	private final static String PREFERENCE_SORTER = "outline_sorted";
+	private final static String PREFERENCE_LINKED = "outline_linked";
+	private final static String PREFERENCE_FILTERS_RECENTLY_USED = PreferenceConstants.SECTION_FILTERS_RECENTLY_USED + "_outline_page";
+	private static final String PREFERENCE_FILTERS= PreferenceConstants.SECTION_FILTERS + "_outline_page";
 
 	public void createControl(Composite parent) {
 		super.createControl(parent);
-		getTreeViewer().setContentProvider(new BaseWorkbenchContentProvider());
+		getTreeViewer().setContentProvider(new ModelContentProvider());
 		getTreeViewer().setLabelProvider(new ModelLabelProvider());
-		getTreeViewer().setSorter(new Sorter());
+		getTreeViewer().setSorter(new ModelSorter(PREFERENCE_SORTER));
+		getTreeViewer().addFilter(fFilter = new ModelSectionFilter(ModelUtils.
+				createBitSetFromString(GrammarEditorPlugin.getDefault().getPreferenceStore().
+						getString(PREFERENCE_FILTERS), PreferenceConstants.SECTION_FILTERS_SEPARATOR)));
 	}
 	
 	public void makeContributions(IMenuManager menuManager, IToolBarManager toolBarManager,
@@ -101,12 +91,16 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 		toolBarManager.add(new CollapseAllAction());
 		toolBarManager.add(new SortAction());
 		toolBarManager.add(new LinkAction());
+		
+		FilterAction filterAction = new FilterAction(getTreeViewer(), fFilter, PREFERENCE_FILTERS, PREFERENCE_FILTERS_RECENTLY_USED);
+		menuManager.add(filterAction.getMostRecentlyUsedContributionItem());
+		menuManager.add(filterAction);
 	}
 
 	public void setInput(Document model) {
 		getTreeViewer().setInput(model);
 		model.addModelListener(new IModelListener() {
-			public void modelChanged() {
+			public void modelChanged(Document model) {
 				refreshWithoutSelectionChangePropagation();
 			}
 		});
@@ -150,6 +144,14 @@ public class GrammarOutlinePage extends ContentOutlinePage {
     }
 
 	public boolean isLinkingEnabled() {
-		return GrammarEditorPlugin.getDefault().getPreferenceStore().getBoolean(PROPERTY_LINKED);
+		return GrammarEditorPlugin.getDefault().getPreferenceStore().getBoolean(PREFERENCE_LINKED);
+	}
+
+	public void adaptToPreferenceChange(PropertyChangeEvent event) {
+		if (PREFERENCE_SORTER.equals(event.getProperty()))
+				((ModelSorter) getTreeViewer().getSorter()).adaptToPreferenceChange(event);
+//		else if (PREFERENCE_FILTERS.equals(event.getProperty()))
+//			fFilter.setFilter(ModelSectionFilter.createBitSetFromString((String) event.getNewValue()));
+		getTreeViewer().refresh();
 	}
 }
