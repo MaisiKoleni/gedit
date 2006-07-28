@@ -39,4 +39,5 @@ public class PreferenceConstants {
 	public static final String SECTION_FILTERS = "section_filters";
 	public static final String SECTION_FILTERS_RECENTLY_USED = "section_filters_recently_used";
 	public static final String SECTION_FILTERS_SEPARATOR = ",";
+	public static final String FILTER_MACROS = "filters_macros";
 }
