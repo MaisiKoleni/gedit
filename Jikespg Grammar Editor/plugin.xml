@@ -15,6 +15,13 @@
       </editor>
    </extension>
    <extension
+         point="org.eclipse.ui.editors.documentProviders">
+      <provider
+            class="gedit.editor.GrammarDocumentProvider"
+            id="gedit.editor.ExternalFileDocumentProvider"
+            inputTypes="gedit.editor.GrammarFileEditorInput"/>
+   </extension>
+   <extension
          point="org.eclipse.ui.contexts">
       <context
             parentId="org.eclipse.ui.textEditorScope"
@@ -103,6 +110,12 @@
             file-extensions="g"/>
    </extension>
    <extension
+         point="org.eclipse.core.filebuffers.documentCreation">
+      <factory
+            class="gedit.editor.GrammarDocumentFactory"
+            contentTypeId="gedit.grammarContentType"/>
+   </extension>
+   <extension
          point="org.eclipse.core.filebuffers.documentSetup">
       <participant
             class="gedit.editor.GrammarDocumentSetupParticipant"
@@ -169,7 +182,13 @@
             id="gedit.foldingPreferencePage"
             name="Folding">
          <keywordReference id="gedit.grammarKeyword"/>
-         <keywordReference id="gedit.foldingKeyword"/>
+      </page>
+      <page
+            category="gedit.editorPreferencePage"
+            class="gedit.editor.SyntaxColoringPreferencePage"
+            id="gedit.syntaxColoringPreferencePage"
+            name="Syntax Coloring">
+         <keywordReference id="gedit.grammarKeyword"/>
       </page>
    </extension>
    <extension
@@ -177,9 +196,6 @@
       <keyword
             id="gedit.grammarKeyword"
             label="grammar"/>
-      <keyword
-            id="gedit.foldingKeyword"
-            label="folding"/>
    </extension>
    <extension
          point="org.eclipse.ui.actionSets">
