@@ -5,9 +5,11 @@
 package gedit.editor;
 
 import gedit.GrammarEditorPlugin;
+import gedit.editor.actions.FilterAction;
 import gedit.model.ModelBase;
-import gedit.model.ModelType;
+import gedit.model.ModelUtils;
 import gedit.model.Reference;
+import gedit.model.Rhs;
 import gedit.model.Section;
 
 import java.util.HashMap;
@@ -15,6 +17,7 @@ import java.util.Map;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.MenuManager;
+import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.text.IInformationControl;
 import org.eclipse.jface.text.IInformationControlExtension2;
 import org.eclipse.jface.text.IInformationControlExtension3;
@@ -52,33 +55,9 @@ import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
-import org.eclipse.ui.model.BaseWorkbenchContentProvider;
 
 public class OutlineInformationControl implements IInformationControl,
 		IInformationControlExtension2, IInformationControlExtension3 {
-	private class TypedFilter extends ViewerFilter {
-		private static final String FILTER_KEY = "quick_outline_typefilter";
-		private int fTypedFilter;
-		public TypedFilter() {
-			fTypedFilter = GrammarEditorPlugin.getDefault().getPreferenceStore().getInt(FILTER_KEY);
-		}
-		
-		public boolean select(Viewer viewer, Object parentElement, Object element) {
-			
-			if (!(element instanceof Section))
-				return true;
-			int type = ((Section) element).getChildType().getType();
-			return (fTypedFilter & type) == 0;
-		}
-		
-		public void setTypedFilter(int type, boolean set) {
-			if (!set)
-				fTypedFilter &= type ^-1;
-			else
-				fTypedFilter |= type;
-			GrammarEditorPlugin.getDefault().getPreferenceStore().setValue(FILTER_KEY, fTypedFilter);
-		}
-	};
 
 	private class PatternFilter extends ViewerFilter {
 		private Map fCache = new HashMap();
@@ -123,32 +102,36 @@ public class OutlineInformationControl implements IInformationControl,
 			return fMatcher.match(string);
 		}
 	};
-
-	private class FilterAction extends Action {
-		private int fType;
-
-		public FilterAction(String text, int type) {
-			super(text);
-			fType = type;
-			setChecked((fTypedFilter.fTypedFilter & type) > 0);
+	
+	private class SortAction extends Action {
+		public SortAction() {
+			super("Sort");
+			setToolTipText("Sort the elements");
+			setImageDescriptor(GrammarEditorPlugin.getImageDescriptor("icons/alphab_sort_co.gif"));
+			setChecked(GrammarEditorPlugin.getDefault().getPreferenceStore().getBoolean(PREFERENCE_SORTER));
 		}
-
+		
 		public void run() {
-			fTypedFilter.setTypedFilter(fType, isChecked());
-			fTreeViewer.getTree().setRedraw(false);
+			boolean checked = isChecked();
+			GrammarEditorPlugin.getDefault().getPreferenceStore().setValue(PREFERENCE_SORTER, checked);
+			((ModelSorter) fTreeViewer.getSorter()).setEnabled(checked);
 			fTreeViewer.refresh();
-			fTreeViewer.getTree().setRedraw(true);
 		}
 	};
 
 	private Shell fShell;
 	private TreeViewer fTreeViewer;
 	private PatternFilter fPatternFilter = new PatternFilter();
-	private TypedFilter fTypedFilter = new TypedFilter();
+	private ModelSectionFilter fSectionFilter;
 	private Text fText;
 	private ToolBar fToolBar;
 	private StringMatcher fMatcher;
 	private GrammarSourceViewer fGrammarViewer;
+	private MenuManager fMenuManager;
+	
+	private final static String PREFERENCE_SORTER = "quick_outline_sorted";
+	private final static String PREFERENCE_FILTERS = PreferenceConstants.SECTION_FILTERS + "_quick_outline";
+	private final static String PREFERENCE_FILTERS_RECENTLY_USED = PreferenceConstants.SECTION_FILTERS_RECENTLY_USED + "_quick_outline";
 	
 	public OutlineInformationControl(GrammarSourceViewer viewer, Shell parent) {
 		fGrammarViewer = viewer;
@@ -159,6 +142,8 @@ public class OutlineInformationControl implements IInformationControl,
 		new Label(fShell, SWT.SEPARATOR | SWT.HORIZONTAL).setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		setForegroundColor(parent.getDisplay().getSystemColor(SWT.COLOR_INFO_FOREGROUND));
 		setBackgroundColor(parent.getDisplay().getSystemColor(SWT.COLOR_INFO_BACKGROUND));
+		
+		fillMenuManager(fMenuManager);
 	}
 
 	private Shell createShell(Shell parent) {
@@ -199,19 +184,16 @@ public class OutlineInformationControl implements IInformationControl,
 			}
 		});
 
-		createMenuButton(composite, getMenuManager());
+		createMenuButton(composite, fMenuManager = new MenuManager());
 		return text;
 	}
 
-	protected MenuManager getMenuManager() {
-		MenuManager menu = new MenuManager();
-		menu.add(new FilterAction("Filter Options", ModelType.OPTION.getType()));
-		menu.add(new FilterAction("Filter Definitions", ModelType.DEFINITION.getType()));
-		menu.add(new FilterAction("Filter Terminals", ModelType.TERMINAL.getType()));
-		menu.add(new FilterAction("Filter Aliases", ModelType.ALIAS.getType()));
-		menu.add(new FilterAction("Filter Rules", ModelType.RULE.getType()));
-		menu.add(new FilterAction("Filter Names", ModelType.NAME.getType()));
-		return menu;
+	protected void fillMenuManager(MenuManager menuManager) {
+		FilterAction filterAction = new FilterAction(fTreeViewer, fSectionFilter, PREFERENCE_FILTERS, PREFERENCE_FILTERS_RECENTLY_USED);
+		menuManager.add(filterAction.getMostRecentlyUsedContributionItem());
+		menuManager.add(filterAction);
+		menuManager.add(new Separator());
+		menuManager.add(new SortAction());
 	}
 
 	protected void createMenuButton(Composite parent, final MenuManager menuManager) {
@@ -243,8 +225,9 @@ public class OutlineInformationControl implements IInformationControl,
 	private TreeViewer createTreeViewer(Shell shell) {
 		TreeViewer viewer = new TreeViewer(shell, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
 		viewer.getControl().setLayoutData(new GridData(GridData.FILL_BOTH));
-		viewer.setContentProvider(new BaseWorkbenchContentProvider());
+		viewer.setContentProvider(new ModelContentProvider());
 		viewer.setLabelProvider(new ModelLabelProvider());
+		viewer.setSorter(new ModelSorter(PREFERENCE_SORTER));
 		
 		viewer.getTree().addSelectionListener(new SelectionAdapter() {
 			public void widgetDefaultSelected(SelectionEvent e) {
@@ -258,7 +241,9 @@ public class OutlineInformationControl implements IInformationControl,
 			}
 		});
 		viewer.addFilter(fPatternFilter);
-		viewer.addFilter(fTypedFilter);
+		viewer.addFilter(fSectionFilter = new ModelSectionFilter(ModelUtils.
+				createBitSetFromString(GrammarEditorPlugin.getDefault().getPreferenceStore().
+						getString(PREFERENCE_FILTERS), PreferenceConstants.SECTION_FILTERS_SEPARATOR)));
 		return viewer;
 	}
 
@@ -339,8 +324,8 @@ public class OutlineInformationControl implements IInformationControl,
 
 	public void setVisible(boolean visible) {
 		ModelBase element = fGrammarViewer.getSelectedElement();
-		if (element instanceof Reference)
-			element = (ModelBase) ((Reference) element).getParent(element);
+		if (element instanceof Reference && element.getParent() instanceof Rhs)
+			element = element.getParent();
 		
 		if (fTreeViewer.getData("selection") == null) {
 			fShell.setVisible(visible);
