@@ -7,7 +7,7 @@ package gedit.model;
 public class Reference extends ModelBase {
 	private ModelBase referrer;
 
-	public Reference(Object parent, String value) {
+	public Reference(ModelBase parent, String value) {
 		super(parent, value);
 	}
 	

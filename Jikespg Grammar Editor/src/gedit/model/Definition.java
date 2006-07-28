@@ -4,14 +4,10 @@
  */
 package gedit.model;
 
-import gedit.GrammarEditorPlugin;
-
-import org.eclipse.jface.resource.ImageDescriptor;
-
 public class Definition extends ModelBase {
 	private String value;
 
-	public Definition(Object parent, String name, String value) {
+	public Definition(ModelBase parent, String name, String value) {
 		super(parent, name);
 		this.value = value;
 	}
@@ -21,17 +17,13 @@ public class Definition extends ModelBase {
 	}
 	
 	public String getValue() {
-		return label;
+		return value;
 	}
 
 	public ModelType getType() {
 		return ModelType.DEFINITION;
 	}
 
-	public ImageDescriptor getImageDescriptor(Object o) {
-		return GrammarEditorPlugin.getImageDescriptor("icons/definition.gif"); //$NON-NLS-1$
-	}
-	
 	public boolean equals(Object o) {
 		if (o == this)
 			return true;

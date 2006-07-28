@@ -4,14 +4,10 @@
  */
 package gedit.model;
 
-import gedit.GrammarEditorPlugin;
-
-import org.eclipse.jface.resource.ImageDescriptor;
-
 public class Alias extends ModelBase {
 	private Reference rhs;
 
-	public Alias(Object parent, String lhs, Reference rhs) {
+	public Alias(ModelBase parent, String lhs, Reference rhs) {
 		super(parent, lhs);
 		this.rhs = rhs;
 		rhs.parent = this;
@@ -27,10 +23,6 @@ public class Alias extends ModelBase {
 	
 	public ModelType getType() {
 		return ModelType.ALIAS;
-	}
-	
-	public ImageDescriptor getImageDescriptor(Object o) {
-		return GrammarEditorPlugin.getImageDescriptor("icons/alias.gif"); //$NON-NLS-1$
 	}
 	
 	public String toString() {

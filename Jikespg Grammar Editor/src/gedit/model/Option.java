@@ -4,21 +4,35 @@
  */
 package gedit.model;
 
-import gedit.GrammarEditorPlugin;
-
-import org.eclipse.jface.resource.ImageDescriptor;
-
 public class Option extends ModelBase {
-	public Option(Object parent, String text) {
-		super(parent, text);
+	protected String value;
+	protected Reference[] fileReferences;
+
+	public Option(ModelBase parent, String key, String value) {
+		super(parent, key);
+		this.value = value;
+	}
+	
+	protected void addFileReference(Reference fileReference, Node node) {
+		if (fileReferences == null)
+			fileReferences = new Reference[] { fileReference };
+		else {
+			int length = fileReferences.length;
+			System.arraycopy(fileReferences, 0, fileReferences = new Reference[length + 1], 0, length);
+			fileReferences[length] = fileReference;
+		}
+		fileReferences[fileReferences.length - 1].node = node;
 	}
 	
 	public ModelType getType() {
 		return ModelType.OPTION;
 	}
 
-	public ImageDescriptor getImageDescriptor(Object o) {
-		return GrammarEditorPlugin.getImageDescriptor("icons/option.gif"); //$NON-NLS-1$
+	public String getValue() {
+		return value;
 	}
-
+	
+	public Reference[] getFileReferences() {
+		return fileReferences;
+	}
 }

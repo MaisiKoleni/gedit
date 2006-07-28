@@ -3,17 +3,13 @@
  */
 package gedit.model;
 
-import gedit.GrammarEditorPlugin;
-
 import java.util.ArrayList;
 import java.util.List;
-
-import org.eclipse.jface.resource.ImageDescriptor;
 
 public class Rule extends ModelBase {
 	protected List rhs = new ArrayList(1);
 	
-	public Rule(Object parent, String lhs) {
+	public Rule(ModelBase parent, String lhs) {
 		super(parent, lhs);
 	}
 	
@@ -26,7 +22,7 @@ public class Rule extends ModelBase {
 		return (Rhs[]) rhs.toArray(new Rhs[rhs.size()]);
 	}
 	
-	public Object[] getChildren(Object o) {
+	public Object[] getChildren() {
 		return getRhs();
 	}
 
@@ -36,10 +32,6 @@ public class Rule extends ModelBase {
 	
 	public ModelType getType() {
 		return ModelType.RULE;
-	}
-
-	public ImageDescriptor getImageDescriptor(Object o) {
-		return GrammarEditorPlugin.getImageDescriptor("icons/production.gif"); //$NON-NLS-1$
 	}
 
 	public String toString() {

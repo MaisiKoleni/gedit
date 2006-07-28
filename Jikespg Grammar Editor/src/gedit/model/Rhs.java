@@ -4,18 +4,14 @@
  */
 package gedit.model;
 
-import gedit.GrammarEditorPlugin;
-
 import java.util.ArrayList;
 import java.util.List;
-
-import org.eclipse.jface.resource.ImageDescriptor;
 
 public class Rhs extends ModelBase {
 	protected List parts = new ArrayList(1);
 	private String string;
 
-	public Rhs(Object parent, String label) {
+	public Rhs(ModelBase parent, String label) {
 		super(parent, label);
 	}
 	
@@ -39,7 +35,7 @@ public class Rhs extends ModelBase {
 		return ModelType.RHS;
 	}
 
-	public String getLabel(Object o) {
+	public String getLabel() {
 		if (string == null)
 			string = computeString(false);
 		return string;
@@ -55,10 +51,6 @@ public class Rhs extends ModelBase {
 		return sb.toString();
 	}
 
-	public ImageDescriptor getImageDescriptor(Object o) {
-		return GrammarEditorPlugin.getImageDescriptor("icons/rhs.gif"); //$NON-NLS-1$
-	}
-	
 	public String toString() {
 		return computeString(true);
 	}

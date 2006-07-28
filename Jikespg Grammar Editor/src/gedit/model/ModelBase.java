@@ -7,25 +7,23 @@ package gedit.model;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.eclipse.core.runtime.IAdaptable;
-import org.eclipse.core.runtime.Platform;
-import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.core.runtime.PlatformObject;
 import org.eclipse.jface.util.Assert;
-import org.eclipse.ui.model.WorkbenchAdapter;
 
-public abstract class ModelBase extends WorkbenchAdapter implements Comparable, IAdaptable {
-	protected Object parent;
+public abstract class ModelBase extends PlatformObject implements Comparable, Cloneable {
+	protected ModelBase parent;
 	protected String label;
 	protected Node node;
+	protected boolean visible = true;
 	private Map userData;
 	
-	public ModelBase(Object parent, String label) {
+	public ModelBase(ModelBase parent, String label) {
 		Assert.isNotNull(label);
 		this.parent = parent;
 		this.label = label;
 	}
 
-	public Object[] getChildren(Object o) {
+	public Object[] getChildren() {
 		return new ModelBase[0];
 	}
 	
@@ -71,23 +69,32 @@ public abstract class ModelBase extends WorkbenchAdapter implements Comparable, 
 	public Object getAdapter(Class adapter) {
 		if (Document.class.equals(adapter)) {
 			if (parent instanceof Document)
-				return parent;
-			if (parent instanceof IAdaptable)
-				return ((IAdaptable) parent).getAdapter(adapter);
+				return (Document) parent;
+			if (parent != null)
+				return parent.getAdapter(adapter);
 		}
-		return Platform.getAdapterManager().getAdapter(this, adapter);
+		return super.getAdapter(adapter);
 	}
 	
-	public String getLabel(Object o) {
+	public String getLabel() {
 		return label;
 	}
 	
-	public ImageDescriptor getImageDescriptor(Object o) {
-		return ImageDescriptor.getMissingImageDescriptor();
-	}
-
-	public Object getParent(Object o) {
+	public ModelBase getParent() {
 		return parent;
+	}
+	
+	public boolean isVisible() {
+		return visible;
+	}
+	
+	protected Object clone() {
+		ModelBase clone = null;
+		try {
+			clone = (ModelBase) super.clone();
+		} catch (CloneNotSupportedException ignore) {
+		}
+		return clone;
 	}
 
 	public int compareTo(Object o) {
