@@ -5,6 +5,7 @@
 package gedit;
 
 import gedit.editor.PreferenceConstants;
+import gedit.model.ModelType;
 
 import org.eclipse.core.runtime.preferences.AbstractPreferenceInitializer;
 import org.eclipse.jface.preference.IPreferenceStore;
@@ -40,6 +41,42 @@ public class GrammarEditorPluginPreferenceInitializer extends AbstractPreference
 		
 
 		store.setDefault(PreferenceConstants.EDITOR_MAXIMUM_PROBLEMS_REPORTED, 100);
+		
+		store.setDefault(PreferenceConstants.SECTION_ORDERING, createDefaultSectionOrdering());
+	}
+
+	private String createDefaultSectionOrdering() {
+		ModelType[] types = {
+				ModelType.OPTION,
+				ModelType.INCLUDE,
+				ModelType.NOTICE,
+				ModelType.DEFINITION,
+				ModelType.TERMINAL,
+				ModelType.EXPORT,
+				ModelType.IMPORT,
+				ModelType.KEYWORD,
+				ModelType.EOF_TOK,
+				ModelType.EOL_TOK,
+				ModelType.ERROR_TOK,
+				ModelType.RECOVER,
+				ModelType.IDENTIFIER,
+				ModelType.START_TOK,
+				ModelType.ALIAS,
+				ModelType.NAME,
+				ModelType.HEADER,
+				ModelType.AST,
+				ModelType.GLOBAL,
+				ModelType.TRAILER,
+				ModelType.RULE,
+				ModelType.TYPE,
+		};
+		StringBuffer sb = new StringBuffer();
+		for (int i = 0; i < types.length; i++) {
+			if (i > 0)
+				sb.append(PreferenceConstants.SECTION_ORDERING_SEPARATOR);
+			sb.append(types[i].getBitPosition());
+		}
+		return sb.toString();
 	}
 
 }
