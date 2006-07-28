@@ -3,8 +3,8 @@
  * All Rights Reserved.
  */
 package gedit.model;
-import java.util.ArrayList;
-import java.util.List;
+
+import gedit.StringUtils.QuoteDetector;
 
 class Scanner implements jpgsym {
 	protected Token current;
@@ -16,17 +16,16 @@ class Scanner implements jpgsym {
 	private int peekPos;
 	private char[] buf;
 	private Document document;
+	private QuoteDetector quoteDetector;
 
 	private static final char EOF = (char) -1;
 	private static final char EOL = (char) -2;
 	
-	public final static int TK_EOL = 9998;
-	public final static int TK_COMMENT = 9999;
-
 	public Scanner(Document document, String text, boolean tokenizeComments) {
 		this.document = document;
 		this.tokenizeComments = tokenizeComments;
 		buf = text.toCharArray();
+		quoteDetector = new QuoteDetector();
 	}
 
     public Token scanToken() {
@@ -40,6 +39,10 @@ class Scanner implements jpgsym {
     	current.length = peekPos - currentTokenOffset;
     	
     	return current;
+    }
+    
+    public Token peekToken() {
+    	return doScan();
     }
 
 	private Token doScan() {
@@ -61,11 +64,21 @@ class Scanner implements jpgsym {
 		case '-':
 			switch (peekChar(peekPos + 1)) {
 			case '>':
-				if (!Character.isWhitespace(peekChar(peekPos + 2)))
-					errorMessage = "Whitespace required after arrow";
-	    		token.kind = TK_ARROW;
-	    		peekPos += 2;
-	    		break;
+				switch (peekChar(peekPos + 2)) {
+				case '?':
+					if (Character.isWhitespace(peekChar(peekPos + 3))) {
+			    		token.kind = TK_PRIORITY_ARROW;
+			    		peekPos += 3;
+					}
+		    		break;
+		    	default:
+					if (Character.isWhitespace(peekChar(peekPos + 2))) {
+			    		token.kind = TK_ARROW;
+			    		peekPos += 2;
+					}
+		    		break;
+				}
+				break;
 			case '-':
 				token.kind = scanComment();
 				if (!tokenizeComments)
@@ -74,30 +87,45 @@ class Scanner implements jpgsym {
 			break;
 		case ':':
 			if (peekChar(peekPos + 1) == ':' && peekChar(peekPos + 2) == '=') {
-				if (!Character.isWhitespace(peekChar(peekPos + 3)))
-					errorMessage = "Whitespace required after equivalence";
-				token.kind = TK_EQUIVALENCE;
-	    		peekPos += 3;
+				switch (peekChar(peekPos + 3)) {
+				case '?':
+					if (Character.isWhitespace(peekChar(peekPos + 4))) {
+						token.kind = TK_PRIORITY_EQUIVALENCE;
+			    		peekPos += 4;
+					}
+		    		break;
+		    	default:
+					if (Character.isWhitespace(peekChar(peekPos + 3))) {
+						token.kind = TK_EQUIVALENCE;
+						peekPos += 3;
+					}
+		    		break;
+				}
 			}
 			break;
-		case '|':
-			peekPos++;
-			token.kind = TK_OR;
-			break;
 		default:
-			if (c == Document.DEFAULT_ESCAPE && matches("options", 1)) { //$NON-NLS-1$
+			if (c == DocumentOptions.DEFAULT_ESCAPE && matches("options", 1)) { //$NON-NLS-1$
 				peekPos += 8;
 	    		token.kind = processOptionLine();
-			} else if (c == document.getEsape()) {
+			} else if (c == document.getOptions().getEsape()) {
 				token.kind = scanKeyword();
-	        } else if (matches(document.hblockb, 0)) {
-	        	token.kind = processMacro(c, document.hblockb.length(), document.hblocke, TK_HBLOCK);
-	        } else if (matches(document.blockb, 0)) {
-	        	token.kind = processMacro(c, document.blockb.length(), document.blocke, TK_BLOCK);
-	    	}
+			} else if (c == document.getOptions().getOrMarker()) {
+				if (Character.isWhitespace(peekChar(peekPos + 1))) {
+					peekPos++;
+					token.kind = TK_OR;
+				}
+	        } else {
+	        	String[] blockb = document.getOptions().getBlockBeginnings();
+	        	String[] blocke = document.getOptions().getBlockEnds();
+	        	for (int i = 0; i < blockb.length; i++) {
+		        	if (blockb[i].length() > 0 && matches(blockb[i], 0)) {
+			        	token.kind = processMacro(c, blockb[i].length(), blocke[i], TK_BLOCK);
+		        	}
+				}
+	        }
         }
         if (token.kind == 0) {
-        	while (c != EOF && !Character.isWhitespace(c))
+        	while (c != EOF && (quoteDetector.detect(c) || !Character.isWhitespace(c)))
     			c = peekChar(++peekPos);
             token.kind = TK_SYMBOL;
         }
@@ -132,38 +160,102 @@ class Scanner implements jpgsym {
 
 	private int scanKeyword() {
 		char c = Character.toLowerCase(peekChar(peekPos + 1));
-    	switch (c) {
-		case EOF:
-	        return TK_EOF;
+		switch (c) {
+    	case EOF:
+			return TK_EOF;
     	case 'd':
-    		if (matches("efine", 2)) //$NON-NLS-1$
-    			if (isTokenSeparatorChar(peekChar(peekPos + 7))) { peekPos += 7; return TK_DEFINE_KEY; }
+    		switch (Character.toLowerCase(peekChar(peekPos + 2))) {
+			case 'e':
+	    		if (matches("fine", 3)) //$NON-NLS-1$
+	    			if (isTokenSeparatorChar(peekChar(peekPos + 7))) { peekPos += 7; return TK_DEFINE_KEY; }
+				break;
+			case 'r':
+	    		switch (Character.toLowerCase(peekChar(peekPos + 3))) {
+	    		case 'o':
+		    		switch (Character.toLowerCase(peekChar(peekPos + 4))) {
+		    		case 'p':
+			    		switch (Character.toLowerCase(peekChar(peekPos + 5))) {
+			    		case 's':
+				    		if (matches("ymbols", 6)) //$NON-NLS-1$
+				    			if (isTokenSeparatorChar(peekChar(peekPos + 12))) { peekPos += 12; return TK_DROPSYMBOLS_KEY; }
+				    		break;
+			    		case 'a':
+				    		if (matches("ctions", 6)) //$NON-NLS-1$
+				    			if (isTokenSeparatorChar(peekChar(peekPos + 12))) { peekPos += 12; return TK_DROPACTIONS_KEY; }
+				    		break;
+			    		case 'r':
+				    		if (matches("ules", 6)) //$NON-NLS-1$
+				    			if (isTokenSeparatorChar(peekChar(peekPos + 10))) { peekPos += 10; return TK_DROPRULES_KEY; }
+				    		break;
+			    		}
+			    		break;
+		    		}
+		    		break;
+	    		}
+	    		break;
+			}
 			break;
     	case 't':
-    		if (matches("erminals", 2)) //$NON-NLS-1$
-    			if (isTokenSeparatorChar(peekChar(peekPos + 10))) { peekPos += 10; return TK_TERMINALS_KEY; }
+    		switch (Character.toLowerCase(peekChar(peekPos + 2))) {
+    		case 'e':
+        		if (matches("rminals", 3)) //$NON-NLS-1$
+        			if (isTokenSeparatorChar(peekChar(peekPos + 10))) { peekPos += 10; return TK_TERMINALS_KEY; }
+        		break;
+    		case 'r':
+        		if (matches("ailers", 3)) //$NON-NLS-1$
+        			if (isTokenSeparatorChar(peekChar(peekPos + 9))) { peekPos += 9; return TK_TRAILERS_KEY; }
+        		break;
+    		case 'y':
+        		if (matches("pes", 3)) //$NON-NLS-1$
+        			if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_TYPES_KEY; }
+        		break;
+    		}
     		break;
     	case 'a':
-    		if (matches("lias", 2)) //$NON-NLS-1$
-    			if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_ALIAS_KEY; }
+    		switch (Character.toLowerCase(peekChar(peekPos + 2))) {
+			case 'l':
+	    		if (matches("ias", 3)) //$NON-NLS-1$
+	    			if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_ALIAS_KEY; }
+				break;
+			case 's':
+	    		if (matches("t", 3)) //$NON-NLS-1$
+	    			if (isTokenSeparatorChar(peekChar(peekPos + 4))) { peekPos += 4; return TK_AST_KEY; }
+				break;
+			}
     		break;
     	case 'r':
-    		if (matches("ules", 2)) //$NON-NLS-1$
-    			if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_RULES_KEY; }
+    		switch (Character.toLowerCase(peekChar(peekPos + 2))) {
+    		case 'e':
+        		if (matches("cover", 3)) //$NON-NLS-1$
+        			if (isTokenSeparatorChar(peekChar(peekPos + 8))) { peekPos += 8; return TK_RECOVER_KEY; }
+        		break;
+    		case 'u':
+        		if (matches("les", 3)) //$NON-NLS-1$
+        			if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_RULES_KEY; }
+        		break;
+    		}
     		break;
     	case 's':
     		if (matches("tart", 2)) //$NON-NLS-1$
     			if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_START_KEY; }
     		break;
     	case 'n':
-    		if (matches("ames", 2)) //$NON-NLS-1$
-    			if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_NAMES_KEY; }
+    		switch (Character.toLowerCase(peekChar(peekPos + 2))) {
+    		case 'a':
+    			if (matches("mes", 3)) //$NON-NLS-1$
+    				if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_NAMES_KEY; }
+    			break;
+    		case 'o':
+    			if (matches("tice", 3)) //$NON-NLS-1$
+    				if (isTokenSeparatorChar(peekChar(peekPos + 7))) { peekPos += 7; return TK_NOTICE_KEY; }
+    			break;
+    		}
     		break;
     	case 'e':
     		switch(Character.toLowerCase(peekChar(peekPos + 2))) {
     		case 'm':
         		if (matches("pty", 3)) //$NON-NLS-1$
-        			if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_EMPTY_SYMBOL; }
+        			if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_EMPTY_KEY; }
         		break;
     		case 'n':
     			if (matches("d", 3)) //$NON-NLS-1$
@@ -172,16 +264,50 @@ class Scanner implements jpgsym {
     		case 'o':
         		switch(Character.toLowerCase(peekChar(peekPos + 3))) {
         		case 'l':
-        			peekPos += 5; return TK_EOL_SYMBOL;
+        			if (isTokenSeparatorChar(peekChar(peekPos + 4))) { peekPos += 4; return TK_EOL_KEY; }
+        			break;
         		case 'f':
-        			peekPos += 5; return TK_EOF_SYMBOL;
+        			if (isTokenSeparatorChar(peekChar(peekPos + 4))) { peekPos += 4; return TK_EOF_KEY; }
+        			break;
         		}
         		break;
     		case 'r':
     			if (matches("ror", 3)) //$NON-NLS-1$
-    				if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_ERROR_SYMBOL; }
+    				if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_ERROR_KEY; }
+    			break;
+    		case 'x':
+    			if (matches("port", 3)) //$NON-NLS-1$
+    				if (isTokenSeparatorChar(peekChar(peekPos + 7))) { peekPos += 7; return TK_EXPORT_KEY; }
     			break;
     		}
+    		break;
+    	case 'i':
+    		switch(Character.toLowerCase(peekChar(peekPos + 2))) {
+    		case 'd':
+        		if (matches("entifier", 3))
+        			if (isTokenSeparatorChar(peekChar(peekPos + 11))) { peekPos += 11; return TK_IDENTIFIER_KEY; }
+        		break;
+    		case 'n':
+        		if (matches("clude", 3))
+        			if (isTokenSeparatorChar(peekChar(peekPos + 8))) { peekPos += 8; return TK_INCLUDE_KEY; }
+        		break;
+    		case 'm':
+	    		if (matches("port", 3))
+	    			if (isTokenSeparatorChar(peekChar(peekPos + 7))) { peekPos += 7; return TK_IMPORT_KEY; }
+	    		break;
+    		}
+    		break;
+    	case 'h':
+    		if (matches("eaders", 2))
+    			if (isTokenSeparatorChar(peekChar(peekPos + 8))) { peekPos += 8; return TK_HEADERS_KEY; }
+    		break;
+    	case 'k':
+    		if (matches("eywords", 2))
+    			if (isTokenSeparatorChar(peekChar(peekPos + 9))) { peekPos += 9; return TK_KEYWORDS_KEY; }
+    		break;
+    	case 'g':
+    		if (matches("lobals", 2))
+    			if (isTokenSeparatorChar(peekChar(peekPos + 8))) { peekPos += 8; return TK_GLOBALS_KEY; }
     		break;
     	}
 		while ((c = peekChar(++peekPos)) != EOF && !Character.isWhitespace(c)) ;
@@ -189,20 +315,20 @@ class Scanner implements jpgsym {
 	}
 
 	private int processMacro(char c, int offset, String endSequence, int successToken) {
-		while (c != EOF && !matchesSequence(c, offset, endSequence))
-			c = peekChar(++offset + peekPos);
+		while ((c = peekChar(offset + peekPos)) != EOF && !matchesSequence(c, offset, endSequence))
+			offset++;
 		if (c != EOF) {
 			peekPos += offset + endSequence.length();
 			return successToken;
 		}
 		errorMessage = "Unterminated macro";
 		peekPos = buf.length;
-		return TK_$error;
+		return TK_ERROR;
 	}
 
 	private boolean matchesSequence(char c, int offset, String endSequence) {
-		for (int i = 0; i < endSequence.length() && c != EOF; i++) {
-			if (c != endSequence.charAt(i))
+		for (int i = 0; i < endSequence.length(); i++) {
+			if (c == EOF || c != endSequence.charAt(i))
 				return false;
 			c = peekChar(++offset + peekPos);
 		}
@@ -210,59 +336,13 @@ class Scanner implements jpgsym {
 	}
 
 	private int processOptionLine() {
-		List options = new ArrayList();
-		char c;
-		int eolOffset = 0;
-		do {
-			c = peekChar(peekPos);
-			while (c != EOF && c == ' ')
-				c = peekChar(++peekPos);
-			int start = peekPos;
-			while (c != EOF && (eolOffset = isEol(c, peekPos)) == 0 && c != ' ' && c != ',' && c != '=')
-				c = peekChar(++peekPos);
-			String option = new String(buf, start, peekPos - start);
-			if (c == EOF)
-				return TK_OPTION_LINE;
-			if (option.length() == 0 || "=".equals(option) || ",".equals(option)) {
-				if (eolOffset == 0)
-					peekPos++;
-			} else
-				options.add(option.toLowerCase());
-		} while (eolOffset == 0);
-		for (int i = 0; i < options.size(); i++) {
-			String option = (String) options.get(i);
-			String value = i + 1 < options.size() ? (String) options.get(i + 1) : null;
-			if (option.startsWith("es")) {
-				if (value != null && value.length() > 0) {
-					document.escape = value.charAt(0);
-					i++;
-				}
-			} else if (option.equals("hblockb")) {
-				if (value != null && value.length() > 0) {
-					document.hblockb = value;
-					i++;
-				}
-			} else if (option.equals("hblocke")) {
-				if (value != null && value.length() > 0) {
-					document.hblocke = value;
-					i++;
-				}
-			} else if (option.equals("blockb")) {
-				if (value != null && value.length() > 0) {
-					document.blockb = value;
-					i++;
-				}
-			} else if (option.equals("blocke")) {
-				if (value != null && value.length() > 0) {
-					document.blocke = value;
-					i++;
-				}
-			}
-		}
+		char c = peekChar(peekPos);
+		while (c != EOF && isEol(c, peekPos) == 0)
+			c = peekChar(++peekPos);
 		return TK_OPTION_LINE;
 	}
-	
-    private char handleInitialWhitespace() {
+
+	private char handleInitialWhitespace() {
 		char c = peekChar(peekPos);
 		while (Character.isWhitespace(c)) {
 			if (tokenizeLbr) {
@@ -294,7 +374,7 @@ class Scanner implements jpgsym {
 	protected String get(int offset, int length) {
 		return new String(buf, offset, offset + length);
 	}
-
+	
 	public String toString() {
 		if (buf == null)
 			return "empty";
@@ -308,7 +388,7 @@ class Scanner implements jpgsym {
 			sb.append("EOF");
 		sb.append("'<<<<<<<<<<<<<<<<");
 		if (peekPos + 2 < buf.length)
-			sb.append(new String(buf, peekPos + 2, buf.length - (peekPos + 2 + 1)));
+			sb.append(new String(buf, peekPos + 2, buf.length - (peekPos + 2)));
 		return sb.toString();
 	}
 
