@@ -4,20 +4,16 @@
  */
 package gedit.model;
 
-import gedit.GrammarEditorPlugin;
-
-import org.eclipse.jface.resource.ImageDescriptor;
+import java.lang.reflect.Array;
+import java.util.BitSet;
 
 public class Section extends ModelBase {
 	private ModelType childType;
-	private ImageDescriptor imageDescriptor;
 	protected ModelBase[] children;
 
-	public Section(ModelType childType, Object parent, String label, String imagePath) {
-		super(parent, label);
+	public Section(ModelType childType, ModelBase parent) {
+		super(parent, childType.getString());
 		this.childType = childType;
-		if (imagePath != null)
-			this.imageDescriptor = GrammarEditorPlugin.getImageDescriptor(imagePath);
 	}
 	
 	public ModelType getChildType() {
@@ -32,20 +28,41 @@ public class Section extends ModelBase {
 		return 0;
 	}
 
-	public ImageDescriptor getImageDescriptor(Object o) {
-		return imageDescriptor;
+	public Object[] getChildren() {
+		return children != null ? children : createChildrenArray(0);
 	}
 	
-	public Object[] getChildren(Object o) {
-		return children != null ? children : new ModelBase[0];
-	}
-	
-	public void setChildren(ModelBase[] children) {
-		this.children = children;
+	public void setChildren(ModelBase[] newChildren) {
+		int length = newChildren != null ? newChildren.length : 0;
+		if (newChildren.getClass().getComponentType() != getChildModelClass()) {
+			children = createChildrenArray(length);
+			if (length > 0)
+				System.arraycopy(newChildren, 0, children, 0, newChildren.length);
+		} else
+			children = newChildren;
 	}
 
-	protected ModelBase getElementById(String id, int filter) {
+	protected ModelBase getElementById(String id, BitSet filter) {
 		return ElementFinder.findElement(this, id, filter);
+	}
+	
+	private Class getChildModelClass() {
+		return childType != null && childType.getModelClass() != null ?
+				childType.getModelClass() : ModelBase.class;
+	}
+	
+	private ModelBase[] createChildrenArray(int size) {
+		return (ModelBase[]) Array.newInstance(getChildModelClass(), size);
+	}
+
+	public GenericModel addChild(GenericModel terminal) {
+		int length = children != null ? children.length : 0;
+		ModelBase[] array = createChildrenArray(length + 1);
+		if (length > 0)
+			System.arraycopy(children, 0, array, 0, length);
+		array[length] = terminal;
+		children = array;
+		return terminal;
 	}
 	
 }
