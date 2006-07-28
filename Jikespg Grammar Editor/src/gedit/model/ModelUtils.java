@@ -91,6 +91,19 @@ public class ModelUtils {
 			return isFile;
 		}
 	}
+	
+	public static class OptionAmbigousException extends Exception {
+		private static final long serialVersionUID = 1L;
+		private OptionProposal[] ambigous;
+		public OptionAmbigousException(OptionProposal[] ambigous) {
+			super();
+			this.ambigous = ambigous;
+		}
+		
+		public OptionProposal[] getAmbigous() {
+			return ambigous;
+		}
+	}
 
 	private static Map OPTIONS;
 	private static BitSet ALL_FILTER;;
@@ -233,31 +246,46 @@ public class ModelUtils {
 		}
 		return OPTIONS;
 	}
+	
+	private static OptionProposal getProposal(Map proposals, String key) {
+		OptionProposal proposal = (OptionProposal) proposals.get(key);
+		if (proposal != null)
+			return proposal;
+		proposal = (OptionProposal) proposals.get(key.replace('_', '-'));
+		if (proposal != null)
+			return proposal;
+		return (OptionProposal) proposals.get(key.replace('_', '-'));
+	}
 
-	public static OptionProposal findOptionProposal(String word) {
+	public static OptionProposal findOptionProposal(String word) throws OptionAmbigousException {
 		if (word == null)
 			return null;
 		Map proposals = getAllOptions();
-		OptionProposal proposal = (OptionProposal) proposals.get(word);
-		if (proposal == null)
-			proposal = (OptionProposal) proposals.get(word.replace('_', '-'));
+		OptionProposal proposal = getProposal(proposals, word);
+		if (proposal == null && word.startsWith("no"))
+			proposal = getProposal(proposals, word.substring(2));
 		if (proposal != null)
 			return proposal;
+		
 		for (Iterator it = proposals.keySet().iterator(); it.hasNext();) {
 			String key = (String) it.next();
 			if (key.startsWith(word)) {
-				boolean isAmbigous = false;
+				OptionProposal found1 = (OptionProposal) proposals.get(key);
+				List ambigous = new ArrayList();
 				for (Iterator it1 = proposals.keySet().iterator(); it1.hasNext();) {
 					String cmp = (String) it1.next();
 					if (cmp.equals(key) || !cmp.startsWith(word))
 						continue;
-					OptionProposal found1 = (OptionProposal) proposals.get(key);
 					OptionProposal found2 = (OptionProposal) proposals.get(cmp);
-					if (isAmbigous = (found1.version & found2.version) > 0)
-						break;
+					if ((found1.version & found2.version) == 0
+							|| found1.hasValue != found2.hasValue)
+						continue;
+					ambigous.add(found2); 
 				}
-				if (!isAmbigous)
+				if (ambigous.isEmpty())
 					return (OptionProposal) proposals.get(key);
+				ambigous.add(found1);
+				throw new OptionAmbigousException((OptionProposal[]) ambigous.toArray(new OptionProposal[ambigous.size()])); 
 			}
 			int sepIndex = key.indexOf('_');
 				if (sepIndex == -1)

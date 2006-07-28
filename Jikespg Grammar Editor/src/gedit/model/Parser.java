@@ -7,6 +7,8 @@ package gedit.model;
 import gedit.GrammarEditorPlugin;
 import gedit.StringUtils;
 import gedit.StringUtils.QuoteDetector;
+import gedit.model.ModelUtils.OptionAmbigousException;
+import gedit.model.ModelUtils.OptionProposal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -314,7 +316,7 @@ class Parser extends jpgprs {
 			char c = line.charAt(i);
 			if (detector.detect(c))
 				continue;
-			if (c == ',' || c == ' ' || i + 1 >= n)  {
+			if (c == ',' || c == ' ' || i + 1 >= n) {
 				if (c == ' ' && !elementStarted) {
 					start++;
 					continue;
@@ -323,14 +325,15 @@ class Parser extends jpgprs {
 				token.name = line.substring(start, c == ',' ? i : i + 1).trim();
 				token.offset = optionLineToken.offset + start;
 				token.length = token.name.length();
-
-				Option option = new Option(section, key.name, value.name);
-				getElements(ModelType.OPTION).add(option);
-				mapElementToNode(createNodeFromToken(peekAst(), key), option, true);
-				expandNodeBy(peekAst(), mapElementToNode(createNodeFromTokens(peekAst(), key, value), option, false));
-
-				processOption(option, key, value, documentOptions, compatMap);
-
+				
+				if (token.name.trim().length() > 0) {
+					Option option = new Option(section, key.name, value.name);
+					getElements(ModelType.OPTION).add(option);
+					mapElementToNode(createNodeFromToken(peekAst(), key), option, true);
+					expandNodeBy(peekAst(), mapElementToNode(value.name != null ? createNodeFromTokens(peekAst(), key, value) : createNodeFromToken(peekAst(), key), option, false));
+	
+					processOption(option, key, value, documentOptions, compatMap);
+				}
 				start = i + 1;
 				key.name = value.name = null;
 				elementStarted = false;
@@ -418,8 +421,18 @@ class Parser extends jpgprs {
 			}
 		}
 		
-		if (ModelUtils.findOptionProposal(key) == null)
-			createProblem(key + " is not a know option.", keyToken, Problem.WARNING);
+		try {
+			if (ModelUtils.findOptionProposal(key) == null)
+				createProblem(key + " is not a know option.", keyToken, Problem.WARNING);
+		} catch (OptionAmbigousException e) {
+			OptionProposal[] ambigous = e.getAmbigous();
+			StringBuffer sb = new StringBuffer("The option ").append(key).append(" is ambigous between ");
+			for (int i = 0; i < ambigous.length; i++) {
+				if (i == ambigous.length - 1) sb.append(" and "); else if (i > 0) sb.append(", "); 
+				sb.append(ambigous[i].getKey());
+			}
+			createProblem(sb.toString(), keyToken, Problem.WARNING);
+		}
 	}
 	private Document processFileOptionValue(Option option, int offset, String name) {
 		Node refNode = new Node(option.node, offset, name.length());
