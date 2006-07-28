@@ -4,7 +4,8 @@
  */
 package gedit.editor;
 
-import org.eclipse.jface.text.Document;
+import gedit.model.Document;
+
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IInformationControl;
 import org.eclipse.jface.text.IInformationControlExtension;
@@ -30,6 +31,7 @@ import org.eclipse.swt.widgets.Shell;
 
 public class GrammarInformationControl implements IInformationControl, IInformationControlExtension, DisposeListener {
 	private Shell fShell;
+	private Document fParentDocument;
 	private SourceViewer fViewer;
 	private StyledText fText;
 	private IInformationPresenter fPresenter;
@@ -37,16 +39,17 @@ public class GrammarInformationControl implements IInformationControl, IInformat
 
 	private static final int BORDER = 1;
 
-	public GrammarInformationControl(Shell parent) {
-		this(parent, null);
+	public GrammarInformationControl(Shell parent, Document parentDocument) {
+		this(parent, null, parentDocument);
 	}
 
-	public GrammarInformationControl(Shell parent, IInformationPresenter informationPresenter) {
-		this(parent, SWT.TOOL, SWT.NONE, informationPresenter);
+	public GrammarInformationControl(Shell parent, IInformationPresenter informationPresenter, Document parentDocument) {
+		this(parent, SWT.TOOL, SWT.NONE, informationPresenter, parentDocument);
 	}
 
-	public GrammarInformationControl(Shell parent, int shellStyle, int style, IInformationPresenter informationPresenter) {
+	public GrammarInformationControl(Shell parent, int shellStyle, int style, IInformationPresenter informationPresenter, Document parentDocument) {
 		fPresenter = informationPresenter;
+		fParentDocument = parentDocument;
 		fShell = new Shell(parent, SWT.NO_FOCUS | SWT.ON_TOP | shellStyle);
 		Display display = fShell.getDisplay();
 		fShell.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
@@ -63,8 +66,6 @@ public class GrammarInformationControl implements IInformationControl, IInformat
 
 		fText = fViewer.getTextWidget();
 		data = new GridData(GridData.BEGINNING | GridData.FILL_BOTH);
-		data.horizontalIndent = 0;
-		data.verticalIndent = 0;
 		fText.setLayoutData(data);
 		fText.setForeground(parent.getDisplay().getSystemColor(
 				SWT.COLOR_INFO_FOREGROUND));
@@ -99,7 +100,7 @@ public class GrammarInformationControl implements IInformationControl, IInformat
 			return;
 		}
 
-		IDocument document = new Document(content);
+		IDocument document = new GrammarDocument(content, fParentDocument);
 		new GrammarDocumentSetupParticipant().setup(document);
 		fViewer.setDocument(document);
 		fPresentation.mergeStyleRanges(fText.getStyleRanges());
