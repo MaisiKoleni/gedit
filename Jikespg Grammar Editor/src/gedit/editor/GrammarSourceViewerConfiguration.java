@@ -55,10 +55,10 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 	private GrammarScanner fMacroScanner;
 	private NonRuleBasedDamagerRepairer fCommentDr;
 	private NonRuleBasedDamagerRepairer fOptionDr;
-	private NonRuleBasedDamagerRepairer fOperatorDr;
 	private SemanticHighLighter fSemanticHighlighter;
 	private PreferenceUtils fUtils;
 	private ModelContentHover fModelContentHover;
+	private MacroHover fMacroHover;
 	private AnnotationHover fAnnotationHover;
 	private boolean fUseReconciling;
 
@@ -80,7 +80,6 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 			GrammarPartitionScanner.GRAMMAR_COMMENT,
 			GrammarPartitionScanner.GRAMMAR_OPTION,
 			GrammarPartitionScanner.GRAMMAR_MACRO,
-			GrammarPartitionScanner.GRAMMAR_OPERATOR,
 		};
 	}
 	
@@ -96,7 +95,6 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 		presenter.setInformationProvider(provider, GrammarPartitionScanner.GRAMMAR_COMMENT);
 		presenter.setInformationProvider(provider, GrammarPartitionScanner.GRAMMAR_MACRO);
 		presenter.setInformationProvider(provider, GrammarPartitionScanner.GRAMMAR_OPTION);
-		presenter.setInformationProvider(provider, GrammarPartitionScanner.GRAMMAR_OPERATOR);
 		presenter.setSizeConstraints(40, 20, true, false);
 		presenter.setRestoreInformationControlBounds(getSettingsSection("outlinePresenterBounds"), true, true);
 		return presenter;
@@ -113,6 +111,7 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 		GrammarCompletionProcessor processor = new GrammarCompletionProcessor();
 		fContentAssistant.setContentAssistProcessor(processor, IDocument.DEFAULT_CONTENT_TYPE);
 		fContentAssistant.setContentAssistProcessor(processor, GrammarPartitionScanner.GRAMMAR_MACRO);
+		fContentAssistant.setContentAssistProcessor(processor, GrammarPartitionScanner.GRAMMAR_OPTION);
 		fContentAssistant.setDocumentPartitioning(GrammarDocumentSetupParticipant.GRAMMAR_PARTITION);
 		fContentAssistant.setAutoActivationDelay(500);
 		fContentAssistant.setProposalPopupOrientation(IContentAssistant.PROPOSAL_OVERLAY);
@@ -146,10 +145,6 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 		reconciler.setDamager(dr, GrammarPartitionScanner.GRAMMAR_MACRO);
 		reconciler.setRepairer(dr, GrammarPartitionScanner.GRAMMAR_MACRO);
 
-		fOperatorDr = new NonRuleBasedDamagerRepairer(PreferenceConstants.GRAMMAR_COLORING_OPERATOR, fUtils);
-		reconciler.setDamager(fOperatorDr, GrammarPartitionScanner.GRAMMAR_OPERATOR);
-		reconciler.setRepairer(fOperatorDr, GrammarPartitionScanner.GRAMMAR_OPERATOR);
-
 		return reconciler;
 	}
 	
@@ -179,14 +174,16 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 		InformationPresenter presenter = new InformationPresenter(new IInformationControlCreator() {
 			public IInformationControl createInformationControl(Shell parent) {
 				return new GrammarInformationControl(parent, SWT.TOOL | SWT.RESIZE,
-						SWT.V_SCROLL | SWT.H_SCROLL, new SimpleTextPresenter());
+						SWT.V_SCROLL | SWT.H_SCROLL, new SimpleTextPresenter(),
+						sourceViewer instanceof GrammarSourceViewer ? ((GrammarSourceViewer) sourceViewer).getModel(false) : null);
 			}
 		});
 		presenter.setDocumentPartitioning(getConfiguredDocumentPartitioning(sourceViewer));
 		IInformationProvider provider = new GrammarInformationProvider(new ITextHover[] {
-				getAnnotationHover(), getModelContentHover(), 	
+				getAnnotationHover(), getModelContentHover(), getMacroHover(), 	
 		});
 		presenter.setInformationProvider(provider, IDocument.DEFAULT_CONTENT_TYPE);
+		presenter.setInformationProvider(provider, GrammarPartitionScanner.GRAMMAR_MACRO);
 		presenter.setSizeConstraints(60, 10, true, true);
 		return presenter;
 		
@@ -198,6 +195,8 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 	
 	public ITextHover getTextHover(ISourceViewer sourceViewer, String contentType, int stateMask) {
 		if ((SWT.CTRL & stateMask) > 0) {
+			if (GrammarPartitionScanner.GRAMMAR_MACRO.equals(contentType))
+				return getMacroHover();
 			return getModelContentHover();
 		}
 		return getAnnotationHover();
@@ -207,6 +206,12 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 		if (fModelContentHover == null)
 			fModelContentHover = new ModelContentHover();
 		return fModelContentHover;
+	}
+
+	private MacroHover getMacroHover() {
+		if (fMacroHover == null)
+			fMacroHover = new MacroHover(getMacroScanner());
+		return fMacroHover;
 	}
 
 	private AnnotationHover getAnnotationHover() {
@@ -231,13 +236,13 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 	
 	private ITokenScanner getDefaultScanner() {
 		if (fDefaultScanner == null)
-			fDefaultScanner = new GrammarScanner(null, fUtils);
+			fDefaultScanner = new GrammarScanner(null, fUtils, true, true);
 		return fDefaultScanner;
 	}
 
-	private ITokenScanner getMacroScanner() {
+	protected GrammarScanner getMacroScanner() {
 		if (fMacroScanner == null)
-			fMacroScanner = new GrammarScanner(PreferenceConstants.GRAMMAR_COLORING_MACRO, fUtils);
+			fMacroScanner = new GrammarScanner(PreferenceConstants.GRAMMAR_COLORING_MACRO, fUtils, false, false);
 		return fMacroScanner;
 	}
 
@@ -252,7 +257,6 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 		fMacroScanner.adaptToPreferenceChange(event);
 		fCommentDr.adaptToPreferenceChange(event);
 		fOptionDr.adaptToPreferenceChange(event);
-		fOperatorDr.adaptToPreferenceChange(event);
 		fSemanticHighlighter.adaptToPreferenceChange(event);
 	}
 
@@ -260,7 +264,6 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 		return fMacroScanner.affectsBehavior(event)
 				|| fDefaultScanner.affectsBehavior(event)
 				|| fCommentDr.affectsTextPresentation(event)
-				|| fOperatorDr.affectsTextPresentation(event)
 				|| fOptionDr.affectsTextPresentation(event)
 				|| fSemanticHighlighter.affectsTextPresentation(event);
 	}
@@ -270,7 +273,6 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 		fMacroScanner = null;
 		fCommentDr = null;
 		fOptionDr = null;
-		fOperatorDr = null;
 		fSemanticHighlighter = null;
 	}
 
