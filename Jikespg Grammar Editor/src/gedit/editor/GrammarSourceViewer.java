@@ -6,11 +6,15 @@ package gedit.editor;
 
 import gedit.GrammarEditorPlugin;
 import gedit.NonUISafeRunnable;
+import gedit.model.Definition;
 import gedit.model.Document;
+import gedit.model.FileProzessor;
 import gedit.model.IProblemRequestor;
 import gedit.model.ModelBase;
 import gedit.model.ModelType;
+import gedit.model.ModelUtils;
 import gedit.model.Problem;
+import gedit.model.Reference;
 
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.preference.IPreferenceStore;
@@ -19,8 +23,10 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IDocumentExtension3;
 import org.eclipse.jface.text.IRegion;
+import org.eclipse.jface.text.Position;
 import org.eclipse.jface.text.Region;
 import org.eclipse.jface.text.information.IInformationPresenter;
+import org.eclipse.jface.text.rules.RuleBasedScanner;
 import org.eclipse.jface.text.source.IAnnotationModel;
 import org.eclipse.jface.text.source.IOverviewRuler;
 import org.eclipse.jface.text.source.IVerticalRuler;
@@ -47,6 +53,7 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 	private SemanticHighLighter fSemanticHighLighter;
 	private IPreferenceStore fPreferenceStore;
 	private ListenerList fReconcilingListeners;
+	private RuleBasedScanner fMacroScanner;
 	private Color fForegroundColor;
 	private Color fBackgroundColor;
 	private Color fSelectionForegroundColor;
@@ -72,6 +79,7 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 			addTextInputListener(fSemanticHighLighter);
 			if (!grammarSourceViewerConfiguration.isUseReconciling())
 				addTextPresentationListener(fSemanticHighLighter);
+			fMacroScanner = grammarSourceViewerConfiguration.getMacroScanner();
 		}
 		if (fPreferenceStore != null) {
 			fPreferenceStore.addPropertyChangeListener(this);
@@ -189,7 +197,7 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 			fOutlinePresenter.showInformation();
 			return;
 		case GOTO_DECLARATION:
-			selectWord(getSelectedWord(getDocument(), widgetOffset2ModelOffset(getTextWidget().getCaretOffset() - 1)));
+			selectReferringWord(getSelectedWord(getDocument(), widgetOffset2ModelOffset(getTextWidget().getCaretOffset() - 1)));
 			break;
 		}
 		super.doOperation(operation);
@@ -242,23 +250,23 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 		setSelectedRange(model.getOffset(), model.getLength());
 		getTextWidget().setRedraw(true);
 	}
-	
+
 	public void setRangeIndication(ModelBase model, boolean moveCursor) {
 		ModelBase element = model;
 		while (element != null && element.getType() != ModelType.RULE)
-			element = (ModelBase) element.getParent(element);
+			element = element.getParent();
 		if (element == null) {
 			element = model;
 			while (element != null && element.getType() != ModelType.SECTION)
-				element = (ModelBase) element.getParent(element);
+				element = element.getParent();
 		}
 		if (element == null)
-			element = model.getParent(model) != null ? (ModelBase) model.getParent(model) : model;
+			element = model.getParent() != null ? (ModelBase) model.getParent() : model;
 		if (element != null)
 			setRangeIndication(element.getRangeOffset(), element.getRangeLength(), moveCursor);
 	}
 
-	public void selectWord(IRegion region) {
+	public void selectReferringWord(IRegion region) {
 		if (region == null)
 			return;
 		try {
@@ -278,7 +286,22 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 	}
 
 	private void selectReferringElement(String word) {
-		selectElement(getModel(false).getElementById(word));
+		Document document = getModel(false);
+		ModelBase model = document.getElementById(word);
+		Document include = document.getInclude(word);
+		if (model != null && model.getDocument() != document) {
+			openUsingOpener(model.getDocument(), document, new Region(model.getOffset(), model.getLength()));
+		} else if (include != null && FileProzessor.getFileForName(document, word).exists()) {
+			openUsingOpener(include, document, null);
+		} else {
+			selectElement(model);
+		}
+	}
+	
+	private void openUsingOpener(Document document, Document parentDocument, IRegion selection) {
+		IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+		IDocumentOpener opener = (IDocumentOpener) page.getActivePart().getAdapter(IDocumentOpener.class);
+		opener.open(document, parentDocument, selection);
 	}
 	
 	protected String getContentType(IDocument document, int offset) {
@@ -288,7 +311,7 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 			else
 				return document.getContentType(offset);
 		} catch (Exception e) {
-			GrammarEditorPlugin.logError("Cannot get the content type for position: " + offset, e);
+			System.err.println("Cannot get the content type for position: " + offset);
 			return null;
 		}
 	}
@@ -297,8 +320,26 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 		
 		try {
 			String contentType = getContentType(document, anchor);
+			Document model = getModel(false);
+
+			if (GrammarPartitionScanner.GRAMMAR_MACRO.equals(contentType)) {
+				Position position = new Position(anchor);
+				Definition definition = ModelUtils.lookupMacro(anchor, this, fMacroScanner, position);
+				if (definition != null)
+					return new Region(position.getOffset(), position.getLength());
+			} else if (GrammarPartitionScanner.GRAMMAR_OPTION.equals(contentType)) {
+				ModelBase element = model.getElementAt(anchor);
+				if (!(element instanceof Reference))
+					return null;
+				return new Region(element.getOffset(), element.getLength());
+			}
+
 			if (!IDocument.DEFAULT_CONTENT_TYPE.equals(contentType))
 				return null;
+
+			ModelBase element = model.getElementAt(anchor);
+			if (element != null && element.getOffset() <= anchor && element.getOffset() + element.getLength() >= anchor)
+				return new Region(element.getOffset(), element.getLength());
 
 			int offset = anchor;
 			char c;
@@ -323,6 +364,11 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 			}
 			
 			int end = offset;
+			
+			String selected = document.get(start, end - start);
+			if ("::=".equals(selected) || "::=?".equals(selected) || "->".equals(selected)
+					|| "->?".equals(selected) || String.valueOf(model.getOptions().getOrMarker()).equals(selected))
+				return null;
 			
 			if (start >= end)
 				return new Region(start, 0);
