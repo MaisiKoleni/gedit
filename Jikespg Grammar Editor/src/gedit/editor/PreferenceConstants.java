@@ -11,6 +11,9 @@ public class PreferenceConstants {
 	public static final String EDITOR_FOLD_SECTIONS = "fold_sections";
 	public static final String EDITOR_FOLD_RULES = "fold_rules";
 	public static final String EDITOR_FOLD_COMMENTS = "fold_comments";
+	public static final String EDITOR_FOLD_MACROS = "fold_macros";
+	public static final String EDITOR_FOLDING_SEPARATOR = ",";
+
 	public static final String EDITOR_BOLD_SUFFIX = "_bold";
 	public static final String EDITOR_ITALIC_SUFFIX = "_italic";
 	public static final String EDITOR_STRIKETHROUGH_SUFFIX = "_striketrough";
@@ -27,4 +30,13 @@ public class PreferenceConstants {
 	public static final String GRAMMAR_COLORING_NON_TERMINAL = "color_non_terminal";
 	public static final String GRAMMAR_COLORING_ALIAS = "color_alias";
 
+	public static final String GRAMMAR_INCLUDE_DIRECTORIES = "grammar_include_directories";
+	public static final String INCLUDE_DIRECTORIES_SEPARATOR = ";";
+	
+	public static final String SECTION_ORDERING = "section_ordering";
+	public static final String SECTION_ORDERING_SEPARATOR = ",";
+
+	public static final String SECTION_FILTERS = "section_filters";
+	public static final String SECTION_FILTERS_RECENTLY_USED = "section_filters_recently_used";
+	public static final String SECTION_FILTERS_SEPARATOR = ",";
 }
