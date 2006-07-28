@@ -12,6 +12,7 @@ import gedit.model.GenericModel;
 import gedit.model.ModelType;
 import gedit.model.ModelUtils;
 import gedit.model.Rule;
+import gedit.model.ModelUtils.OptionAmbigousException;
 import gedit.model.ModelUtils.OptionProposal;
 
 import java.io.File;
@@ -175,6 +176,14 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		Collections.sort(sortedProposals);
 		proposals.addAll(sortedProposals);
 	}
+	
+	private OptionProposal findOptionProposal(String word) {
+		try {
+			return ModelUtils.findOptionProposal(word);
+		} catch (OptionAmbigousException e) {
+			return null;
+		}
+	}
 
 	private void computeOptionProposals(Document model, String word, String previousWord, int endOffset, List proposals) {
 		Map options = ModelUtils.getAllOptions();
@@ -183,13 +192,13 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 			String key = assignmentIndex != -1 ? word.substring(0, assignmentIndex) : previousWord;
 			if (assignmentIndex != -1)
 				word = word.substring(assignmentIndex + 1);
-			OptionProposal option = ModelUtils.findOptionProposal(key);
+			OptionProposal option = findOptionProposal(key);
 			if (option != null)
 				computeOptionValueProposals(model, word, endOffset, proposals, option);
 			return;
 		}
 		
-		OptionProposal previousOption = ModelUtils.findOptionProposal(previousWord);
+		OptionProposal previousOption = findOptionProposal(previousWord);
 		if (previousOption != null && previousOption.hasValue()) {
 			proposals.add(new GrammarCompletionProposal("=", "=",
 					GrammarEditorPlugin.getImage("icons/option.gif"), //$NON-NLS-1$
@@ -197,7 +206,7 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 			return;
 		}
 		
-		OptionProposal optionByWord = ModelUtils.findOptionProposal(word);
+		OptionProposal optionByWord = findOptionProposal(word);
 		for (Iterator it = options.values().iterator(); it.hasNext(); ) {
 			OptionProposal proposal = (OptionProposal) it.next();
 			String name = proposal.getKey();
