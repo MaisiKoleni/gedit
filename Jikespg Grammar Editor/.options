@@ -1,3 +1,4 @@
 # Debugging options for the gedit plugin
 
 gedit/debug = true
+gedit/parser/level = 3
