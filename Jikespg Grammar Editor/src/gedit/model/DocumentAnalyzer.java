@@ -5,11 +5,9 @@
 package gedit.model;
 
 import gedit.GrammarEditorPlugin;
+import gedit.StringUtils;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -17,81 +15,104 @@ import java.util.List;
 import java.util.Map;
 
 public class DocumentAnalyzer {
-	private String text;
-	private IProblemRequestor probemRequestor;
+	private IProblemRequestor problemRequestor;
+	private FileProzessor fileProzessor;
+	private DocumentOptions globalOptions;
+	private Document parentDocument;
 	private Map elementToNode = new HashMap();
 
-	protected static String trimQuotes(String text) {
-		return text.startsWith("'") && text.endsWith("'") && text.length() > 1 ?
-				text.substring(1, text.length() - 1) : text;
-	}
-
-	public DocumentAnalyzer(String text, IProblemRequestor probemRequestor) {
-		this.text = text;
-		this.probemRequestor = probemRequestor;
+	public DocumentAnalyzer(IProblemRequestor probemRequestor, FileProzessor fileProzessor, Document parentDocument) {
+		this(probemRequestor, fileProzessor, parentDocument != null ? parentDocument.getOptions() : null);
+		this.parentDocument = parentDocument;
 	}
 	
-	public Document analyze(Document document) {
+	public DocumentAnalyzer(IProblemRequestor probemRequestor, FileProzessor fileProzessor, DocumentOptions globalOptions) {
+		this.problemRequestor = probemRequestor;
+		this.fileProzessor = fileProzessor;
+		this.globalOptions = globalOptions;
+	}
+
+	public Document analyze(Document document, String text) {
 		if (document == null)
 			document = new Document();
-		document.reset();
-		if (probemRequestor != null)
-			probemRequestor.beginReporting();
+		document.reset(globalOptions);
+		if (problemRequestor != null)
+			problemRequestor.beginReporting();
 
 		long time = System.currentTimeMillis();
 		
-		Parser parser = new Parser(document, text, probemRequestor);
+		Parser parser = new Parser(document, text, problemRequestor, fileProzessor);
 		try {
 			parser.mapElementToNode(parser.parse(), document, true);
 		} catch (Exception e) {
-			e.printStackTrace();
+			GrammarEditorPlugin.logError("Cannot parse the document", e);
 		}
+		
+		if (parentDocument != null)
+			mergeMacros(parentDocument, document);
 
 		checkConsistency(document);
 
-		if (probemRequestor != null)
-			probemRequestor.endReporting();
+		if (problemRequestor != null)
+			problemRequestor.endReporting();
 
 		document.notifyModelChanged();
 	
-		if (GrammarEditorPlugin.getDefault().isDebugging())
-			System.out.println("analyze document in: " + (System.currentTimeMillis() - time) + "ms");
+		if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 0)
+			System.out.println("Analyzed " + document + ": " + (System.currentTimeMillis() - time) + "ms");
 		return document;
 	}
 	
-	private void checkConsistency(Document document) {
-		Section rulesSection = document.getSection(ModelType.RULE);
-		if (rulesSection == null)
+	private void mergeMacros(Document source, Document target) {
+		Section sourceSection = source.getSection(ModelType.DEFINITION);
+		if (sourceSection == null || sourceSection.children == null)
 			return;
+		List clonedMacros = new ArrayList();
+		for (int i = 0; i < sourceSection.children.length; i++) {
+			ModelBase clone = (ModelBase) sourceSection.children[i].clone();
+			clone.visible = false;
+			clonedMacros.add(clone);
+		}
+		target.addChildren(ModelType.DEFINITION, clonedMacros, false, true); 
+	}
+
+	private void checkConsistency(Document document) {
+
 		Rule[] rules = document.getRules();
 		Map rulesLookup = new HashMap();
-		for (int i = 0; rules != null && i < rules.length; i++) {
-			rulesLookup.put(rules[i].label, rules[i]);
+		for (int i = 0; i < rules.length; i++) {
+			Rule rule = rules[i];
+			rulesLookup.put(rule.label, rule);
+			String strippedLabel = stripEscape(document, rule.label);
+			if (strippedLabel != null)
+				rulesLookup.put(strippedLabel, rule);
 		}
-		Terminal[] terminals = document.getTerminals();
+		GenericModel[] terminals = document.getTerminals();
 		Map terminalsLookup = new HashMap();
-		for (int i = 0; terminals != null && i < terminals.length; i++) {
-			terminalsLookup.put(terminals[i].label, terminals[i]);
+		for (int i = 0; i < terminals.length; i++) {
+			GenericModel terminal = terminals[i];
+			terminalsLookup.put(terminal.label, terminal);
 		}
 		Alias[] aliases = document.getAliases();
 		Map aliasLookup = new HashMap();
-		for (int i = 0; aliases != null && i < aliases.length; i++) {
+		for (int i = 0; i < aliases.length; i++) {
 			Alias alias = aliases[i];
-			if (aliasLookup.put(trimQuotes(alias.getLhs()), alias) != null)
+			if (aliasLookup.put(StringUtils.trimQuotes(alias.label, '\''), alias) != null)
 				createProblem(document, alias, Problem.WARNING, "Alias " + alias.label + " has already been defined.");
 		}
 		
-		for (int i = 0; aliases != null && i < aliases.length; i++) {
+		for (int i = 0; i < aliases.length; i++) {
 			Alias alias = aliases[i];
 			String rhs = alias.getRhs().label;
 			if (terminalsLookup.containsKey(rhs))
 				continue;
 			if (rulesLookup.containsKey(rhs))
 				continue;
-			createProblem(document, alias.getRhs(), Problem.ERROR, "Alias reference " + rhs + " is not defined");
+			createProblem(document, alias.getRhs(), Problem.WARNING, "Alias reference " + rhs + " is not defined, assuming it is a terminal");
+			createUndeclaredTerminal(document, alias.getRhs(), terminalsLookup);
 		}
 		
-		for (int i = 0; rules != null && i < rules.length; i++) {
+		for (int i = 0; i < rules.length; i++) {
 			Rule rule = rules[i];
 			if (lookup(rule.label, terminalsLookup, aliasLookup) != null) {
 				createProblem(document, rule, Problem.ERROR, "Terminal " + rule.label + " cannot be used as left hand side");
@@ -103,20 +124,19 @@ public class DocumentAnalyzer {
 				for (int k = j + 1; k < rhses.length; k++) {
 					Rhs other = rhses[k];
 					if (equals(other.getParts(), rhs.getParts()))
-						createProblem(document, other, Problem.ERROR, other.getLabel(other) + " does already exist in " + rule.label);
+						createProblem(document, other, Problem.ERROR, other.getLabel() + " does already exist in " + rule.label);
 				}
 				Reference[] parts = rhs.getParts();
 				for (int k = 0; k < parts.length; k++) {
 					Reference ref = parts[k];
 					String label = ref.label;
-					if (label.equalsIgnoreCase(document.escape + (String) Document.getKeywords().get(ModelType.EMPTY_TOK)))
+					if (label.equalsIgnoreCase(document.getOptions().getEsape() + ModelType.EMPTY_TOK.getString()))
 						continue;
-					label = trimQuotes(label);
 					ModelBase referred = lookup(label, rulesLookup, aliasLookup);
 					if (referred != null) {
 						markAsReferenced(referred);
 						if (parts.length == 1 && referred.equals(rule))
-							createProblem(document, ref, Problem.WARNING, "The production " + rule.label + " -> " + ref.label + " may lead to a recursion");
+							createProblem(document, ref, Problem.WARNING, "The production " + rule.label + " -> " + label + " may lead to a recursion");
 						continue;
 					}
 					referred = lookup(label, terminalsLookup, aliasLookup);
@@ -124,23 +144,43 @@ public class DocumentAnalyzer {
 						markAsReferenced(referred);
 						continue;
 					}
-					createProblem(document, ref, Problem.ERROR, "Element " + ref.label + " is not defined");
+
+					ModelBase includedRef = document.getElementById(label);
+					String strippedLabel = stripEscape(document, label);
+					ModelBase strippedIncludeRef = strippedLabel != null ? document.getElementById(strippedLabel) : null;
+					if (includedRef != null && includedRef.getDocument() != document && !isExportingType(((Section) includedRef.parent).getChildType())) {
+						createProblem(document, ref, Problem.WARNING, "Element " + label + " is declared in " + new File(includedRef.getDocument().getFilePath()).getName() + " but not exported there");
+					} else if (includedRef == null && strippedIncludeRef == null && !Parser.name[1].substring(1).equalsIgnoreCase(label.substring(1))) {
+						createProblem(document, ref, Problem.WARNING, "Element " + label + " is not defined, assuming it is a terminal");
+						GenericModel terminal = createUndeclaredTerminal(document, ref, terminalsLookup);
+						markAsReferenced(terminal);
+					}
 				}
 			}
 		}
 
-		for (Iterator it = document.startTokens.iterator(); it.hasNext(); ) {
-			Reference startToken = (Reference) it.next();
-			ModelBase referrer = startToken.getReferer();
-			if (referrer != null)
-				markAsReferenced(referrer);
-			else
-				createProblem(document, startToken, Problem.ERROR, "The start token " + startToken.label + " is not defined");
+		Section section = document.getSection(ModelType.START_TOK);
+		if (section != null) {
+			ModelBase[] startTokens = (ModelBase[]) section.getChildren();
+			for (int i = 0; i < startTokens.length; i++) {
+				Reference startToken = (Reference) startTokens[i];
+				ModelBase referrer = startToken.getReferer();
+				if (referrer != null) {
+					markAsReferenced(referrer);
+				} else {
+					createProblem(document, startToken, Problem.WARNING, "The start token " + startToken.label + " is not defined, assuming it is a terminal");
+					createUndeclaredTerminal(document, startToken, terminalsLookup);
+				}
+			}
 		}
 
 		for (Iterator it = rulesLookup.values().iterator(); it.hasNext(); ) {
 			ModelBase model = (ModelBase) it.next();
 			if (hasBeenReferenced(model))
+				continue;
+			String strippedLabel = stripEscape(document, model.label);
+			ModelBase strippedModel = (ModelBase) rulesLookup.get(strippedLabel);
+			if (strippedModel != null && hasBeenReferenced(strippedModel))
 				continue;
 			createProblem(document, model, Problem.WARNING, "The production " + model.label + " is never used");
 		}
@@ -149,10 +189,40 @@ public class DocumentAnalyzer {
 			ModelBase model = (ModelBase) it.next();
 			if (hasBeenReferenced(model))
 				continue;
-			if (aliasLookup.containsKey(((Terminal) model).label))
+			if (aliasLookup.containsKey(((GenericModel) model).label))
 				continue;
-			createProblem(document, model, Problem.WARNING, "The terminal " + ((Terminal) model).label + " is never used");
+			createProblem(document, model, Problem.WARNING, "The terminal " + ((GenericModel) model).label + " is never used");
 		}
+	}
+	
+	private GenericModel createUndeclaredTerminal(Document document, ModelBase model, Map terminalsLookup) {
+		ModelBase section = model.parent;
+		GenericModel terminal = new GenericModel(section, model.getLabel(), ModelType.TERMINAL);
+		terminal.visible = false;
+		if (section instanceof Section)
+			((Section) section).addChild(terminal).node = section.node;
+		terminal.node = new Node(section.node, model.getOffset(), model.getLength());
+		document.register(terminal.node, terminal);
+		
+		terminalsLookup.put(terminal.label, terminal);
+		return terminal;
+	}
+	
+	private String stripEscape(Document document, String name) {
+		int escapeIndex = name.indexOf(document.getOptions().getEsape());
+		if (escapeIndex == -1)
+			return null;
+		if (name.substring(1).toLowerCase().equals("empty") ||
+				name.charAt(0) == '\'' && name.charAt(name.length() - 1) == '\'')
+			return null;
+		return name.substring(0, escapeIndex);
+	}
+
+	private boolean isExportingType(ModelType type) {
+		return type == ModelType.EXPORT
+				| type == ModelType.ERROR_TOK
+				| type == ModelType.EOF_TOK
+				| type == ModelType.EOL_TOK;
 	}
 
 	private void markAsReferenced(ModelBase model) {
@@ -169,7 +239,7 @@ public class DocumentAnalyzer {
 			return model;
 		Alias alias = (Alias) aliasLookup.get(value);
 		if (alias == null) {
-			String trimmedValue = trimQuotes(value);
+			String trimmedValue = StringUtils.trimQuotes(value, '\'');
 			if (trimmedValue.length() == value.length())
 				return null;
 			alias = (Alias) aliasLookup.get(trimmedValue);
@@ -194,6 +264,8 @@ public class DocumentAnalyzer {
 	}
 
 	private void createProblem(Document document, ModelBase element, int type, String message) {
+		if (element.getDocument() != document) // ignore problems from included documents
+			return;
 		Node node = (Node) elementToNode.get(element);
 		if (node == null)
 			node = element.node;
@@ -204,28 +276,8 @@ public class DocumentAnalyzer {
 	private void createProblem(Document document, int offset, int length, int type, String message) {
 		Problem problem = new Problem(type, message, offset, length);
 		document.addProblem(problem);
-		if (probemRequestor != null)
-			probemRequestor.accept(problem);
+		if (problemRequestor != null)
+			problemRequestor.accept(problem);
 	}
 	
-	protected static Definition[] readPredefinedDefinitions() {
-		final String fileName = "predefined_macros.txt";
-		InputStream in = DocumentAnalyzer.class.getResourceAsStream(fileName);
-		if (in == null) {
-			GrammarEditorPlugin.logError("Missing resource: " + fileName, null);
-			return new Definition[0];
-		}
-		BufferedReader r = new BufferedReader(new InputStreamReader(in));
-		List result = new ArrayList();
-		try {
-			for (String line = r.readLine(); line != null; line = r.readLine()) {
-				result.add(new Definition(null, line.trim(), ""));
-			}
-			in.close();
-		} catch (IOException e) {
-			GrammarEditorPlugin.logError("Cannot read: " + fileName, e);
-		}
-		return (Definition[]) result.toArray(new Definition[result.size()]);
-	}
-
 }
