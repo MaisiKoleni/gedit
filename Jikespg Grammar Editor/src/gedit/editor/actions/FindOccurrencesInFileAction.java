@@ -31,8 +31,10 @@ public class FindOccurrencesInFileAction extends TextEditorAction {
 		ModelBase element = editor.getSelectedElement();
 		Node[] occurrences = null;
 		if (element != null)
-			occurrences = editor.findOccurrences(element.getLabel(element));
+			occurrences = editor.findOccurrences(element.getLabel());
 		IAnnotationModel annotationModel = editor.getDocumentProvider().getAnnotationModel(editor.getEditorInput());
+		if (annotationModel == null)
+			return;
 		for (Iterator it = annotationModel.getAnnotationIterator(); it.hasNext(); ) {
 			Annotation annotation = (Annotation) it.next();
 			if (GrammarDocumentProvider.ANNOTATION_SEARCH_RESULT.equals(annotation.getType()))
@@ -43,7 +45,7 @@ public class FindOccurrencesInFileAction extends TextEditorAction {
 		for (int i = 0; i < occurrences.length; i++) {
 			Node occurrence = occurrences[i];
 			annotationModel.addAnnotation(new Annotation(GrammarDocumentProvider.ANNOTATION_SEARCH_RESULT,
-					false, element.getLabel(element)), new Position(occurrence.getOffset(), occurrence.getLength()));
+					false, element.getLabel()), new Position(occurrence.getOffset(), occurrence.getLength()));
 		}
 	}
 

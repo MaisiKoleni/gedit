@@ -4,8 +4,11 @@
  */
 package gedit.editor;
 
+import java.util.BitSet;
+
 import gedit.model.Alias;
 import gedit.model.ModelBase;
+import gedit.model.ModelType;
 import gedit.model.Reference;
 import gedit.model.Rhs;
 import gedit.model.Rule;
@@ -21,6 +24,7 @@ import org.eclipse.swt.widgets.Shell;
 
 public class ModelContentHover implements ITextHover, ITextHoverExtension {
 	private ModelBase fModel;
+	private BitSet fFilter = ModelType.REFERENCE.or(ModelType.ALIAS.or(ModelType.RULE));
 
 	public String getHoverInfo(ITextViewer textViewer, IRegion hoverRegion) {
 
@@ -32,7 +36,7 @@ public class ModelContentHover implements ITextHover, ITextHoverExtension {
 		if (label == null && !(fModel instanceof Rule))
 			return null;
 		if (label == null)
-			label = fModel.getLabel(fModel);
+			label = fModel.getLabel();
 			
 		StringBuffer sb = new StringBuffer();
 		sb.append(SimpleTextPresenter.BOLD);
@@ -62,15 +66,17 @@ public class ModelContentHover implements ITextHover, ITextHoverExtension {
 		if (!(textViewer instanceof GrammarSourceViewer))
 			return null;
 		GrammarSourceViewer viewer = (GrammarSourceViewer) textViewer;
-		fModel = viewer.getModel(false).getElementAt(offset);
+		ModelBase model = viewer.getModel(false).getElementAt(offset);
+		fModel = model != null && model.getType().matches(fFilter) ? model : null;
 		
-		return new Region(offset, 0);
+		return fModel != null ? new Region(offset, 0) : null;
 	}
 
 	public IInformationControlCreator getHoverControlCreator() {
 		return new IInformationControlCreator() {
 			public IInformationControl createInformationControl(Shell parent) {
-				return new GrammarInformationControl(parent, new SimpleTextPresenter());
+				return new GrammarInformationControl(parent, new SimpleTextPresenter(),
+						fModel != null ? fModel.getDocument() : null);
 			}
 		};
 	}

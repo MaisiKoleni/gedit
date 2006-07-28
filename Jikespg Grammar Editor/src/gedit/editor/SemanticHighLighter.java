@@ -52,9 +52,9 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 		private TextPresentation fPresentation;
 		private List fPositions = new ArrayList();
 		public Styler(Document document) {
-			super(document, ModelType.ALIAS.getType() |
-					ModelType.TERMINAL.getType() | ModelType.RULE.getType() |
-					ModelType.REFERENCE.getType());
+			super(document, ModelType.ALIAS.or(
+					ModelType.TERMINAL.or(ModelType.RULE.or(
+					ModelType.REFERENCE))));
 			fPresentation = new TextPresentation();
 		}
 		
@@ -63,14 +63,14 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 				return false;
 			if (element == null || node.spansMultipleNodes())
 				return true;
-			int elementType = element.getType().getType();
-			if (elementType == ModelType.TERMINAL.getType()) {
+			ModelType elementType = element.getType();
+			if (elementType == ModelType.TERMINAL) {
 				applyAttribute(fPresentation, fTerminalTextAttribute, node, element);
-			} else if (elementType == ModelType.ALIAS.getType()) {
+			} else if (elementType == ModelType.ALIAS) {
 				applyAttribute(fPresentation, fAliasTextAttribute, node, element);
-			} else if (elementType == ModelType.RULE.getType()) {
+			} else if (elementType == ModelType.RULE) {
 				applyAttribute(fPresentation, fNonTerminalTextAttribute, node, element);
-			} else if (elementType == ModelType.REFERENCE.getType()) {
+			} else if (elementType == ModelType.REFERENCE) {
 				ModelBase referrer = ((Reference) element).getReferer();
 				doVisit(node, referrer);
 			}
@@ -80,7 +80,7 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 		private void applyAttribute(TextPresentation presentation, TextAttribute attribute, Node node, ModelBase element) {
 			int offset = node.getOffset();
 			int length = node.getLength();
-			if (GrammarEditorPlugin.getDefault().isDebugging()) {
+			if (GrammarEditorPlugin.DEBUG) {
 				for (int i = 0; i < fPositions.size(); i++) {
 					Position position = (Position) fPositions.get(i);
 					if (!position.overlapsWith(offset, length))
@@ -196,7 +196,7 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 		Styler finder = new Styler(fViewer.getModel(false));
 		List positions = finder.legLos();
 
-		if (GrammarEditorPlugin.getDefault().isDebugging())
+		if (GrammarEditorPlugin.DEBUG)
 			System.out.println("semantic styles creation: " + (System.currentTimeMillis() - time) + "ms");
 
 		synchronized (fPositions) {
@@ -304,7 +304,7 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 
 	public void documentAboutToBeChanged(DocumentEvent event) {
 		int i = computeIndexAtOffset(fPositions, event.getOffset());
-		if (i <= 0 || i >= fPositions.size())
+		if (i < 0 || i >= fPositions.size())
 			return;
 		boolean insidePosition = true;
 		SemanticPosition position = (SemanticPosition) fPositions.get(i);

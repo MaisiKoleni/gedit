@@ -42,7 +42,7 @@ public class RenameInFileAction extends Action {
 		IDocument document = viewer.getDocument();
 		int offset = ((ITextSelection) viewer.getSelectionProvider().getSelection()).getOffset();
 		LinkedPositionGroup group = new LinkedPositionGroup();
-		Node[] occurrences = fEditor.findOccurrences(element.getLabel(element));
+		Node[] occurrences = fEditor.findOccurrences(element.getLabel());
 	
 		addPositionsToGroup(offset, occurrences, document, group);
 		if (group.isEmpty()) {

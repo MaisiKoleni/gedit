@@ -25,6 +25,7 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.Position;
+import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 
@@ -51,7 +52,7 @@ public class GrammarStructureDiffViewer extends StructureDiffViewer {
 				}
 			}
 			Document model = GrammarEditorPlugin.getDocumentModel(document, null, true);
-			return new GrammarNode(ModelType.DOCUMENT.getType(), document, model);
+			return new GrammarNode(ModelType.DOCUMENT.getBitPosition(), document, model);
 		}
 
 		public IStructureComparator locate(Object path, Object input) {
@@ -96,7 +97,7 @@ public class GrammarStructureDiffViewer extends StructureDiffViewer {
 		private ModelBase fModel;
 
 		public GrammarNode(int typeCode, IDocument document, ModelBase model) {
-			super(typeCode, typeCode + model.getLabel(model), document, model.getOffset(), model.getLength());
+			super(typeCode, typeCode + model.getLabel(), document, model.getOffset(), model.getLength());
 			fModel = model;
 			adaptRange();
 		}
@@ -111,23 +112,23 @@ public class GrammarStructureDiffViewer extends StructureDiffViewer {
 		}
 		
 		public Object[] getChildren() {
-			Object[] children = fModel.getChildren(fModel);
+			Object[] children = fModel.getChildren();
 			if (children == null)
 				return null;
 			GrammarNode[] nodes = new GrammarNode[children.length];
 			for (int i = 0; i < nodes.length; i++) {
 				ModelBase model = (ModelBase) children[i];
-				nodes[i] = new GrammarNode(model.getType().getType(), getDocument(), model);
+				nodes[i] = new GrammarNode(model.getType().getBitPosition(), getDocument(), model);
 			}
 			return nodes;
 		}
 
 		public String getName() {
-			return fModel.getLabel(fModel);
+			return fModel.getLabel();
 		}
 
 		public Image getImage() {
-			return GrammarEditorPlugin.getImage(fModel.getImageDescriptor(fModel));
+			return fLabelProvider.getImage(fModel);
 		}
 
 		public String getType() {
@@ -135,6 +136,7 @@ public class GrammarStructureDiffViewer extends StructureDiffViewer {
 		}
 	};
 
+	private ILabelProvider fLabelProvider = new ModelLabelProvider();
 	public GrammarStructureDiffViewer(Composite parent, CompareConfiguration configuration) {
 		super(parent, configuration);
 		setStructureCreator(new GrammarStructureCreator());

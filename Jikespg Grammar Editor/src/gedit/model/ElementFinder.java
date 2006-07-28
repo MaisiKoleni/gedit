@@ -4,6 +4,9 @@
  */
 package gedit.model;
 
+import gedit.StringUtils;
+
+import java.util.BitSet;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -38,10 +41,10 @@ public class ElementFinder {
 		private String id;
 		private String trimmedId;
 		private ModelBase firstHit;
-		public IdFinder(Document document, String id, int filter) {
+		public IdFinder(Document document, String id, BitSet filter) {
 			super(document, filter);
 			this.id = id;
-			String s = DocumentAnalyzer.trimQuotes(id);
+			String s = StringUtils.trimQuotes(id, '\'');
 			if (!s.equals(id))
 				trimmedId = s;
 		}
@@ -62,7 +65,7 @@ public class ElementFinder {
 		
 		protected boolean matches(String text) {
 			return text.equals(id) || text.equals(trimmedId)
-				|| DocumentAnalyzer.trimQuotes(text).equals(trimmedId != null ? trimmedId : id);
+				|| StringUtils.trimQuotes(text, '\'').equals(trimmedId != null ? trimmedId : id);
 		}
 
 	};
@@ -75,13 +78,14 @@ public class ElementFinder {
 		return finder.getNearest();
 	}
 
-	public static ModelBase findElement(ModelBase start, String id, int filter) {
+	public static ModelBase findElement(ModelBase start, String id, BitSet filter) {
 		Document document = start.getDocument();
 		IdFinder finder = new IdFinder(document, id, filter);
 		Node node = start.node != null ? start.node : null;
-		if (node.parent != null)
+		if (node != null && node.parent != null)
 			node = node.parent;
-		node.accept(finder);
+		if (node != null)
+			node.accept(finder);
 		return finder.getFirstHit();
 	}
 
