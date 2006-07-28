@@ -13,7 +13,9 @@ import java.util.Map;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.Position;
 import org.eclipse.jface.text.source.Annotation;
 import org.eclipse.jface.text.source.AnnotationModelEvent;
@@ -96,5 +98,15 @@ public class GrammarDocumentProvider extends TextFileDocumentProvider {
 	
 	protected IAnnotationModel createAnnotationModel(IFile file) {
 		return new AnnotationModel(file);
+	}
+	
+	public void connect(Object element) throws CoreException {
+		super.connect(element);
+		if (!(element instanceof GrammarFileEditorInput))
+			return;
+		IDocument document = getDocument(element);
+		if (!(document instanceof GrammarDocument))
+			return;
+		((GrammarDocument) document).setParentDocument(((GrammarFileEditorInput) element).getParentDocument());
 	}
 }
