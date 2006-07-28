@@ -4,24 +4,26 @@
  */
 package gedit.model;
 
+import java.util.BitSet;
+
 public abstract class NodeVisitor implements INodeVisitor {
 	protected Document document;
-	protected int filter;
+	protected BitSet filter;
 	
 	protected NodeVisitor(Document document) {
-		this(document, 0);
+		this(document, null);
 	}
 
-	protected NodeVisitor(Document document, int filter) {
+	protected NodeVisitor(Document document, BitSet filter) {
 		this.document = document;
 		this.filter = filter;
 	}
 	
 	public boolean visit(Node node) {
-		if (filter == 0)
+		if (filter == null)
 			return true;
 		ModelBase element = getElement(node);
-		if (element != null && (element.getType().getType() & filter) > 0)
+		if (element != null && element.getType().matches(filter))
 			return doVisit(node, element);
 		return true;
 	}
