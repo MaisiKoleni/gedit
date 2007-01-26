@@ -12,7 +12,7 @@ import org.eclipse.swt.widgets.Display;
 
 public class SimpleTextPresenter implements IInformationPresenter {
 
-	public final static char BOLD = 1;
+	public final static char BOLD = SWT.BOLD;
 	public final static char CR = 2;
 	public final static char INDENT = 3;
 	public final static char BULLET = 4;
@@ -20,6 +20,7 @@ public class SimpleTextPresenter implements IInformationPresenter {
 	public String updatePresentation(Display display, String hoverInfo, TextPresentation presentation, int maxWidth, int maxHeight) {
 		StringBuffer sb = new StringBuffer(hoverInfo);
 		applyBold(sb, presentation);
+		applyItalic(sb, presentation);
 		applyCr(sb, presentation);
 		applyIndent(sb, presentation);
 		applyBullet(sb, presentation);
@@ -28,19 +29,27 @@ public class SimpleTextPresenter implements IInformationPresenter {
 	}
 	
 	private void applyBold(StringBuffer text, TextPresentation presentation) {
+		applyFontStyle(text, presentation, SWT.BOLD);
+	}
+
+	private void applyItalic(StringBuffer text, TextPresentation presentation) {
+		applyFontStyle(text, presentation, SWT.ITALIC);
+	}
+	
+	private void applyFontStyle(StringBuffer text, TextPresentation presentation, int fontStyle) {
 		String s = text.toString();
-		int index1 = s.indexOf(BOLD);
+		int index1 = s.indexOf(fontStyle);
 		if (index1 == -1)
 			return;
-		int index2 = s.indexOf(BOLD, index1 + 1);
+		int index2 = s.indexOf(fontStyle, index1 + 1);
 		if (index2 == -1)
 			index2 = text.length();
 		else
 			text.deleteCharAt(index2);
-		StyleRange range = new StyleRange(index1, index2, null, null, SWT.BOLD);
+		StyleRange range = new StyleRange(index1, index2 - index1 - 1, null, null, fontStyle);
 		presentation.addStyleRange(range);
 		text.deleteCharAt(index1);
-		applyBold(text, presentation);
+		applyFontStyle(text, presentation, fontStyle);
 	}
 
 	private void applyCr(StringBuffer text, TextPresentation presentation) {
