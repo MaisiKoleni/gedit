@@ -158,10 +158,10 @@ public class GrammarCompletionProposal implements ICompletionProposal, ICompleti
 			 	if (viewer instanceof ITextViewerExtension5) {
 			 		
 			 		ITextViewerExtension5 extension= (ITextViewerExtension5) viewer;
-			 		IRegion widgetRange= extension.modelRange2WidgetRange(new Region(fRememberedStyleRange.start, fRememberedStyleRange.length));
+			 		IRegion widgetRange= extension.widgetRange2ModelRange(new Region(fRememberedStyleRange.start, fRememberedStyleRange.length));
 			 		if (widgetRange != null)
 			 			viewer2.invalidateTextPresentation(widgetRange.getOffset(), widgetRange.getLength());
-			 			
+		 			viewer2.invalidateTextPresentation(fRememberedStyleRange.start, fRememberedStyleRange.length);
 			 	} else {
 					viewer2.invalidateTextPresentation(fRememberedStyleRange.start + viewer.getVisibleRegion().getOffset(), fRememberedStyleRange.length);
 			 	}
