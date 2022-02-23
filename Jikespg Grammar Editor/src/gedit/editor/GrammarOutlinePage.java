@@ -16,7 +16,7 @@ import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.preference.IPreferenceStore;
-import org.eclipse.jface.util.ListenerList;
+import org.eclipse.core.runtime.ListenerList;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.util.SafeRunnable;
 import org.eclipse.jface.viewers.ISelection;
@@ -33,7 +33,7 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 			setImageDescriptor(GrammarEditorPlugin.getImageDescriptor("icons/synced.gif"));
 			setChecked(GrammarEditorPlugin.getDefault().getPreferenceStore().getBoolean(PREFERENCE_LINKED));
 		}
-		
+
 		public void run() {
 			boolean checked = isChecked();
 			GrammarEditorPlugin.getDefault().getPreferenceStore().setValue(PREFERENCE_LINKED, checked);
@@ -46,7 +46,7 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 			setImageDescriptor(GrammarEditorPlugin.getImageDescriptor("icons/alphab_sort_co.gif"));
 			setChecked(GrammarEditorPlugin.getDefault().getPreferenceStore().getBoolean(PREFERENCE_SORTER));
 		}
-		
+
 		public void run() {
 			boolean checked = isChecked();
 			GrammarEditorPlugin.getDefault().getPreferenceStore().setValue(PREFERENCE_SORTER, checked);
@@ -60,7 +60,7 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 			setToolTipText("Collapse all elements");
 			setImageDescriptor(GrammarEditorPlugin.getImageDescriptor("icons/collapseall.gif"));
 		}
-		
+
 		public void run() {
 			fSuppressSelectionChangePropagation = true;
 			getTreeViewer().collapseAll();
@@ -89,13 +89,13 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 						PreferenceConstants.SECTION_FILTERS_SEPARATOR),
 				store.getBoolean(PREFERENCE_FILTER_MACROS)));
 	}
-	
+
 	public void makeContributions(IMenuManager menuManager, IToolBarManager toolBarManager,
 			IStatusLineManager statusLineManager) {
 		toolBarManager.add(new CollapseAllAction());
 		toolBarManager.add(new SortAction());
 		toolBarManager.add(new LinkAction());
-		
+
 		FilterAction filterAction = new FilterAction(getTreeViewer(), fFilter,
 				PREFERENCE_SECTION_FILTERS, PREFERENCE_SECTION_FILTERS_RECENTLY_USED,
 				PREFERENCE_FILTER_MACROS);
@@ -111,7 +111,7 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 			}
 		});
 	}
-	
+
 	protected void refreshWithoutSelectionChangePropagation() {
 		if (getTreeViewer().getControl().isDisposed())
 			return;
@@ -125,7 +125,7 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 			}
 		});
 	}
-	
+
     public void addSelectionChangedListener(ISelectionChangedListener listener) {
         selectionChangedListeners.add(listener);
     }

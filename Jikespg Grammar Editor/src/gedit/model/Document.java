@@ -22,7 +22,7 @@ import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.text.Position;
 import org.eclipse.core.runtime.Assert;
-import org.eclipse.jface.util.ListenerList;
+import org.eclipse.core.runtime.ListenerList;
 
 public class Document extends ModelBase implements IAdaptable {
 	public interface IModelListener {

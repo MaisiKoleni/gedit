@@ -15,4 +15,5 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.ui.editors,
  org.eclipse.ui.workbench.texteditor,
  org.eclipse.ui.views,
- org.eclipse.compare
+ org.eclipse.compare,
+ org.eclipse.equinox.common;bundle-version="3.2.0"
