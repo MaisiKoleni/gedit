@@ -230,7 +230,7 @@ public class StringMatcher {
 		if(fPattern.startsWith("*"))//$NON-NLS-1$
 			fHasLeadingStar= true;
 		/* make sure it's not an escaped wildcard */
-		if (fPattern.endsWith("*") && (fLength > 1 && fPattern.charAt(fLength - 2) != '\\')) {
+		if (fPattern.endsWith("*") && fLength > 1 && fPattern.charAt(fLength - 2) != '\\') {
 			fHasTrailingStar= true;
 		}
 
@@ -246,9 +246,10 @@ public class StringMatcher {
 					if (pos >= fLength) {
 						buf.append(c);
 					} else {
-						char next= fPattern.charAt(pos++);
+						char next= fPattern.charAt(pos);
+						pos++;
 						/* if it's an escape sequence */
-						if (((next != '*') && (next != '?') && (next != '\\'))) {
+						if (next != '*' && next != '?' && next != '\\') {
 							/* not an escape sequence, just insert literally */
 							buf.append(c);
 						}
@@ -335,20 +336,17 @@ public class StringMatcher {
 		while (plen-- > 0) {
 			char tchar= text.charAt(tStart);
 			tStart++;
-			char pchar= p.charAt(pStart++);
+			char pchar= p.charAt(pStart);
+			pStart++;
 
 			/* process wild cards */
 			/* skip single wild cards */
-			if ((!fIgnoreWildCards && (pchar == fSingleWildCard)) || (pchar == tchar))
+			if (!fIgnoreWildCards && pchar == fSingleWildCard || pchar == tchar)
 				continue;
-			if (fIgnoreCase) {
-				if (Character.toUpperCase(tchar) == Character.toUpperCase(pchar))
-					continue;
-				// comparing after converting to upper case doesn't handle all cases;
-				// also compare after converting to lower case
-				if (Character.toLowerCase(tchar) == Character.toLowerCase(pchar))
-					continue;
-			}
+			// comparing after converting to upper case doesn't handle all cases;
+			// also compare after converting to lower case
+			if (fIgnoreCase && (Character.toUpperCase(tchar) == Character.toUpperCase(pchar) || Character.toLowerCase(tchar) == Character.toLowerCase(pchar)))
+				continue;
 			return false;
 		}
 		return true;

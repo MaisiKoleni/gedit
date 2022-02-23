@@ -39,7 +39,7 @@ public class GrammarStructureDiffViewer extends StructureDiffViewer {
 		@Override
 		public IStructureComparator getStructure(Object input) {
 			IDocument document = CompareUI.getDocument(input);
-			if ((document == null) && (input instanceof IStreamContentAccessor)) {
+			if (document == null && input instanceof IStreamContentAccessor) {
 				IStreamContentAccessor sca = (IStreamContentAccessor) input;
 				String contents = GrammarTextViewer.getString(sca);
 				if (contents != null) {

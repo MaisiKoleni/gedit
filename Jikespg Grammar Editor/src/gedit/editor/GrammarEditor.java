@@ -240,7 +240,7 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 			}
 
 			StyledText text = viewer.getTextWidget();
-			if (text == null || text.isDisposed() || ((event.stateMask & SWT.BUTTON1) != 0 && text.getSelectionCount() != 0)) {
+			if (text == null || text.isDisposed() || (event.stateMask & SWT.BUTTON1) != 0 && text.getSelectionCount() != 0) {
 				deactivate();
 				return;
 			}
@@ -640,7 +640,7 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 			((GrammarSourceViewerConfiguration) getSourceViewerConfiguration()).adaptToPreferenceChange(event);
 
 			if (PreferenceConstants.EDITOR_MARK_OCCURRENCES.equals(event.getProperty())) {
-				boolean newValue = ((Boolean) event.getNewValue());
+				boolean newValue = (Boolean) event.getNewValue();
 				if (newValue != fMarkOccurrenceAnnotations) {
 					fMarkOccurrenceAnnotations = newValue;
 					fLastSelectedElement = null;
@@ -922,7 +922,7 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
     	if (fFoldingStructureProvider != null) {
     		fFoldingStructureProvider.updateFoldingRegions(viewer.getModel(false), false);
     	}
-    	getSite().getShell().getDisplay().asyncExec(() -> handleEditorSelectionChanged());
+    	getSite().getShell().getDisplay().asyncExec(this::handleEditorSelectionChanged);
 	}
 
 	public boolean isMarkingOccurrences() {

@@ -67,8 +67,7 @@ public class StringUtils {
 	}
 
 	public static String join(String[] values, String separator) {
-		String sb = String.join(separator, values);
-		return sb;
+		return String.join(separator, values);
 	}
 
 	public static String trimQuotes(String text) {

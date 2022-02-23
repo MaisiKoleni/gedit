@@ -44,13 +44,11 @@ public class CaseInsensitiveSingleLineRule extends SingleLineRule {
 
 			int c= scanner.read();
 			fQuoteDetector.detect(c);
-			if ((c == fStartSequence[0]) && sequenceDetected(scanner, fStartSequence, true, true)) {
-				if (endSequenceDetected(scanner)) {
-					if (!fEolDetected && !fEndSequenceIncluded && fEndSequence != null)
-						for (int i = 0; i < fEndSequence.length; i++)
-							scanner.unread();
-					return fToken;
-				}
+			if (c == fStartSequence[0] && sequenceDetected(scanner, fStartSequence, true, true) && endSequenceDetected(scanner)) {
+				if (!fEolDetected && !fEndSequenceIncluded && fEndSequence != null)
+					for (int i = 0; i < fEndSequence.length; i++)
+						scanner.unread();
+				return fToken;
 			}
 		}
 

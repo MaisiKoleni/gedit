@@ -457,7 +457,7 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
 
 	private String loadPreviewContentFromFile(String filename) {
 		String line;
-		String separator = System.getProperty("line.separator"); //$NON-NLS-1$
+		String separator = System.lineSeparator();
 		StringBuilder buffer = new StringBuilder(512);
 		BufferedReader reader = null;
 		try {

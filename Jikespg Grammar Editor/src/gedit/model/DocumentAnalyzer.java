@@ -200,17 +200,14 @@ public class DocumentAnalyzer {
 
 	private String stripEscape(Document document, String name) {
 		int escapeIndex = name.indexOf(document.getOptions().getEsape());
-		if ((escapeIndex == -1) || "empty".equals(name.substring(1).toLowerCase()) ||
+		if (escapeIndex == -1 || "empty".equals(name.substring(1).toLowerCase()) ||
 				name.charAt(0) == '\'' && name.charAt(name.length() - 1) == '\'')
 			return null;
 		return name.substring(0, escapeIndex);
 	}
 
 	private boolean isExportingType(ModelType type) {
-		return type == ModelType.EXPORT
-				| type == ModelType.ERROR_TOK
-				| type == ModelType.EOF_TOK
-				| type == ModelType.EOL_TOK;
+		return type == ModelType.EXPORT || type == ModelType.ERROR_TOK || type == ModelType.EOF_TOK || type == ModelType.EOL_TOK;
 	}
 
 	private void markAsReferenced(ModelBase model) {
@@ -240,7 +237,7 @@ public class DocumentAnalyzer {
 	private boolean equals(ModelBase[] base1, ModelBase[] base2) {
         if (base1 == base2)
         	return true;
-        if (base1 == null || base2 == null || (base1.length != base2.length))
+        if (base1 == null || base2 == null || base1.length != base2.length)
             return false;
         for (int i = 0; i < base1.length; i++) {
             if (!base1[i].label.equals(base2[i].label))

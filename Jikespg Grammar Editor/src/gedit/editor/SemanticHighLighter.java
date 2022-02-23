@@ -316,7 +316,7 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 			return;
 		boolean insidePosition = true;
 		SemanticPosition position = (SemanticPosition) fPositions.get(i);
-		if (!position.overlapsWith(event.fOffset, event.fLength) && (i > 0)) {
+		if (!position.overlapsWith(event.fOffset, event.fLength) && i > 0) {
 			i--;
 			SemanticPosition pos = (SemanticPosition) fPositions.get(i);
 			if (!pos.overlapsWith(event.fOffset, event.fLength))

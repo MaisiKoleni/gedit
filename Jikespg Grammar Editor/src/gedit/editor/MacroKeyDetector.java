@@ -65,9 +65,8 @@ public class MacroKeyDetector {
 				fCurrentKey = null;
 				fCurrentIndex = 0;
 				return MATCH;
-			} else {
-				return rewind(scanner, buffer);
 			}
+			return rewind(scanner, buffer);
 		}
 		Object value = fCurrentMacros.get(String.valueOf(Character.toLowerCase(c)));
 		if (value == null) {
@@ -121,7 +120,7 @@ public class MacroKeyDetector {
 	}
 
 	private boolean sameAsOnLastInvocation(Definition[] makros) {
-		if ((fMacrosCopy == null) || (fMacrosCopy.length != makros.length))
+		if (fMacrosCopy == null || fMacrosCopy.length != makros.length)
 			return false;
 		for (int i = 0; i < fMacrosCopy.length; i++) {
 			if (!fMacrosCopy[i].equals(makros[i]))

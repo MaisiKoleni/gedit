@@ -414,7 +414,7 @@ class Parser extends jpgprs {
 					document.addChildren(ModelType.TERMINAL, Arrays.asList(terminals), true, true);
 				}
 			}
-		} else if (key.startsWith("filt") && (value != null)) {
+		} else if (key.startsWith("filt") && value != null) {
 			processFileOptionValue(option, valueToken.offset, value);
 		}
 
@@ -634,7 +634,7 @@ class Parser extends jpgprs {
 	}
 	private String stripEscape(String name) {
 		int escapeIndex = name.indexOf(document.getOptions().getEsape());
-		if ((escapeIndex == -1) || "empty".equals(name.substring(1).toLowerCase()) ||
+		if (escapeIndex == -1 || "empty".equals(name.substring(1).toLowerCase()) ||
 				name.charAt(0) == '\'' && name.charAt(name.length() - 1) == '\'')
 			return null;
 		return name.substring(0, escapeIndex);

@@ -27,7 +27,7 @@ public class ModelFilter extends ViewerFilter {
 		if (element instanceof Section)
 			return !((Section) element).getChildType().matches(fTypedFilter);
 		if (element instanceof ModelBase)
-			return (!fFilterMacros || (((ModelBase) element).getType() != ModelType.MACRO_BLOCK));
+			return !fFilterMacros || ((ModelBase) element).getType() != ModelType.MACRO_BLOCK;
 		return true;
 	}
 

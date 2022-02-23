@@ -116,7 +116,7 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 		fContentAssistant.setProposalPopupOrientation(IContentAssistant.PROPOSAL_OVERLAY);
 		fContentAssistant.setContextInformationPopupOrientation(IContentAssistant.CONTEXT_INFO_ABOVE);
 
-		fContentAssistant.setInformationControlCreator(parent -> new DefaultInformationControl(parent));
+		fContentAssistant.setInformationControlCreator(DefaultInformationControl::new);
 		return fContentAssistant;
 	}
 

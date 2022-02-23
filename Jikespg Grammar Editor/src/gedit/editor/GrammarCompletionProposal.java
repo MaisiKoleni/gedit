@@ -38,7 +38,6 @@ public class GrammarCompletionProposal implements ICompletionProposal, ICompleti
 	private int fReplacementOffset;
 	private int fReplacementLength;
 	private int fCursorPosition;
-	private boolean fToggleEating;
 	private StyleRange fRememberedStyleRange;
 	private Image fImage;
 	private String fAdditionalProposalInfo;
@@ -65,7 +64,7 @@ public class GrammarCompletionProposal implements ICompletionProposal, ICompleti
 	@Override
 	public void apply(ITextViewer viewer, char trigger, int stateMask, int offset) {
 		IDocument document= viewer.getDocument();
-		fToggleEating = (stateMask & SWT.MOD1) != 0;
+		boolean fToggleEating = (stateMask & SWT.MOD1) != 0;
 		if (!fToggleEating && offset >= fReplacementOffset)
 			fReplacementLength = offset - fReplacementOffset;
 
