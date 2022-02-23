@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.jface.text.IDocument;
-import org.eclipse.jface.util.Assert;
+import org.eclipse.core.runtime.Assert;
 
 public class FileProzessor {
 	private Map documents;
@@ -69,7 +69,7 @@ public class FileProzessor {
 			in = new FileReader(file);
 			int count = in.read(buf);
 			for (int c1 = 0; c1 != -1 && (count += c1) < buf.length; c1 = in.read(buf, count, buf.length - count)) ;
-				
+
 		} catch (IOException e) {
 			GrammarEditorPlugin.logError("Cannot process included file: " + file, e);
 		} finally {

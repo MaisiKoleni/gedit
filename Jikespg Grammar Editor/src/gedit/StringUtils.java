@@ -6,7 +6,7 @@ package gedit;
 
 import java.util.StringTokenizer;
 
-import org.eclipse.jface.util.Assert;
+import org.eclipse.core.runtime.Assert;
 
 public class StringUtils {
 	public static class QuoteDetector {
@@ -47,14 +47,14 @@ public class StringUtils {
 		public void reset() {
 			fInQuotes = 0;
 		}
-		
+
 		public void setQuoteChars(char[] quoteChars) {
 			Assert.isNotNull(quoteChars);
 			fQuoteChars = quoteChars;
 			reset();
 		}
 	};
-	
+
 	public static String[] split(String value, String separator) {
 		if (value == null)
 			return new String[0];

@@ -21,7 +21,7 @@ import java.util.WeakHashMap;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.text.Position;
-import org.eclipse.jface.util.Assert;
+import org.eclipse.core.runtime.Assert;
 import org.eclipse.jface.util.ListenerList;
 
 public class Document extends ModelBase implements IAdaptable {
@@ -34,17 +34,17 @@ public class Document extends ModelBase implements IAdaptable {
 	private Map nodeToElements = new HashMap();
 	private List problems;
 	private ListenerList listeners;
-	
+
 	private DocumentOptions options = new DocumentOptions();
-	
+
 	private Map elementCache = new WeakHashMap();
-	
+
 	private static Definition[] PREDEFINED_DEFINITIONS;
-	
+
 	public Document() {
 		super(null, "Root");
 	}
-	
+
 	public Document(String pathRef) {
 		super(null, pathRef);
 	}
@@ -65,11 +65,11 @@ public class Document extends ModelBase implements IAdaptable {
 	protected void register(Node node, ModelBase element) {
 		nodeToElements.put(node, element);
 	}
-	
+
 	protected ModelBase getElementForNode(Node node) {
 		return (ModelBase) nodeToElements.get(node);
 	}
-	
+
 	public Node getRoot() {
 		return node;
 	}
@@ -89,14 +89,14 @@ public class Document extends ModelBase implements IAdaptable {
 	public Section getSection(Object childType) {
 		return (Section) sections.get(childType);
 	}
-	
+
 	public void setSection(Object childType, Section section) {
 		if (section != null)
 			sections.put(childType, section);
 		else
 			sections.remove(childType);
 	}
-	
+
 	public Problem[] getProblems(ModelBase model) {
 		if (model.node == null)
 			return new Problem[0];
@@ -110,7 +110,7 @@ public class Document extends ModelBase implements IAdaptable {
 		}
 		return getProblems(offset, length);
 	}
-	
+
 	public Problem[] getProblems(int offset, int length) {
 		Position position = new Position(offset, length);
 		Map result = new TreeMap(Collections.reverseOrder());
@@ -168,17 +168,17 @@ public class Document extends ModelBase implements IAdaptable {
 		section.visible = visible & childrenVisible & section.node != null;
 		section.setChildren(array);
 	}
-	
+
 	protected void addInclude(Document include) {
 		if (includes == null)
 			includes = new ArrayList();
 		includes.add(include);
 	}
-	
+
 	public Document getInclude(String name) {
 		if (includes == null)
 			return null;
-		Object file = FileProzessor.getFileForName(this, name); 
+		Object file = FileProzessor.getFileForName(this, name);
 		for (int i = 0; i < includes.size(); i++) {
 			Document document = (Document) includes.get(i);
 			if (FileProzessor.getFileForName(this, document.label).equals(file))
@@ -203,7 +203,7 @@ public class Document extends ModelBase implements IAdaptable {
 			System.arraycopy(rules, 0, rules = new Rule[size], 0, size);
 		return rules;
 	}
-	
+
 	public GenericModel[] getTerminals() {
 		Section section = getSection(ModelType.TERMINAL);
 		return section != null ? (GenericModel[]) section.getChildren() : new GenericModel[0];
@@ -213,12 +213,12 @@ public class Document extends ModelBase implements IAdaptable {
 		Section section = getSection(ModelType.ALIAS);
 		return section != null ? (Alias[]) section.getChildren() : new Alias[0];
 	}
-	
+
 	public GenericModel[] getExports() {
 		Section section = getSection(ModelType.EXPORT);
 		return section != null ? (GenericModel[]) section.getChildren() : new GenericModel[0];
 	}
-	
+
 	public Definition[] getMakros() {
 		Section section = getSection(ModelType.DEFINITION);
 		return section != null ? (Definition[]) section.getChildren() : new Definition[0];
@@ -243,11 +243,11 @@ public class Document extends ModelBase implements IAdaptable {
 		}
 		return PREDEFINED_DEFINITIONS;
 	}
-	
+
 	public DocumentOptions getOptions() {
 		return options;
 	}
-	
+
 	public ModelBase getElementAt(int offset) {
 		return getElementAt(offset, true);
 	}

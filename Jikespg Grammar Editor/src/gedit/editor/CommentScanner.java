@@ -9,7 +9,7 @@ import org.eclipse.jface.text.rules.IRule;
 import org.eclipse.jface.text.rules.IToken;
 import org.eclipse.jface.text.rules.RuleBasedScanner;
 import org.eclipse.jface.text.rules.Token;
-import org.eclipse.jface.util.Assert;
+import org.eclipse.core.runtime.Assert;
 
 public class CommentScanner extends RuleBasedScanner {
 	private class TaskRule implements IRule {
@@ -17,7 +17,7 @@ public class CommentScanner extends RuleBasedScanner {
 		public TaskRule(IToken token) {
 			this.token = token;
 		}
-		
+
 		public IToken evaluate(ICharacterScanner scanner) {
 			for (int c = scanner.read(), i = 0, j = 0; c != '\r' && c != '\n'; c = scanner.read(), j++) {
 				if (c == ICharacterScanner.EOF) {
@@ -39,7 +39,7 @@ public class CommentScanner extends RuleBasedScanner {
 			return fDefaultReturnToken;
 		}
 	};
-	
+
 	private final static char[] TASK = "TODO".toCharArray();
 
 	private PreferenceUtils fUtils;
@@ -51,7 +51,7 @@ public class CommentScanner extends RuleBasedScanner {
 		Token task = new Token(fUtils.createTextAttribute(PreferenceConstants.GRAMMAR_COLORING_TASK));
 
 		setRules(new IRule[] { new TaskRule(task) });
-		
+
 		setDefaultReturnToken(comment);
 	}
 }

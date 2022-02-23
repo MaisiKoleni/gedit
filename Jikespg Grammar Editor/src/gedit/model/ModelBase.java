@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.core.runtime.PlatformObject;
-import org.eclipse.jface.util.Assert;
+import org.eclipse.core.runtime.Assert;
 
 public abstract class ModelBase extends PlatformObject implements Comparable, Cloneable {
 	protected ModelBase parent;
@@ -16,7 +16,7 @@ public abstract class ModelBase extends PlatformObject implements Comparable, Cl
 	protected Node node;
 	protected boolean visible = true;
 	private Map userData;
-	
+
 	public ModelBase(ModelBase parent, String label) {
 		Assert.isNotNull(label);
 		this.parent = parent;
@@ -26,9 +26,9 @@ public abstract class ModelBase extends PlatformObject implements Comparable, Cl
 	public Object[] getChildren() {
 		return new ModelBase[0];
 	}
-	
+
 	public abstract ModelType getType();
-	
+
 	public int getOffset() {
 		return node.offset;
 	}
@@ -36,7 +36,7 @@ public abstract class ModelBase extends PlatformObject implements Comparable, Cl
 	public int getLength() {
 		return node.length;
 	}
-	
+
 	public int getRangeOffset() {
 		return node.parent != null ? node.parent.offset : node.offset;
 	}
@@ -44,20 +44,20 @@ public abstract class ModelBase extends PlatformObject implements Comparable, Cl
 	public int getRangeLength() {
 		return node.parent != null ? node.parent.length : node.length;
 	}
-	
+
 	public Problem[] getProblems() {
 		Document document = (Document) getAdapter(Document.class);
 		if (document == null)
 			return null;
 		return document.getProblems(this);
 	}
-	
+
 	public void setUserData(Object key, Object value) {
 		if (userData == null)
 			userData = new HashMap();
 		userData.put(key, value);
 	}
-	
+
 	public Object getUserData(Object key) {
 		return userData != null ? userData.get(key) : null;
 	}
@@ -65,7 +65,7 @@ public abstract class ModelBase extends PlatformObject implements Comparable, Cl
 	public Document getDocument() {
 		return (Document) getAdapter(Document.class);
 	}
-	
+
 	public Object getAdapter(Class adapter) {
 		if (Document.class.equals(adapter)) {
 			if (parent instanceof Document)
@@ -75,19 +75,19 @@ public abstract class ModelBase extends PlatformObject implements Comparable, Cl
 		}
 		return super.getAdapter(adapter);
 	}
-	
+
 	public String getLabel() {
 		return label;
 	}
-	
+
 	public ModelBase getParent() {
 		return parent;
 	}
-	
+
 	public boolean isVisible() {
 		return visible;
 	}
-	
+
 	protected Object clone() {
 		ModelBase clone = null;
 		try {

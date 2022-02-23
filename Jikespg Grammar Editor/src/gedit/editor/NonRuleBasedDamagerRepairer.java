@@ -10,7 +10,7 @@ import org.eclipse.jface.text.TextAttribute;
 import org.eclipse.jface.text.TextPresentation;
 import org.eclipse.jface.text.presentation.IPresentationDamager;
 import org.eclipse.jface.text.presentation.IPresentationRepairer;
-import org.eclipse.jface.util.Assert;
+import org.eclipse.core.runtime.Assert;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
@@ -23,12 +23,12 @@ public class NonRuleBasedDamagerRepairer implements IPresentationDamager, IPrese
 	protected TextAttribute fDefaultTextAttribute;
 	private String fPreferenceKey;
 	private PreferenceUtils fUtils;
-	
+
 	public NonRuleBasedDamagerRepairer(String preferenceKey, PreferenceUtils utils) {
 		Assert.isNotNull(preferenceKey);
 
 		fPreferenceKey = preferenceKey;
-		fUtils = utils; 
+		fUtils = utils;
 		fDefaultTextAttribute = fUtils.createTextAttribute(preferenceKey);
 	}
 
@@ -112,7 +112,7 @@ public class NonRuleBasedDamagerRepairer implements IPresentationDamager, IPrese
 
 	/**
 	 * Adds style information to the given text presentation.
-	 * 
+	 *
 	 * @param presentation
 	 *            the text presentation to be extended
 	 * @param offset
@@ -129,15 +129,15 @@ public class NonRuleBasedDamagerRepairer implements IPresentationDamager, IPrese
 			range.strikeout = (attr.getStyle() & TextAttribute.STRIKETHROUGH) > 0;
 			range.underline = (attr.getStyle() & TextAttribute.UNDERLINE) > 0;
 			presentation.addStyleRange(range);
-			
+
 		}
 	}
-	
+
 	public boolean affectsTextPresentation(PropertyChangeEvent event) {
 		String property = event.getProperty();
 		return property != null && property.startsWith(fPreferenceKey);
 	}
-	
+
 	public void adaptToPreferenceChange(PropertyChangeEvent event) {
 		if (affectsTextPresentation(event))
 			fDefaultTextAttribute = fUtils.createTextAttribute(fPreferenceKey);
