@@ -20,7 +20,7 @@ public class GrammarPartitionScanner extends RuleBasedPartitionScanner {
 		public BlockRule(String startSequence, String endSequence, IToken token) {
 			super(startSequence, endSequence, token, (char) 0, true);
 		}
-		
+
 		public void setSequences(String start, String end) {
 			fStartSequence = start.toCharArray();
 			fEndSequence = end.toCharArray();
@@ -42,8 +42,8 @@ public class GrammarPartitionScanner extends RuleBasedPartitionScanner {
 		IToken macro = new Token(GRAMMAR_MACRO);
 
 		IPredicateRule[] rules = {
-			new CaseInsensitiveSingleLineRule("--", null, comment, (char) 0, true),
-			new CaseInsensitiveSingleLineRule("%Options", null, option, (char) 0, true),
+			new CaseInsensitiveSingleLineRule("--", null, comment, (char) 0, true, true),
+			new CaseInsensitiveSingleLineRule("%Options", null, option, (char) 0, true, true),
 			fMacroRule = new MacroKeyRule(new MacroKeyDetector(), macro),
 		};
 		fStaticRuleNumber = rules.length;
@@ -71,10 +71,10 @@ public class GrammarPartitionScanner extends RuleBasedPartitionScanner {
 		} else {
 			for (int i = 0; i < beginnings.length; i++) {
 				fBlockRules[i].setSequences(beginnings[i], ends[i]);
-			}			
+			}
 		}
 	}
-	
+
 	private void addBlockRules() {
 		IRule[] rules = new IRule[fStaticRuleNumber + fBlockRules.length];
 		System.arraycopy(fRules, 0, rules, 0, fStaticRuleNumber);

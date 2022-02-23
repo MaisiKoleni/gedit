@@ -132,4 +132,8 @@ public class CaseInsensitiveSingleLineRule extends SingleLineRule {
 
 		return true;
 	}
+
+	public void reset() {
+		fQuoteDetector.reset();
+	}
 }
