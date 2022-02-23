@@ -7,7 +7,6 @@ package gedit;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.PropertyResourceBundle;
@@ -43,8 +42,8 @@ public class GrammarEditorPlugin extends AbstractUIPlugin implements IPropertyCh
 	//Resource bundle.
 	private ResourceBundle fResourceBundle;
 	// Images
-	private Map fImages;
-	private Map fModels;
+	private Map<Object, Image> fImages;
+	private Map<IDocument, Document> fModels;
 	private FileProzessor fFileProzessor;
 	private ColorManager fColorManager;
 	private IPreferenceStore fCombinedPreferenceStore;
@@ -129,8 +128,7 @@ public class GrammarEditorPlugin extends AbstractUIPlugin implements IPropertyCh
 	private void disposeImages() {
 		if (fImages == null)
 			return;
-		for (Iterator it = fImages.values().iterator(); it.hasNext();) {
-			Image image = (Image) it.next();
+		for (Image image : fImages.values()) {
 			image.dispose();
 		}
 		fImages.clear();
@@ -156,10 +154,10 @@ public class GrammarEditorPlugin extends AbstractUIPlugin implements IPropertyCh
 	}
 
 	private static Image doGetImage(Object key) {
-		Map images = getDefault().fImages;
+		Map<Object, Image> images = getDefault().fImages;
 		if (images == null)
-			getDefault().fImages = images = new HashMap();
-		Image image = (Image) images.get(key);
+			getDefault().fImages = images = new HashMap<>();
+		Image image = images.get(key);
 		if (image == null) {
 			ImageDescriptor descriptor = null;
 			if (key instanceof ImageDescriptor)
@@ -190,11 +188,11 @@ public class GrammarEditorPlugin extends AbstractUIPlugin implements IPropertyCh
 	}
 
 	public static Document getDocumentModel(IDocument document, IProblemRequestor probemRequestor, boolean reconcile) {
-		Map models = getDefault().fModels;
+		Map<IDocument, Document> models = getDefault().fModels;
 		if (models == null)
-			getDefault().fModels = models = new WeakHashMap();
+			getDefault().fModels = models = new WeakHashMap<>();
 		Document doc;
-		doc = (Document) models.get(document);
+		doc = models.get(document);
 		if (doc != null && !reconcile)
 			return doc;
 

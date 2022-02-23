@@ -49,9 +49,9 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 		}
 	}
 
-	private class Styler extends NodeVisitor implements Comparator {
+	private class Styler extends NodeVisitor implements Comparator<Position> {
 		private TextPresentation fPresentation;
-		private List fPositions = new ArrayList();
+		private List<Position> fPositions = new ArrayList<>();
 		public Styler(Document document) {
 			super(document, ModelType.ALIAS.or(
 					ModelType.TERMINAL.or(ModelType.RULE.or(
@@ -95,7 +95,7 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 			fPositions.add(position);
 		}
 
-		public List legLos() {
+		public List<Position> legLos() {
 			if (document.getRoot() != null)
 				document.getRoot().accept(this);
 			Collections.sort(fPositions, this);
@@ -103,9 +103,9 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 		}
 
 		@Override
-		public int compare(Object arg0, Object arg1) {
-			Position s1 = (Position) arg0;
-			Position s2 = (Position) arg1;
+		public int compare(Position arg0, Position arg1) {
+			Position s1 = arg0;
+			Position s2 = arg1;
 			return s1.offset - s2.offset;
 		}
 	}
@@ -129,7 +129,7 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 	private TextAttribute fTerminalTextAttribute;
 	private TextAttribute fNonTerminalTextAttribute;
 	private TextAttribute fAliasTextAttribute;
-	private List fPositions = new ArrayList();
+	private List<Position> fPositions = new ArrayList<>();
 	private boolean fCanceled;
 	private PresentationJob fPresentationJob = new PresentationJob();
 
@@ -189,7 +189,7 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 			return presentation;
 		TextPresentation original = fViewer.getPresentationReconciler().createPresentation(
 				new Region(0, fViewer.getDocument().getLength()), fViewer.getDocument());
-		for (Iterator it = presentation.getAllStyleRangeIterator(); it.hasNext(); ) {
+		for (Iterator<?> it = presentation.getAllStyleRangeIterator(); it.hasNext(); ) {
 			original.mergeStyleRange((StyleRange) it.next());
 		}
 		return original;
@@ -198,7 +198,7 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 	protected TextPresentation createSemanticStyles() {
 		long time = System.currentTimeMillis();
 		Styler finder = new Styler(fViewer.getModel(false));
-		List positions = finder.legLos();
+		List<Position> positions = finder.legLos();
 
 		if (GrammarEditorPlugin.DEBUG)
 			System.out.println("semantic styles creation: " + (System.currentTimeMillis() - time) + "ms");
@@ -220,7 +220,7 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 
 		int i = computeIndexAtOffset(fPositions, region.getOffset()), n = computeIndexAtOffset(fPositions, region.getOffset() + region.getLength());
 		if (n - i > 2) {
-			List ranges = new ArrayList(n - i);
+			List<StyleRange> ranges = new ArrayList<>(n - i);
 			for (; i < n; i++) {
 				SemanticPosition position = (SemanticPosition) fPositions.get(i);
 				if (!IDocument.DEFAULT_CONTENT_TYPE.equals(fViewer.getContentType(document, position.offset)))
@@ -229,7 +229,7 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 					ranges.add(createStyleRange(position.fTextAttribute, position.offset, position.length));
 			}
 			StyleRange[] array = new StyleRange[ranges.size()];
-			array = (StyleRange[]) ranges.toArray(array);
+			array = ranges.toArray(array);
 			textPresentation.mergeStyleRanges(array);
 		} else {
 			for (; i < n; i++) {
@@ -242,12 +242,12 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 		}
 	}
 
-	private int computeIndexAtOffset(List positions, int offset) {
+	private int computeIndexAtOffset(List<Position> positions, int offset) {
 		int i = -1;
 		int j = positions.size();
 		while (j - i > 1) {
 			int k = i + j >> 1;
-			Position position = (Position) positions.get(k);
+			Position position = positions.get(k);
 			if (position.getOffset() >= offset)
 				j = k;
 			else

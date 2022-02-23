@@ -20,7 +20,7 @@ public class CaseInsensitiveSingleLineRule extends SingleLineRule {
 	private boolean fEolDetected;
 	private char[][] fLineDelimiters;
 	private char[][] fSortedLineDelimiters;
-	private Comparator fLineDelimiterComparator = (o1, o2) -> ((char[]) o2).length - ((char[]) o1).length;
+	private Comparator<char[]> fLineDelimiterComparator = (o1, o2) -> o2.length - o1.length;
 	public CaseInsensitiveSingleLineRule(String startSequence, String endSequence,
 			IToken token, char escapeCharacter, boolean breaksOnEOF, boolean endSequenceIncluded) {
 		super(startSequence, endSequence, token, escapeCharacter, breaksOnEOF);

@@ -124,7 +124,7 @@ public class FoldingPreferencePage extends PreferencePage implements IWorkbenchP
 
 	private void initializeSections(IPreferenceStore store, boolean defaultValues) {
 		ModelType[] allTypes = ModelType.getAllTypes();
-		List entries = new ArrayList();
+		List<ModelType> entries = new ArrayList<>();
 		fEnablementState = ModelUtils.createBitSetFromString(defaultValues ? store.getDefaultString(PreferenceConstants.EDITOR_FOLD_SECTIONS)
 				: store.getString(PreferenceConstants.EDITOR_FOLD_SECTIONS), PreferenceConstants.EDITOR_FOLDING_SEPARATOR);
 		for (ModelType type : allTypes) {

@@ -66,10 +66,6 @@ public class StringUtils {
 		return result;
 	}
 
-	public static String join(String[] values, String separator) {
-		return String.join(separator, values);
-	}
-
 	public static String trimQuotes(String text) {
 		return trimQuotes(trimQuotes(text, '\''), '"');
 	}

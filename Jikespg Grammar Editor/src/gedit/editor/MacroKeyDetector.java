@@ -4,6 +4,7 @@
  */
 package gedit.editor;
 
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.TreeMap;
 
@@ -17,8 +18,8 @@ import gedit.model.DocumentOptions;
 import gedit.model.ModelType;
 
 public class MacroKeyDetector {
-	private TreeMap fMacros = new TreeMap();
-	private TreeMap fCurrentMacros;
+	private TreeMap<String, Object> fMacros = new TreeMap<>();
+	private TreeMap<String, Object> fCurrentMacros;
 	private String fCurrentKey;
 	private int fCurrentIndex;
 	private Definition[] fMacrosCopy;
@@ -55,6 +56,7 @@ public class MacroKeyDetector {
 		return false;
 	}
 
+	@SuppressWarnings("unchecked")
 	public int isWordPart(char c, ICharacterScanner scanner, StringBuffer buffer) {
 		if (fCurrentKey != null) {
 			if (fCurrentIndex < fCurrentKey.length() && Character.toLowerCase(c) == fCurrentKey.charAt(fCurrentIndex)) {
@@ -75,7 +77,7 @@ public class MacroKeyDetector {
 			return rewind(scanner, buffer);
 		}
 		if (value instanceof TreeMap)
-			fCurrentMacros = (TreeMap) value;
+			fCurrentMacros = (TreeMap<String, Object>) value;
 		else if (value instanceof String) {
 			fCurrentKey = (String) value;
 			if (reachedWordEnd(buffer, fCurrentKey))
@@ -129,26 +131,26 @@ public class MacroKeyDetector {
 		return true;
 	}
 
-	private void clear(TreeMap map) {
+	private void clear(TreeMap<String, Object> map) {
 		synchronized (map) {
-			for (Iterator it = map.keySet().iterator(); it.hasNext();) {
+			for (Iterator<String> it = map.keySet().iterator(); it.hasNext();) {
 				Object key = it.next();
 				Object value = map.get(key);
 				if (value instanceof TreeMap)
-					clear((TreeMap) value);
+					clear((TreeMap<String, Object>) value);
 				it.remove();
 			}
 		}
 	}
 
-	private void insert(TreeMap m, String name, int index) {
+	private void insert(TreeMap<String, Object> m, String name, int index) {
 		if (name == null || name.length() == 0) // don't want error default
 			return;
 		name = name.toLowerCase();
 		String key = name.length() <= index ? DEF : String.valueOf(name.charAt(index));
 		Object val = m.get(key);
 		if (val instanceof TreeMap) {
-			insert((TreeMap) val, name, index + 1);
+			insert((TreeMap<String, Object>) val, name, index + 1);
 		} else if (val instanceof String) {
 			String prev = (String) val;
 			if (prev.equals(name)) { // special case for doubled adding of keywords
@@ -156,13 +158,13 @@ public class MacroKeyDetector {
 					System.out.println("Doubled added macro, ignored: " + name);
 				return;
 			}
-			TreeMap p = new TreeMap();
-			TreeMap p1 = p;
+			TreeMap<String, Serializable> p = new TreeMap<>();
+			TreeMap<String, Serializable> p1 = p;
 			for (int keyIndex = index + 1, n = Math.max(name.length(), prev.length()); keyIndex < n; keyIndex++) {
 				String sKey1 = prev.length() <= keyIndex ? DEF : String.valueOf(prev.charAt(keyIndex));
 				String sKey2 = name.length() <= keyIndex ? DEF : String.valueOf(name.charAt(keyIndex));
 				if (sKey1.equals(sKey2)) {
-					p1.put(sKey1, p1 = new TreeMap());
+					p1.put(sKey1, p1 = new TreeMap<>());
 					continue;
 				}
 				p1.put(sKey1, prev);

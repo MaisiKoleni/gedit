@@ -147,7 +147,7 @@ class Scanner implements jpgsym {
     }
 
 	private boolean isTokenSeparatorNotWhitespaceChar(char c) {
-		return c != c;
+		return c != c; // FIXME where does this come from? Keep behavior or adjust to name?
 	}
 
 	private boolean matches(String string, int offset) {

@@ -26,12 +26,12 @@ public class Section extends ModelBase {
 	}
 
 	@Override
-	public int compareTo(Object o) {
+	public int compareTo(ModelBase o) {
 		return 0;
 	}
 
 	@Override
-	public Object[] getChildren() {
+	public ModelBase[] getChildren() {
 		return children != null ? children : createChildrenArray(0);
 	}
 
@@ -49,7 +49,7 @@ public class Section extends ModelBase {
 		return ElementFinder.findElement(this, id, filter);
 	}
 
-	private Class getChildModelClass() {
+	private Class<?> getChildModelClass() {
 		return childType != null && childType.getModelClass() != null ?
 				childType.getModelClass() : ModelBase.class;
 	}

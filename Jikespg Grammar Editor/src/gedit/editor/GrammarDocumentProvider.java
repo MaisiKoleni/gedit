@@ -34,9 +34,9 @@ public class GrammarDocumentProvider extends TextFileDocumentProvider {
 
 		@Override
 		public void beginReporting() {
-			Map annotations = getAnnotationMap();
-			for (Iterator it = annotations.keySet().iterator(); it.hasNext();) {
-				Annotation annotation = (Annotation) it.next();
+			Map<Annotation, Position> annotations = getAnnotationMap();
+			for (Iterator<Annotation> it = annotations.keySet().iterator(); it.hasNext();) {
+				Annotation annotation = it.next();
 				if (annotation instanceof ProblemAnnotation)
 					it.remove();
 			}

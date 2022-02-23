@@ -10,12 +10,12 @@ import java.util.Map;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.PlatformObject;
 
-public abstract class ModelBase extends PlatformObject implements Comparable, Cloneable {
+public abstract class ModelBase extends PlatformObject implements Comparable<ModelBase>, Cloneable {
 	protected ModelBase parent;
 	protected String label;
 	protected Node node;
 	protected boolean visible = true;
-	private Map userData;
+	private Map<Object, Object> userData;
 
 	public ModelBase(ModelBase parent, String label) {
 		Assert.isNotNull(label);
@@ -23,7 +23,7 @@ public abstract class ModelBase extends PlatformObject implements Comparable, Cl
 		this.label = label;
 	}
 
-	public Object[] getChildren() {
+	public ModelBase[] getChildren() {
 		return new ModelBase[0];
 	}
 
@@ -46,7 +46,7 @@ public abstract class ModelBase extends PlatformObject implements Comparable, Cl
 	}
 
 	public Problem[] getProblems() {
-		Document document = (Document) getAdapter(Document.class);
+		Document document = getAdapter(Document.class);
 		if (document == null)
 			return null;
 		return document.getProblems(this);
@@ -54,7 +54,7 @@ public abstract class ModelBase extends PlatformObject implements Comparable, Cl
 
 	public void setUserData(Object key, Object value) {
 		if (userData == null)
-			userData = new HashMap();
+			userData = new HashMap<>();
 		userData.put(key, value);
 	}
 
@@ -63,14 +63,15 @@ public abstract class ModelBase extends PlatformObject implements Comparable, Cl
 	}
 
 	public Document getDocument() {
-		return (Document) getAdapter(Document.class);
+		return getAdapter(Document.class);
 	}
 
 	@Override
-	public Object getAdapter(Class adapter) {
+	@SuppressWarnings("unchecked")
+	public <T> T getAdapter(Class<T> adapter) {
 		if (Document.class.equals(adapter)) {
 			if (parent instanceof Document)
-				return parent;
+				return (T) parent;
 			if (parent != null)
 				return parent.getAdapter(adapter);
 		}
@@ -100,8 +101,8 @@ public abstract class ModelBase extends PlatformObject implements Comparable, Cl
 	}
 
 	@Override
-	public int compareTo(Object o) {
-		return o instanceof ModelBase ? label.compareToIgnoreCase(((ModelBase) o).label) : 0;
+	public int compareTo(ModelBase o) {
+		return label.compareToIgnoreCase(o.label);
 	}
 
 	@Override

@@ -14,21 +14,21 @@ import gedit.model.ModelBase;
 public class ModelContentProvider extends BaseWorkbenchContentProvider {
 
 	@Override
-	public Object[] getChildren(Object element) {
+	public ModelBase[] getChildren(Object element) {
 		if (!(element instanceof ModelBase))
-			return new Object[0];
+			return new ModelBase[0];
 		ModelBase modelBase = (ModelBase) element;
 
-		Object[] children = modelBase.getChildren();
-		List filtered = null;
+		ModelBase[] children = modelBase.getChildren();
+		List<ModelBase> filtered = null;
 
 		for (int i = 0; i < children.length; i++) {
-			Object child = children[i];
-			if (child instanceof ModelBase && ((ModelBase) child).isVisible()) {
+			ModelBase child = children[i];
+			if (child != null && child.isVisible()) {
 				if (filtered != null)
 					filtered.add(child);
 			} else if (filtered == null) {
-				filtered = new ArrayList();
+				filtered = new ArrayList<>();
 				for (int j = 0; j < i; j++) {
 					filtered.add(children[j]);
 				}
@@ -40,7 +40,7 @@ public class ModelContentProvider extends BaseWorkbenchContentProvider {
 	}
 
 	@Override
-	public Object getParent(Object element) {
+	public ModelBase getParent(Object element) {
 		if (!(element instanceof ModelBase))
 			return null;
 		ModelBase modelBase = (ModelBase) element;

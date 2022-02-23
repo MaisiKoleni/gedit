@@ -76,11 +76,12 @@ public class GrammarFileEditorInput implements IPathEditorInput, ILocationProvid
 	}
 
 	@Override
-	public Object getAdapter(Class adapter) {
+	@SuppressWarnings("unchecked")
+	public <T> T getAdapter(Class<T> adapter) {
 		if (ILocationProvider.class.equals(adapter))
-			return this;
+			return (T) this;
 		if (IWorkbenchAdapter.class.equals(adapter))
-			return fWorkbenchAdapter;
+			return (T) fWorkbenchAdapter;
 		return Platform.getAdapterManager().getAdapter(this, adapter);
 	}
 

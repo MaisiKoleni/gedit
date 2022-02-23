@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Rule extends ModelBase {
-	protected List rhs = new ArrayList(1);
+	protected List<Rhs> rhs = new ArrayList<>(1);
 
 	public Rule(ModelBase parent, String lhs) {
 		super(parent, lhs);
@@ -19,11 +19,11 @@ public class Rule extends ModelBase {
 	}
 
 	public Rhs[] getRhs() {
-		return (Rhs[]) rhs.toArray(new Rhs[rhs.size()]);
+		return rhs.toArray(Rhs[]::new);
 	}
 
 	@Override
-	public Object[] getChildren() {
+	public Rhs[] getChildren() {
 		return getRhs();
 	}
 

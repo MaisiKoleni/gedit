@@ -465,7 +465,7 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 	}
 
 	private class OccurrencesFinder extends IdFinder {
-		private List fResult = new ArrayList();
+		private List<Node> fResult = new ArrayList<>();
 		public OccurrencesFinder(Document document, String id, BitSet filter) {
 			super(document, id, filter);
 		}
@@ -479,7 +479,7 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 
 		public Node[] findOccurrences() {
 			document.getRoot().accept(this);
-			return (Node[]) fResult.toArray(new Node[fResult.size()]);
+			return fResult.toArray(new Node[fResult.size()]);
 		}
 	}
 
@@ -606,12 +606,12 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 	@Override
 	protected String[] collectContextMenuPreferencePages() {
 		String[] ids = super.collectContextMenuPreferencePages();
-		List more = new ArrayList();
+		List<String> more = new ArrayList<>();
 		more.add("gedit.editorPreferencePage"); //$NON-NLS-1$
 		more.add("gedit.syntaxColoringPreferencePage"); //$NON-NLS-1$
 		more.add("gedit.foldingPreferencePage"); //$NON-NLS-1$
 		more.addAll(Arrays.asList(ids));
-		return (String[]) more.toArray(new String[more.size()]);
+		return more.toArray(new String[more.size()]);
 	}
 
 	@Override
@@ -707,7 +707,8 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 	}
 
 	@Override
-	public Object getAdapter(Class adapter) {
+	@SuppressWarnings("unchecked")
+	public<T> T getAdapter(Class<T> adapter) {
 		if (IContentOutlinePage.class.equals(adapter)) {
 			if (fOutlinePage == null) {
 				fOutlinePage = new GrammarOutlinePage();
@@ -716,10 +717,10 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 				fOutlinePage.addSelectionChangedListener(fOutlineSelectionChangedListener);
 				getEditorSite().getShell().getDisplay().asyncExec(() -> fOutlinePage.setInput(getGrammarSourceViewer().getModel(false)));
 			}
-			return fOutlinePage;
+			return (T) fOutlinePage;
 		}
         if (fProjectionSupport != null) {
-        	Object object = fProjectionSupport.getAdapter(getSourceViewer(), adapter);
+        	T object = fProjectionSupport.getAdapter(getSourceViewer(), adapter);
         	if (object != null)
         		return object;
         }

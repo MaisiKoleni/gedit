@@ -7,7 +7,6 @@ package gedit.model;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -19,7 +18,7 @@ public class DocumentAnalyzer {
 	private FileProzessor fileProzessor;
 	private DocumentOptions globalOptions;
 	private Document parentDocument;
-	private Map elementToNode = new HashMap();
+	private Map<String, Node> elementToNode = new HashMap<>(); // FIXME This is pointless, we never insert
 
 	public DocumentAnalyzer(IProblemRequestor probemRequestor, FileProzessor fileProzessor, Document parentDocument) {
 		this(probemRequestor, fileProzessor, parentDocument != null ? parentDocument.getOptions() : null);
@@ -67,7 +66,7 @@ public class DocumentAnalyzer {
 		Section sourceSection = source.getSection(ModelType.DEFINITION);
 		if (sourceSection == null || sourceSection.children == null)
 			return;
-		List clonedMacros = new ArrayList();
+		List<ModelBase> clonedMacros = new ArrayList<>();
 		for (ModelBase child : sourceSection.children) {
 			ModelBase clone = (ModelBase) child.clone();
 			clone.visible = false;
@@ -79,7 +78,7 @@ public class DocumentAnalyzer {
 	private void checkConsistency(Document document) {
 
 		Rule[] rules = document.getRules();
-		Map rulesLookup = new HashMap();
+		Map<String, ModelBase> rulesLookup = new HashMap<>();
 		for (Rule rule : rules) {
 			rulesLookup.put(rule.label, rule);
 			String strippedLabel = stripEscape(document, rule.label);
@@ -87,12 +86,12 @@ public class DocumentAnalyzer {
 				rulesLookup.put(strippedLabel, rule);
 		}
 		GenericModel[] terminals = document.getTerminals();
-		Map terminalsLookup = new HashMap();
+		Map<String, ModelBase> terminalsLookup = new HashMap<>();
 		for (GenericModel terminal : terminals) {
 			terminalsLookup.put(terminal.label, terminal);
 		}
 		Alias[] aliases = document.getAliases();
-		Map aliasLookup = new HashMap();
+		Map<String, Alias> aliasLookup = new HashMap<>();
 		for (Alias alias : aliases) {
 			if (aliasLookup.put(StringUtils.trimQuotes(alias.label, '\''), alias) != null)
 				createProblem(document, alias, Problem.WARNING, "Alias " + alias.label + " has already been defined.");
@@ -153,7 +152,7 @@ public class DocumentAnalyzer {
 
 		Section section = document.getSection(ModelType.START_TOK);
 		if (section != null) {
-			ModelBase[] startTokens = (ModelBase[]) section.getChildren();
+			ModelBase[] startTokens = section.getChildren();
 			for (ModelBase startToken2 : startTokens) {
 				Reference startToken = (Reference) startToken2;
 				ModelBase referrer = startToken.getReferer();
@@ -166,26 +165,24 @@ public class DocumentAnalyzer {
 			}
 		}
 
-		for (Iterator it = rulesLookup.values().iterator(); it.hasNext(); ) {
-			ModelBase model = (ModelBase) it.next();
+		for (ModelBase model : rulesLookup.values()) {
 			if (hasBeenReferenced(model))
 				continue;
 			String strippedLabel = stripEscape(document, model.label);
-			ModelBase strippedModel = (ModelBase) rulesLookup.get(strippedLabel);
+			ModelBase strippedModel = rulesLookup.get(strippedLabel);
 			if (strippedModel != null && hasBeenReferenced(strippedModel))
 				continue;
 			createProblem(document, model, Problem.WARNING, "The production " + model.label + " is never used");
 		}
 
-		for (Iterator it = terminalsLookup.values().iterator(); it.hasNext(); ) {
-			ModelBase model = (ModelBase) it.next();
+		for (ModelBase model : terminalsLookup.values()) {
 			if (hasBeenReferenced(model) || aliasLookup.containsKey(((GenericModel) model).label))
 				continue;
 			createProblem(document, model, Problem.WARNING, "The terminal " + ((GenericModel) model).label + " is never used");
 		}
 	}
 
-	private GenericModel createUndeclaredTerminal(Document document, ModelBase model, Map terminalsLookup) {
+	private GenericModel createUndeclaredTerminal(Document document, ModelBase model, Map<String, ModelBase> terminalsLookup) {
 		ModelBase section = model.parent;
 		GenericModel terminal = new GenericModel(section, model.getLabel(), ModelType.TERMINAL);
 		terminal.visible = false;
@@ -218,20 +215,20 @@ public class DocumentAnalyzer {
 		return model.getUserData("ref") != null;
 	}
 
-	private ModelBase lookup(String value, Map originLookup, Map aliasLookup) {
-		ModelBase model = (ModelBase) originLookup.get(value);
+	private ModelBase lookup(String value, Map<String, ModelBase> originLookup, Map<String, Alias> aliasLookup) {
+		ModelBase model = originLookup.get(value);
 		if (model != null)
 			return model;
-		Alias alias = (Alias) aliasLookup.get(value);
+		Alias alias = aliasLookup.get(value);
 		if (alias == null) {
 			String trimmedValue = StringUtils.trimQuotes(value, '\'');
 			if (trimmedValue.length() == value.length())
 				return null;
-			alias = (Alias) aliasLookup.get(trimmedValue);
+			alias = aliasLookup.get(trimmedValue);
 			if (alias == null)
-				return (ModelBase) originLookup.get(trimmedValue);
+				return originLookup.get(trimmedValue);
 		}
-		return (ModelBase) originLookup.get(alias.getRhs().label);
+		return originLookup.get(alias.getRhs().label);
 	}
 
 	private boolean equals(ModelBase[] base1, ModelBase[] base2) {
@@ -249,7 +246,7 @@ public class DocumentAnalyzer {
 	private void createProblem(Document document, ModelBase element, int type, String message) {
 		if (element.getDocument() != document) // ignore problems from included documents
 			return;
-		Node node = (Node) elementToNode.get(element);
+		Node node = elementToNode.get(element); // FIXME see declaration
 		if (node == null)
 			node = element.node;
 		if (node != null)

@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
-public class ModelType implements Comparable {
-	private final static List ALL_TYPES = new ArrayList();
+public class ModelType implements Comparable<ModelType> {
+	private final static List<ModelType> ALL_TYPES = new ArrayList<>();
 
 	public final static ModelType DOCUMENT = new ModelType("Document", Document.class, false, false);
 	public final static ModelType SECTION = new ModelType("Section", Section.class, false, false);
@@ -48,7 +48,7 @@ public class ModelType implements Comparable {
 	private static int NUMBER;
 
 	public static ModelType[] getAllTypes() {
-		return (ModelType[]) ALL_TYPES.toArray(new ModelType[ALL_TYPES.size()]);
+		return ALL_TYPES.toArray(new ModelType[ALL_TYPES.size()]);
 	}
 
 	public static ModelType getByBitPosition(int position) {
@@ -64,9 +64,9 @@ public class ModelType implements Comparable {
 	private String string;
 	private boolean sectionType;
 	private boolean keyword;
-	private Class modelClass;
+	private Class<?> modelClass;
 
-	private ModelType(String string, Class modelClass, boolean sectionType, boolean keyword) {
+	private ModelType(String string, Class<?> modelClass, boolean sectionType, boolean keyword) {
 		this.bitSet = createBitSet();
 		this.string = string;
 		this.sectionType = sectionType;
@@ -118,13 +118,13 @@ public class ModelType implements Comparable {
 		return keyword;
 	}
 
-	public Class getModelClass() {
+	public Class<?> getModelClass() {
 		return modelClass;
 	}
 
 	@Override
-	public int compareTo(Object o) {
-		return o instanceof ModelType ? string.compareToIgnoreCase(((ModelType) o).string) : 0;
+	public int compareTo(ModelType o) {
+		return string.compareToIgnoreCase(o.string);
 	}
 
 	@Override

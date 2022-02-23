@@ -301,28 +301,28 @@ public class jpgprs implements jpgsym {
     public final static byte nonterminalIndex[] = NonterminalIndex.nonterminalIndex;
     public final int nonterminalIndex(int index) { return nonterminalIndex[index]; }
     public final static int scopePrefix[] = null;
-    public final int scopePrefix(int index) { return 0;}
+    public final int scopePrefix(@SuppressWarnings("unused") int index) { return 0;}
 
     public final static int scopeSuffix[] = null;
-    public final int scopeSuffix(int index) { return 0;}
+    public final int scopeSuffix(@SuppressWarnings("unused") int index) { return 0;}
 
     public final static int scopeLhs[] = null;
-    public final int scopeLhs(int index) { return 0;}
+    public final int scopeLhs(@SuppressWarnings("unused") int index) { return 0;}
 
     public final static int scopeLa[] = null;
-    public final int scopeLa(int index) { return 0;}
+    public final int scopeLa(@SuppressWarnings("unused") int index) { return 0;}
 
     public final static int scopeStateSet[] = null;
-    public final int scopeStateSet(int index) { return 0;}
+    public final int scopeStateSet(@SuppressWarnings("unused") int index) { return 0;}
 
     public final static int scopeRhs[] = null;
-    public final int scopeRhs(int index) { return 0;}
+    public final int scopeRhs(@SuppressWarnings("unused") int index) { return 0;}
 
     public final static int scopeState[] = null;
-    public final int scopeState(int index) { return 0;}
+    public final int scopeState(@SuppressWarnings("unused") int index) { return 0;}
 
     public final static int inSymb[] = null;
-    public final int inSymb(int index) { return 0;}
+    public final int inSymb(@SuppressWarnings("unused") int index) { return 0;}
 
 
     public interface Name {

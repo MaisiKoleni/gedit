@@ -32,7 +32,7 @@ import gedit.GrammarEditorPlugin;
 import gedit.model.Document;
 
 public class GrammarCompletionProposal implements ICompletionProposal, ICompletionProposalExtension,
-		ICompletionProposalExtension2, ICompletionProposalExtension3, Comparable {
+		ICompletionProposalExtension2, ICompletionProposalExtension3, Comparable<GrammarCompletionProposal> {
 	private String fReplacement;
 	private String fDisplayString;
 	private int fReplacementOffset;
@@ -292,8 +292,8 @@ public class GrammarCompletionProposal implements ICompletionProposal, ICompleti
 	}
 
 	@Override
-	public int compareTo(Object o) {
-		return o instanceof GrammarCompletionProposal ? fDisplayString.compareToIgnoreCase(((GrammarCompletionProposal) o).fDisplayString) : 0;
+	public int compareTo(GrammarCompletionProposal o) {
+		return fDisplayString.compareToIgnoreCase(o.fDisplayString);
 	}
 
 }

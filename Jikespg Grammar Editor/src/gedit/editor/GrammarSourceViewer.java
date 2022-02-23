@@ -52,7 +52,7 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 	private IInformationPresenter fOutlinePresenter;
 	private SemanticHighLighter fSemanticHighLighter;
 	private IPreferenceStore fPreferenceStore;
-	private ListenerList fReconcilingListeners;
+	private ListenerList<IReconcilingListener> fReconcilingListeners;
 	private RuleBasedScanner fMacroScanner;
 	private Color fForegroundColor;
 	private Color fBackgroundColor;
@@ -210,7 +210,7 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 
 	public void addReconcilingListener(IReconcilingListener listener) {
 		if (fReconcilingListeners == null)
-			fReconcilingListeners = new ListenerList();
+			fReconcilingListeners = new ListenerList<>();
 		fReconcilingListeners.add(listener);
 	}
 

@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -29,15 +28,15 @@ public class Document extends ModelBase implements IAdaptable {
 		void modelChanged(Document model);
 	}
 
-	private Map sections = new HashMap();
-	private List includes;
-	private Map nodeToElements = new HashMap();
-	private List problems;
-	private ListenerList listeners;
+	private Map<Object, Section> sections = new HashMap<>();
+	private List<Document> includes;
+	private Map<Node, ModelBase> nodeToElements = new HashMap<>();
+	private List<Problem> problems;
+	private ListenerList<IModelListener> listeners;
 
 	private DocumentOptions options = new DocumentOptions();
 
-	private Map elementCache = new WeakHashMap();
+	private Map<String, ModelBase> elementCache = new WeakHashMap<>();
 
 	private static Definition[] PREDEFINED_DEFINITIONS;
 
@@ -67,7 +66,7 @@ public class Document extends ModelBase implements IAdaptable {
 	}
 
 	protected ModelBase getElementForNode(Node node) {
-		return (ModelBase) nodeToElements.get(node);
+		return nodeToElements.get(node);
 	}
 
 	public Node getRoot() {
@@ -80,16 +79,16 @@ public class Document extends ModelBase implements IAdaptable {
 	}
 
 	@Override
-	public Object[] getChildren() {
+	public Section[] getChildren() {
 		return getSections();
 	}
 
 	public Section[] getSections() {
-		return (Section[]) sections.values().toArray(new Section[sections.size()]);
+		return sections.values().toArray(Section[]::new);
 	}
 
 	public Section getSection(Object childType) {
-		return (Section) sections.get(childType);
+		return sections.get(childType);
 	}
 
 	public void setSection(Object childType, Section section) {
@@ -115,25 +114,25 @@ public class Document extends ModelBase implements IAdaptable {
 
 	public Problem[] getProblems(int offset, int length) {
 		Position position = new Position(offset, length);
-		Map result = new TreeMap(Collections.reverseOrder());
+		Map<Integer, Problem> result = new TreeMap<>(Collections.reverseOrder());
 		for (int i = 0; problems != null && i < problems.size(); i++) {
-			Problem problem = (Problem) problems.get(i);
+			Problem problem = problems.get(i);
 			if (problem.getOffset() == offset)
-				result.put(Integer.valueOf(2 * problem.getType()), problem);
+				result.put(2 * problem.getType(), problem);
 			else if (position.overlapsWith(problem.getOffset(), problem.getLength()))
-				result.put(Integer.valueOf(problem.getType()), problem);
+				result.put(problem.getType(), problem);
 		}
-		return (Problem[]) result.values().toArray(new Problem[result.size()]);
+		return result.values().toArray(new Problem[result.size()]);
 	}
 
 	public void addProblem(Problem problem) {
 		if (problems == null)
-			problems = new ArrayList();
+			problems = new ArrayList<>();
 		problems.add(problem);
 	}
 
-	protected void addChildren(ModelType childType, List children, boolean visible, boolean create) {
-		Class elementType = childType.getModelClass();
+	protected void addChildren(ModelType childType, List<?> children, boolean visible, boolean create) {
+		Class<?> elementType = childType.getModelClass();
 		if (elementType == null)
 			return;
 		Assert.isTrue(ModelBase.class.isAssignableFrom(elementType));
@@ -173,7 +172,7 @@ public class Document extends ModelBase implements IAdaptable {
 
 	protected void addInclude(Document include) {
 		if (includes == null)
-			includes = new ArrayList();
+			includes = new ArrayList<>();
 		includes.add(include);
 	}
 
@@ -274,7 +273,7 @@ public class Document extends ModelBase implements IAdaptable {
 
 	public ModelBase getElementById(String id, BitSet filter) {
 		String key = id + filter;
-		ModelBase model = (ModelBase) elementCache.get(key);
+		ModelBase model = elementCache.get(key);
 		if (model != null)
 			return model;
 		model = internalGetElementById(id, filter);
@@ -284,8 +283,7 @@ public class Document extends ModelBase implements IAdaptable {
 	}
 
 	private ModelBase internalGetElementById(String id, BitSet filter) {
-		for (Iterator it = new ArrayList(sections.values()).iterator(); it.hasNext(); ) {
-			Section section = (Section) it.next();
+		for (Section section : new ArrayList<>(sections.values())) {
 			if (!section.getChildType().matches(filter))
 				continue;
 			ModelBase element = section.getElementById(id, filter);
@@ -319,7 +317,7 @@ public class Document extends ModelBase implements IAdaptable {
 
 	public void addModelListener(IModelListener listener) {
 		if (listeners == null)
-			listeners = new ListenerList();
+			listeners = new ListenerList<>();
 		listeners.add(listener);
 	}
 

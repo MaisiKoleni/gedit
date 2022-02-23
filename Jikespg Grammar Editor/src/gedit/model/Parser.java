@@ -31,11 +31,11 @@ class Parser extends jpgprs {
 	private Document document;
 	private IProblemRequestor problemRequestor;
 	private FileProzessor fileProzessor;
-	private Map elements;
+	private Map<ModelType, List<ModelBase>> elements;
 	private Rule currentRule;
 	private Rhs currentRuleRhs;
 	private int ruleSymbolNumber;
-	private Map rulesLookup;
+	private Map<String, Rule> rulesLookup;
 	private boolean optionsProcessed;
 
 	public final int t_action(int act, int sym) {
@@ -120,23 +120,23 @@ class Parser extends jpgprs {
 
 	private Token nextToken() {
 		Token token, prevToken = token = scanner.scanToken();
-		List comments = null;
+		List<Token> comments = null;
 		while (token.kind == TK_COMMENT | token.kind == TK_EOL) {
 			if (comments == null)
-				comments = new ArrayList();
+				comments = new ArrayList<>();
 			if (token.kind == TK_COMMENT)
 				comments.add(token);
 			scanner.tokenizeLbr = true;
 			token = scanner.scanToken();
 			if (token.kind == TK_EOL && prevToken.kind == TK_EOL) {
-				consume_comments((Token[]) comments.toArray(new Token[comments.size()]));
+				consume_comments(comments.toArray(new Token[comments.size()]));
 				comments.clear();
 			}
 			prevToken = token;
 		}
 		scanner.tokenizeLbr = false;
 		if (comments != null)
-			consume_comments((Token[]) comments.toArray(new Token[comments.size()]));
+			consume_comments(comments.toArray(new Token[comments.size()]));
 
 		if (token.kind == TK_OPTION_LINE) {
 			if (optionsProcessed)
@@ -169,8 +169,8 @@ class Parser extends jpgprs {
         parse_stack = new Node[20];
         model_stack = new ModelBase[20];
 
-        elements = new HashMap();
-		rulesLookup = new HashMap();
+        elements = new HashMap<>();
+		rulesLookup = new HashMap<>();
 
     /*****************************************************************/
     /* Start parsing.                                                */
@@ -216,8 +216,8 @@ class Parser extends jpgprs {
                 continue ProcessTerminals;
             } else
             	break ProcessTerminals;
-
-            ProcessNonTerminals: do {
+            // Process non-terminals
+            do {
             	consume_rule(act);
                 state_stack_top -= rhs[act] - 1;
                 act = ntAction(stack[state_stack_top], lhs[act]);
@@ -234,10 +234,10 @@ class Parser extends jpgprs {
         return root;
     }
 
-	private List getElements(ModelType elementType) {
-		List list = (List) elements.get(elementType);
+	private List<ModelBase> getElements(ModelType elementType) {
+		List<ModelBase> list = elements.get(elementType);
 		if (list == null)
-			elements.put(elementType, list = new ArrayList());
+			elements.put(elementType, list = new ArrayList<>());
 		return list;
 	}
 
@@ -304,7 +304,7 @@ class Parser extends jpgprs {
 		QuoteDetector detector = new QuoteDetector(new char[] { '\'', '\'', '"', '"', '(', ')' });
 		Token key = new Token();
 		Token value = new Token();
-		Map compatMap = new HashMap();
+		Map<String, String> compatMap = new HashMap<>();
 		DocumentOptions documentOptions = document.getOptions();
 		String line = optionLineToken.name;
 		int start = line.indexOf(DocumentOptions.DEFAULT_ESCAPE) + 8;
@@ -345,10 +345,10 @@ class Parser extends jpgprs {
 			} else
 				elementStarted = true;
 		}
-		documentOptions.addBlockPair((String) compatMap.get("hblockb"), (String) compatMap.get("hblocke"));
-		documentOptions.addBlockPair((String) compatMap.get("blockb"), (String) compatMap.get("blocke"));
+		documentOptions.addBlockPair(compatMap.get("hblockb"), compatMap.get("hblocke"));
+		documentOptions.addBlockPair(compatMap.get("blockb"), compatMap.get("blocke"));
 	}
-	private void processOption(Option option, Token keyToken, Token valueToken, DocumentOptions documentOptions, Map compatMap) {
+	private void processOption(Option option, Token keyToken, Token valueToken, DocumentOptions documentOptions, Map<String, String> compatMap) {
 		String key = keyToken.name.toLowerCase();
 		String value = valueToken.name;
 		if (key.startsWith("es")) {
@@ -506,7 +506,7 @@ class Parser extends jpgprs {
 	private void consume_lhs_produces_rhs() {
 		Token currentRuleToken = tok_stack[tok_stack_top - ruleSymbolNumber - 1];
 		String stripped = stripEscape(currentRuleToken.name);
-		currentRule = (Rule) rulesLookup.get(currentRuleToken.name);
+		currentRule = rulesLookup.get(currentRuleToken.name);
 		boolean firstRule = currentRule == null;
 		if (firstRule) {
 			rulesLookup.put(currentRuleToken.name, currentRule = new Rule(peekModel(), currentRuleToken.name));

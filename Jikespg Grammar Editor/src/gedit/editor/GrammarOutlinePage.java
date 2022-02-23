@@ -71,7 +71,7 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 	}
 
 	private boolean fSuppressSelectionChangePropagation;
-    private ListenerList selectionChangedListeners = new ListenerList();
+    private ListenerList<ISelectionChangedListener> selectionChangedListeners = new ListenerList<>();
     private ModelFilter fFilter;
 
 	private final static String PREFERENCE_SORTER = "outline_sorted";

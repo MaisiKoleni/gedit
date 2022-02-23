@@ -27,7 +27,7 @@ public class Reference extends ModelBase {
 	}
 
 	private ModelBase findReferrer() {
-		Document document = (Document) getAdapter(Document.class);
+		Document document = getAdapter(Document.class);
 		return document.getElementById(label);
 	}
 

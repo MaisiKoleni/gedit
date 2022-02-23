@@ -53,7 +53,7 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		int end = findWordEnd(text, offset, (char) 0);
 		String contentType = fViewer.getContentType(viewer.getDocument(), offset);
 
-		List proposals = new ArrayList();
+		List<ICompletionProposal> proposals = new ArrayList<>();
 		Document model = fViewer.getModel(true);
 
 		if (IDocument.DEFAULT_CONTENT_TYPE.equals(contentType)) {
@@ -74,15 +74,15 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 
 		setErrorMessage(proposals.size() > 0 ? null : "No proposals available");
 
-		return (ICompletionProposal[]) proposals.toArray(new ICompletionProposal[proposals.size()]);
+		return proposals.toArray(new ICompletionProposal[proposals.size()]);
 	}
 
-	private void computeRulesProposals(Document model, String word, int endOffset, List proposals) {
+	private void computeRulesProposals(Document model, String word, int endOffset, List<ICompletionProposal> proposals) {
 
-		List list = new ArrayList(Arrays.asList(model.getRules()));
+		List<Rule> list = new ArrayList<>(Arrays.asList(model.getRules()));
 		Collections.sort(list);
-		Set duplicates = new HashSet();
-		Rule[] rules = (Rule[]) list.toArray(new Rule[list.size()]);
+		Set<String> duplicates = new HashSet<>();
+		Rule[] rules = list.toArray(new Rule[list.size()]);
 		for (Rule rule : rules) {
 			String name = rule.getLhs();
 			if (duplicates.contains(name))
@@ -98,10 +98,10 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		}
 	}
 
-	private void computeTerminalProposals(Document model, String word, int endOffset, List proposals) {
-		List list = new ArrayList(Arrays.asList(model.getTerminals()));
+	private void computeTerminalProposals(Document model, String word, int endOffset, List<ICompletionProposal> proposals) {
+		List<GenericModel> list = new ArrayList<>(Arrays.asList(model.getTerminals()));
 		Collections.sort(list);
-		GenericModel[] terminals = (GenericModel[]) list.toArray(new GenericModel[list.size()]);
+		GenericModel[] terminals = list.toArray(new GenericModel[list.size()]);
 		for (GenericModel terminal : terminals) {
 			String name = terminal.getLabel();
 			if (!startsWithIgnoreCase(name, word))
@@ -114,12 +114,12 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		}
 	}
 
-	private void computeMacroProposals(Document model, String word, int endOffset, ILabelProvider labelProvider, List proposals) {
+	private void computeMacroProposals(Document model, String word, int endOffset, ILabelProvider labelProvider, List<ICompletionProposal> proposals) {
 		Definition[] definitions = model.getAllMakros();
-		List list = new ArrayList(Arrays.asList(definitions));
+		List<Definition> list = new ArrayList<>(Arrays.asList(definitions));
 		list.add(new Definition(null, labelProvider.getText(ModelType.EMPTY_TOK), ""));
 		Collections.sort(list);
-		definitions = (Definition[]) list.toArray(new Definition[list.size()]);
+		definitions = list.toArray(new Definition[list.size()]);
 		char escape = model.getOptions().getEsape();
 		String[] blockb = model.getOptions().getBlockBeginnings();
 		boolean secondRun = false;
@@ -152,9 +152,9 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		} while (proposals.isEmpty());
 	}
 
-	private void computeKeywordProposals(Document model, String word, int endOffset, ILabelProvider labelProvider, List proposals) {
+	private void computeKeywordProposals(Document model, String word, int endOffset, ILabelProvider labelProvider, List<ICompletionProposal> proposals) {
 		ModelType[] allTypes = ModelType.getAllTypes();
-		List sortedProposals = new ArrayList();
+		List<GrammarCompletionProposal> sortedProposals = new ArrayList<>();
 		for (ModelType type : allTypes) {
 			if (!type.isKeyword())
 				continue;
@@ -184,8 +184,8 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		}
 	}
 
-	private void computeOptionProposals(Document model, String word, String previousWord, int endOffset, List proposals) {
-		Map options = ModelUtils.getAllOptions();
+	private void computeOptionProposals(Document model, String word, String previousWord, int endOffset, List<ICompletionProposal> proposals) {
+		Map<?, ?> options = ModelUtils.getAllOptions();
 		int assignmentIndex = word.indexOf('=');
 		if ("=".equals(previousWord) || assignmentIndex != -1) {
 			String key = assignmentIndex != -1 ? word.substring(0, assignmentIndex) : previousWord;
@@ -206,7 +206,7 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		}
 
 		OptionProposal optionByWord = findOptionProposal(word);
-		for (Iterator it = options.values().iterator(); it.hasNext(); ) {
+		for (Iterator<?> it = options.values().iterator(); it.hasNext(); ) {
 			OptionProposal proposal = (OptionProposal) it.next();
 			String name = proposal.getKey();
 			previousOption = optionByWord;
@@ -249,7 +249,7 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		}
 	}
 
-	private void computeOptionValueProposals(Document model, String word, int endOffset, List proposals, OptionProposal option) {
+	private void computeOptionValueProposals(Document model, String word, int endOffset, List<ICompletionProposal> proposals, OptionProposal option) {
 		String[] choices = option.getChoice();
 		if (choices != null) {
 			for (String choice : choices) {
@@ -267,7 +267,7 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		}
 	}
 
-	private void computeFileSystemProposals(Document model, String word, int endOffset, List proposals, boolean suppressFiles) {
+	private void computeFileSystemProposals(Document model, String word, int endOffset, List<ICompletionProposal> proposals, boolean suppressFiles) {
 		int separatorIndex = word.lastIndexOf(';');
 		if (separatorIndex != -1)
 			word = word.substring(separatorIndex + 1);
@@ -284,7 +284,7 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		}
 	}
 
-	private void doComputeFileSystemProposals(Document model, String word, int endOffset, List proposals, File root, boolean suppressFiles, boolean absolute) {
+	private void doComputeFileSystemProposals(Document model, String word, int endOffset, List<ICompletionProposal> proposals, File root, boolean suppressFiles, boolean absolute) {
 		word = word.replace('/', File.separatorChar);
 		if (absolute && !word.endsWith(File.separator) && root.exists() && root.isDirectory())
 			root = root.getParentFile();

@@ -12,14 +12,14 @@ import gedit.StringUtils;
 
 public class ElementFinder {
 	public static class OffsetFinder extends NodeVisitor {
-		private SortedMap result;
+		private SortedMap<Integer, ModelBase> result;
 		private int offset;
 		private boolean restrictToLeafs;
 		public OffsetFinder(Document document, int offset, boolean restrictToLeafs) {
 			super(document);
 			this.offset = offset;
 			this.restrictToLeafs = restrictToLeafs;
-			result = new TreeMap();
+			result = new TreeMap<>();
 		}
 
 		@Override
@@ -28,7 +28,7 @@ public class ElementFinder {
 				return true;
 			ModelBase element = getElement(node);
 			if (offset >= node.offset && offset <= node.offset + node.length)
-				result.put(Integer.valueOf(node.length), element);
+				result.put(node.length, element);
 
 			return super.visit(node);
 		}

@@ -11,7 +11,7 @@ public class Node {
 	protected int offset;
 	protected int length;
 	protected Node parent;
-	private List children;
+	private List<Node> children;
 
 	public Node(Node parent, int offset, int length) {
 		this.offset = offset;
@@ -23,7 +23,7 @@ public class Node {
 
 	private void addChild(Node node) {
 		if (children == null)
-			children = new ArrayList(3);
+			children = new ArrayList<>(3);
 		children.add(node);
 	}
 
@@ -46,7 +46,7 @@ public class Node {
 	}
 
 	protected Node[] getChildren() {
-		return children != null ? (Node[]) children.toArray(new Node[children.size()]) : null;
+		return children != null ? children.toArray(Node[]::new) : null;
 	}
 
 	public int getOffset() {

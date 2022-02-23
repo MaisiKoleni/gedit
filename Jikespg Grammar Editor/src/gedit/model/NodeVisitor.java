@@ -29,6 +29,7 @@ public abstract class NodeVisitor implements INodeVisitor {
 		return true;
 	}
 
+	@SuppressWarnings("unused")
 	protected boolean doVisit(Node node, ModelBase element) {
 		return true;
 	}

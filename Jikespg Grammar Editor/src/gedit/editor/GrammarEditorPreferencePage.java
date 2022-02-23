@@ -390,8 +390,8 @@ public class GrammarEditorPreferencePage extends PreferencePage implements IWork
 
 	@Override
 	public boolean performOk() {
-		getPreferenceStore().setValue(PreferenceConstants.GRAMMAR_INCLUDE_DIRECTORIES, StringUtils.join(fDirectoryList.getItems(),
-				PreferenceConstants.INCLUDE_DIRECTORIES_SEPARATOR));
+		getPreferenceStore().setValue(PreferenceConstants.GRAMMAR_INCLUDE_DIRECTORIES, String.join(
+				PreferenceConstants.INCLUDE_DIRECTORIES_SEPARATOR, fDirectoryList.getItems()));
 		StringBuilder sb = new StringBuilder();
 		TableItem[] items = fSectionTable.getItems();
 		for (int i = 0; i < items.length; i++) {

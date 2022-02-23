@@ -59,14 +59,14 @@ public class OutlineInformationControl implements IInformationControl,
 		IInformationControlExtension2, IInformationControlExtension3 {
 
 	private class PatternFilter extends ViewerFilter {
-		private Map fCache = new HashMap();
+		private Map<Object, Object[]> fCache = new HashMap<>();
 
 		@Override
 		public Object[] filter(Viewer viewer, Object parent, Object[] elements) {
 			if (fMatcher == null)
 				return elements;
 
-			Object[] filtered = (Object[]) fCache.get(parent);
+			Object[] filtered = fCache.get(parent);
 			if (filtered == null) {
 				filtered = super.filter(viewer, parent, elements);
 				fCache.put(parent, filtered);

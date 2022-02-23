@@ -32,7 +32,7 @@ import gedit.model.Section;
 
 public class GrammarFoldingStructureProvider {
 	private static class RegionFinder extends NodeVisitor {
-		private List fResult = new ArrayList();
+		private List<ModelBase> fResult = new ArrayList<>();
 
 		protected RegionFinder(Document document, BitSet filter) {
 			super(document, filter);
@@ -47,7 +47,7 @@ public class GrammarFoldingStructureProvider {
 			return true;
 		}
 
-		public List getElements(Document document) {
+		public List<ModelBase> getElements(Document document) {
 			document.getRoot().accept(this);
 			return fResult;
 		}
@@ -57,7 +57,7 @@ public class GrammarFoldingStructureProvider {
 	private static class FoldingOptions {
 		FoldingOptions(IPreferenceStore store) {
 			ModelType[] allTypes = ModelType.getAllTypes();
-			fFoldSections = new HashMap();
+			fFoldSections = new HashMap<>();
 			BitSet values = ModelUtils.createBitSetFromString(store.getString(PreferenceConstants.EDITOR_FOLD_SECTIONS), PreferenceConstants.EDITOR_FOLDING_SEPARATOR);
 			for (ModelType type : allTypes) {
 				String section = type.getString();
@@ -74,14 +74,14 @@ public class GrammarFoldingStructureProvider {
 			String label = ((Section) node).getChildType().getString().toLowerCase();
 			return  fFoldSections.get(label) != null;
 		}
-		Map fFoldSections;
+		Map<String, Object> fFoldSections;
 		boolean fFoldRules;
 		boolean fFoldMacros;
 		boolean fFoldComments;
 	}
 
 	private IDocument fDocument;
-	private Map fPositionToElement = new HashMap();
+	private Map<Position, ModelBase> fPositionToElement = new HashMap<>();
 	private GrammarEditor fEditor;
 
 	public GrammarFoldingStructureProvider(GrammarEditor editor) {
@@ -93,12 +93,12 @@ public class GrammarFoldingStructureProvider {
 	}
 
 	private void updateFoldingRegions(ProjectionAnnotationModel model,
-			Set currentRegions, boolean initial, FoldingOptions options) {
+			Set<Position> currentRegions, boolean initial, FoldingOptions options) {
 		Annotation[] deletions = computeDifferences(model, currentRegions);
 
-		Map additionsMap = new HashMap();
-		for (Object position : currentRegions) {
-			ModelBase node = (ModelBase) fPositionToElement.get(position);
+		Map<ProjectionAnnotation, Position> additionsMap = new HashMap<>();
+		for (Position position : currentRegions) {
+			ModelBase node = fPositionToElement.get(position);
 			ModelType type = node.getType();
 			boolean collapseRules = initial && type == ModelType.RULE && options.fFoldRules;
 			boolean collapseMacros = initial && type == ModelType.MACRO_BLOCK && options.fFoldMacros;
@@ -113,9 +113,9 @@ public class GrammarFoldingStructureProvider {
 		}
 	}
 
-	private Annotation[] computeDifferences(ProjectionAnnotationModel model, Set additions) {
-		List deletions = new ArrayList();
-		for (Iterator it = model.getAnnotationIterator(); it.hasNext(); ) {
+	private Annotation[] computeDifferences(ProjectionAnnotationModel model, Set<Position> additions) {
+		List<Object> deletions = new ArrayList<>();
+		for (Iterator<?> it = model.getAnnotationIterator(); it.hasNext(); ) {
 			Object annotation = it.next();
 			if (annotation instanceof ProjectionAnnotation) {
 				Position position = model.getPosition((Annotation) annotation);
@@ -126,14 +126,14 @@ public class GrammarFoldingStructureProvider {
 				}
 			}
 		}
-		return (Annotation[]) deletions.toArray(new Annotation[deletions.size()]);
+		return deletions.toArray(new Annotation[deletions.size()]);
 	}
 
 	public void updateFoldingRegions(Document document, boolean initial) {
 		FoldingOptions options = new FoldingOptions(GrammarEditorPlugin.getDefault().getPreferenceStore());
-		fPositionToElement = new HashMap();
+		fPositionToElement = new HashMap<>();
 		try {
-			ProjectionAnnotationModel model = (ProjectionAnnotationModel) fEditor
+			ProjectionAnnotationModel model = fEditor
 					.getAdapter(ProjectionAnnotationModel.class);
 			if (model == null)
 				return;
@@ -142,20 +142,19 @@ public class GrammarFoldingStructureProvider {
 					ModelType.COMMENT.or(ModelType.MACRO_BLOCK)));
 
 			RegionFinder finder = new RegionFinder(document, filter);
-			List elements = finder.getElements(document);
+			List<ModelBase> elements = finder.getElements(document);
 
-			Set currentRegions = new HashSet();
+			Set<Position> currentRegions = new HashSet<>();
 			addFoldingRegions(currentRegions, elements);
 			updateFoldingRegions(model, currentRegions, initial, options);
 		} catch (BadLocationException ignore) {
 		}
 	}
 
-	private void addFoldingRegions(Set regions, List children) throws BadLocationException {
+	private void addFoldingRegions(Set<Position> regions, List<ModelBase> children) throws BadLocationException {
 
-		for (Iterator it = children.iterator(); it.hasNext(); ) {
+		for (ModelBase element : children) {
 
-			ModelBase element = (ModelBase) it.next();
 			Node node = (Node) element.getUserData("node");
 			if (node == null)
 				continue;

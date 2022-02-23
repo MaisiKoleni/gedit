@@ -11,7 +11,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -28,7 +27,7 @@ import gedit.editor.GrammarSourceViewer;
 import gedit.editor.MacroKeyDetector;
 
 public class ModelUtils {
-	public static class OptionProposal implements Comparable {
+	public static class OptionProposal implements Comparable<OptionProposal> {
 		private String key;
 		private boolean hasValue;
 		private String[] choice;
@@ -65,8 +64,8 @@ public class ModelUtils {
 		}
 
 		@Override
-		public int compareTo(Object o) {
-			return o instanceof OptionProposal ? key.compareToIgnoreCase(((OptionProposal) o).key) : 0;
+		public int compareTo(OptionProposal o) {
+			return key.compareToIgnoreCase(o.key);
 		}
 
 		public String getKey() {
@@ -106,7 +105,7 @@ public class ModelUtils {
 		}
 	}
 
-	private static Map OPTIONS;
+	private static Map<String, OptionProposal> OPTIONS;
 	private static BitSet ALL_FILTER;
 
 	public static Definition lookupMacro(int offset, GrammarSourceViewer viewer, RuleBasedScanner macroScanner, Position found) {
@@ -177,16 +176,16 @@ public class ModelUtils {
 
 	protected static Definition[] readPredefinedDefinitions() {
 		String[] lines = readResource("predefined_macros.txt", false);
-		List result = new ArrayList();
+		List<Definition> result = new ArrayList<>();
 		for (String line : lines) {
 			result.add(new Definition(null, line, ""));
 		}
-		return (Definition[]) result.toArray(new Definition[result.size()]);
+		return result.toArray(new Definition[result.size()]);
 	}
 
 	protected static OptionProposal[] readOptions() {
 		String[] lines = readResource("jikespg_options.txt", false);
-		List result = new ArrayList();
+		List<OptionProposal> result = new ArrayList<>();
 		for (String line : lines) {
 			result.add(OptionProposal.createFromLine(line, OptionProposal.JIKESPG));
 		}
@@ -198,7 +197,7 @@ public class ModelUtils {
 			result.add(proposal);
 		}
 		Collections.sort(result);
-		return (OptionProposal[]) result.toArray(new OptionProposal[result.size()]);
+		return result.toArray(new OptionProposal[result.size()]);
 	}
 
 	protected static String[] readResource(final String fileName, boolean sort) {
@@ -208,7 +207,7 @@ public class ModelUtils {
 			return new String[0];
 		}
 		BufferedReader r = new BufferedReader(new InputStreamReader(in));
-		List result = new ArrayList();
+		List<String> result = new ArrayList<>();
 		try {
 			for (String line = r.readLine(); line != null; line = r.readLine()) {
 				line = line.trim();
@@ -221,7 +220,7 @@ public class ModelUtils {
 		}
 		if (sort)
 			Collections.sort(result);
-		return (String[]) result.toArray(new String[result.size()]);
+		return result.toArray(new String[result.size()]);
 	}
 
 	public static BitSet getAllFilter() {
@@ -236,10 +235,10 @@ public class ModelUtils {
 		return ALL_FILTER;
 	}
 
-	public static Map getAllOptions() {
+	public static Map<String, OptionProposal> getAllOptions() {
 		if (OPTIONS == null) {
 			OptionProposal[] proposals = ModelUtils.readOptions();
-			Map map = new TreeMap();
+			Map<String, OptionProposal> map = new TreeMap<>();
 			for (OptionProposal proposal : proposals) {
 				map.put(proposal.getKey(), proposal);
 			}
@@ -248,45 +247,43 @@ public class ModelUtils {
 		return OPTIONS;
 	}
 
-	private static OptionProposal getProposal(Map proposals, String key) {
-		OptionProposal proposal = (OptionProposal) proposals.get(key);
+	private static OptionProposal getProposal(Map<String, OptionProposal> proposals, String key) {
+		OptionProposal proposal = proposals.get(key);
 		if (proposal != null)
 			return proposal;
-		proposal = (OptionProposal) proposals.get(key.replace('_', '-'));
+		proposal = proposals.get(key.replace('_', '-'));
 		if (proposal != null)
 			return proposal;
-		return (OptionProposal) proposals.get(key.replace('_', '-'));
+		return proposals.get(key.replace('_', '-'));
 	}
 
 	public static OptionProposal findOptionProposal(String word) throws OptionAmbigousException {
 		if (word == null)
 			return null;
-		Map proposals = getAllOptions();
+		Map<String, OptionProposal> proposals = getAllOptions();
 		OptionProposal proposal = getProposal(proposals, word);
 		if (proposal == null && word.startsWith("no"))
 			proposal = getProposal(proposals, word.substring(2));
 		if (proposal != null)
 			return proposal;
 
-		for (Iterator it = proposals.keySet().iterator(); it.hasNext();) {
-			String key = (String) it.next();
+		for (String key : proposals.keySet()) {
 			if (key.startsWith(word)) {
-				OptionProposal found1 = (OptionProposal) proposals.get(key);
-				List ambigous = new ArrayList();
-				for (Iterator it1 = proposals.keySet().iterator(); it1.hasNext();) {
-					String cmp = (String) it1.next();
+				OptionProposal found1 = proposals.get(key);
+				List<OptionProposal> ambigous = new ArrayList<>();
+				for (String cmp : proposals.keySet()) {
 					if (cmp.equals(key) || !cmp.startsWith(word))
 						continue;
-					OptionProposal found2 = (OptionProposal) proposals.get(cmp);
+					OptionProposal found2 = proposals.get(cmp);
 					if ((found1.version & found2.version) == 0
 							|| found1.hasValue != found2.hasValue)
 						continue;
 					ambigous.add(found2);
 				}
 				if (ambigous.isEmpty())
-					return (OptionProposal) proposals.get(key);
+					return proposals.get(key);
 				ambigous.add(found1);
-				throw new OptionAmbigousException((OptionProposal[]) ambigous.toArray(new OptionProposal[ambigous.size()]));
+				throw new OptionAmbigousException(ambigous.toArray(new OptionProposal[ambigous.size()]));
 			}
 			int sepIndex = key.indexOf('_');
 				if (sepIndex == -1)
@@ -294,7 +291,7 @@ public class ModelUtils {
 			if (sepIndex != -1 && sepIndex < key.length()) {
 				String abbrev = key.charAt(0) + String.valueOf(key.charAt(sepIndex + 1));
 				if (abbrev.equalsIgnoreCase(word))
-					return (OptionProposal) proposals.get(key);
+					return proposals.get(key);
 			}
 		}
 		return null;

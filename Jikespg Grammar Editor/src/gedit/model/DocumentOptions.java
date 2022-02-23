@@ -103,7 +103,7 @@ public class DocumentOptions {
 		if (globalOptions.global)
 			includeDirs = globalOptions.getIncludeDirs();
 		else {
-			List dirs = globalOptions.includeDirs != null ? new ArrayList(Arrays.asList(globalOptions.includeDirs)) : new ArrayList();
+			List<?> dirs = globalOptions.includeDirs != null ? new ArrayList<>(Arrays.asList(globalOptions.includeDirs)) : new ArrayList<>();
 			if (includeDirs != null) {
 				for (String includeDir : includeDirs) {
 					int index = dirs.indexOf(includeDir);

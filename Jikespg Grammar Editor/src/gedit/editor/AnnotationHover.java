@@ -27,18 +27,18 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.texteditor.ITextEditor;
 
 public class AnnotationHover implements IAnnotationHover, ITextHover {
-	private List fAnnotations = new ArrayList(1);
+	private List<Annotation> fAnnotations = new ArrayList<>(1);
 
-	protected final static Map SHOW_IN_OVERVIEW;
-	protected final static Map SHOW_IN_TEXT;
+	protected final static Map<String, ?> SHOW_IN_OVERVIEW;
+	protected final static Map<String, ?> SHOW_IN_TEXT;
 
 	static {
-		Map map = new HashMap();
+		Map<String, ?> map = new HashMap<>();
 		map.put(GrammarDocumentProvider.ANNOTATION_BOOKMARK, null);
 		map.put(GrammarDocumentProvider.ANNOTATION_ERROR, null);
 		map.put(GrammarDocumentProvider.ANNOTATION_TASK, null);
 		map.put(GrammarDocumentProvider.ANNOTATION_WARNING, null);
-		SHOW_IN_TEXT = Collections.unmodifiableMap(new HashMap(map));
+		SHOW_IN_TEXT = Collections.unmodifiableMap(new HashMap<String, Object>(map));
 		map.put(GrammarDocumentProvider.ANNOTATION_SEARCH_RESULT, null);
 		map.put(GrammarDocumentProvider.ANNOTATION_OCCURRENCE, null);
 		SHOW_IN_OVERVIEW = Collections.unmodifiableMap(map);
@@ -55,7 +55,7 @@ public class AnnotationHover implements IAnnotationHover, ITextHover {
 		}
 		if (model == null)
 			return;
-		for (Iterator it = model.getAnnotationIterator(); it.hasNext();) {
+		for (Iterator<?> it = model.getAnnotationIterator(); it.hasNext();) {
 			Annotation annotation = (Annotation) it.next();
 			Position position = model.getPosition(annotation);
 			if (position == null)
@@ -65,14 +65,14 @@ public class AnnotationHover implements IAnnotationHover, ITextHover {
 		}
 	}
 
-	protected String getHoverText(IAnnotationModel model, IRegion region, Map shownTypes) {
+	protected String getHoverText(IAnnotationModel model, IRegion region, Map<String, ?> shownTypes) {
 
 		if (fAnnotations.size() == 0)
 			findAnnotations(model, region);
 
 		StringBuffer text = null;
 		Annotation previousAnnotation = null;
-		Map posMessages = new HashMap();
+		Map<Position, Object> posMessages = new HashMap<>();
 		for (Object fAnnotation : fAnnotations) {
 			Annotation annotation = (Annotation) fAnnotation;
 			if (!shownTypes.containsKey(annotation.getType()))
@@ -122,18 +122,18 @@ public class AnnotationHover implements IAnnotationHover, ITextHover {
 		return null;
 	}
 
-	private boolean isDuplicateAt(Position position, String text, Map annotations) {
+	private boolean isDuplicateAt(Position position, String text, Map<Position, Object> annotations) {
 		if (annotations.containsKey(position)) {
 			Object object = annotations.get(position);
 			if (text.equals(object))
 				return true;
 			if (object instanceof List) {
-				List list = (List) object;
+				List<String> list = (List<String>) object;
 				if (list.contains(text))
 					return true;
 				list.add(text);
 			} else {
-				List list = new ArrayList();
+				List<Object> list = new ArrayList<>();
 				list.add(object);
 				list.add(text);
 				annotations.put(position, list);

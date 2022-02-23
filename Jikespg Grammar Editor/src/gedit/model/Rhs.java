@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Rhs extends ModelBase {
-	protected List parts = new ArrayList(1);
+	protected List<Reference> parts = new ArrayList<>(1);
 	private String string;
 
 	public Rhs(ModelBase parent, String label) {
@@ -21,15 +21,16 @@ public class Rhs extends ModelBase {
 	}
 
 	@Override
-	public Object getAdapter(Class adapter) {
+	@SuppressWarnings("unchecked")
+	public <T> T getAdapter(Class<T> adapter) {
 		if (Rule.class.equals(adapter))
 			if (parent instanceof Rule)
-				return parent;
+				return (T) parent;
 		return super.getAdapter(adapter);
 	}
 
 	public Reference[] getParts() {
-		return (Reference[]) parts.toArray(new Reference[parts.size()]);
+		return parts.toArray(Reference[]::new);
 	}
 
 	@Override
@@ -49,7 +50,7 @@ public class Rhs extends ModelBase {
 		for (int i = 0; i < parts.size(); i++) {
 			if (i > 0)
 				sb.append(' ');
-			sb.append(withAnnotation ? (Object) parts.get(i) : ((Reference) parts.get(i)).label);
+			sb.append(withAnnotation ? (Object) parts.get(i) : parts.get(i).label);
 		}
 		return sb.toString();
 	}
@@ -66,8 +67,8 @@ public class Rhs extends ModelBase {
 		if (!(o instanceof Rhs))
 			return false;
 		Rhs rhs = (Rhs) o;
-		Rule thisParent = (Rule) getAdapter(Rule.class);
-		Rule otherParent = (Rule) rhs.getAdapter(Rule.class);
+		Rule thisParent = getAdapter(Rule.class);
+		Rule otherParent = rhs.getAdapter(Rule.class);
 		return super.equals(rhs) && thisParent.getLhs().equals(otherParent.getLhs())
 				&& parts.equals(rhs.parts);
 	}

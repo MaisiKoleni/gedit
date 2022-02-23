@@ -18,7 +18,7 @@ import gedit.StringUtils;
 import gedit.editor.GrammarDocument;
 
 public class FileProzessor {
-	private Map documents;
+	private Map<String, IDocument> documents;
 
 	public static File getFileForName(Document parentDocument, String fileName) {
 		Assert.isNotNull(fileName);
@@ -50,8 +50,8 @@ public class FileProzessor {
 		String content = getFileContent(file);
 		String path = file.getAbsolutePath();
 		if (documents == null)
-			documents = new HashMap();
-		IDocument document = (IDocument) documents.get(path);
+			documents = new HashMap<>();
+		IDocument document = documents.get(path);
 		if (document == null || !document.get().equals(content)
 				|| document instanceof GrammarDocument && ((GrammarDocument) document).getParentDocument() != parentDocument)
 			documents.put(path, document = new GrammarDocument(content, parentDocument));

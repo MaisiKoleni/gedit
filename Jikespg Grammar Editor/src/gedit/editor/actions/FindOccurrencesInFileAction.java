@@ -36,8 +36,8 @@ public class FindOccurrencesInFileAction extends TextEditorAction {
 		IAnnotationModel annotationModel = editor.getDocumentProvider().getAnnotationModel(editor.getEditorInput());
 		if (annotationModel == null)
 			return;
-		for (Iterator it = annotationModel.getAnnotationIterator(); it.hasNext(); ) {
-			Annotation annotation = (Annotation) it.next();
+		for (Iterator<Annotation> it = annotationModel.getAnnotationIterator(); it.hasNext(); ) {
+			Annotation annotation = it.next();
 			if (GrammarDocumentProvider.ANNOTATION_SEARCH_RESULT.equals(annotation.getType()))
 				annotationModel.removeAnnotation(annotation);
 		}

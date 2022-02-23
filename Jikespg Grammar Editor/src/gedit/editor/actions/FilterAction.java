@@ -88,7 +88,7 @@ public class FilterAction extends Action {
 			fTypeTable.setLabelProvider(new ModelLabelProvider());
 			fTypeTable.setSorter(new ModelSorter());
 			ModelType[] allTypes = ModelType.getAllTypes();
-			List input = new ArrayList();
+			List<ModelType> input = new ArrayList<>();
 			for (ModelType type : allTypes) {
 				if (!type.isSectionType())
 					continue;
@@ -204,7 +204,7 @@ public class FilterAction extends Action {
 	}
 
 	private void addToRecentlyUsedFilters(String newFiltersString) {
-		List recentlyUsedFilters = new ArrayList(Arrays.asList(StringUtils.split(fStore.getString(fPreferenceKeyRecentlyUsed), PreferenceConstants.SECTION_FILTERS_SEPARATOR)));
+		List<String> recentlyUsedFilters = new ArrayList<>(Arrays.asList(StringUtils.split(fStore.getString(fPreferenceKeyRecentlyUsed), PreferenceConstants.SECTION_FILTERS_SEPARATOR)));
 		String[] newFilters = StringUtils.split(newFiltersString, PreferenceConstants.SECTION_FILTERS_SEPARATOR);
 		for (String newFilter : newFilters) {
 			if (!recentlyUsedFilters.contains(newFilter))
@@ -212,7 +212,7 @@ public class FilterAction extends Action {
 		}
 		if (recentlyUsedFilters.size() > MAX_RECENTLY_USED_FILTERS)
 			recentlyUsedFilters = recentlyUsedFilters.subList(0, MAX_RECENTLY_USED_FILTERS);
-		fStore.setValue(fPreferenceKeyRecentlyUsed, StringUtils.join((String[]) recentlyUsedFilters.toArray(new String[recentlyUsedFilters.size()]), PreferenceConstants.SECTION_FILTERS_SEPARATOR));
+		fStore.setValue(fPreferenceKeyRecentlyUsed, String.join(PreferenceConstants.SECTION_FILTERS_SEPARATOR, recentlyUsedFilters));
 	}
 
 	public IContributionItem getMostRecentlyUsedContributionItem() {
