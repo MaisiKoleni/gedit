@@ -1,8 +1,8 @@
 package gedit.editor;
 
+import org.eclipse.core.runtime.Assert;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.preference.PreferenceStore;
-import org.eclipse.core.runtime.Assert;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
 
@@ -10,7 +10,7 @@ public class OverlayPreferenceStore  implements IPreferenceStore {
 	public static final class TypeDescriptor {
 		private TypeDescriptor() {
 		}
-	};
+	}
 
 	public static final TypeDescriptor BOOLEAN = new TypeDescriptor();
 	public static final TypeDescriptor DOUBLE = new TypeDescriptor();
@@ -27,15 +27,16 @@ public class OverlayPreferenceStore  implements IPreferenceStore {
 			fDescriptor = descriptor;
 			fKey = key;
 		}
-	};
+	}
 
 	private class PropertyListener implements IPropertyChangeListener {
+		@Override
 		public void propertyChange(PropertyChangeEvent event) {
 			OverlayKey key = findOverlayKey(event.getProperty());
 			if (key != null)
 				propagateProperty(fParent, key, fStore);
 		}
-	};
+	}
 
 	private IPreferenceStore fParent;
 	private IPreferenceStore fStore;
@@ -51,15 +52,15 @@ public class OverlayPreferenceStore  implements IPreferenceStore {
 	}
 
 	private OverlayKey findOverlayKey(String key) {
-		for (int i = 0; i < fOverlayKeys.length; i++) {
-			if (fOverlayKeys[i].fKey.equals(key))
-				return fOverlayKeys[i];
+		for (OverlayKey fOverlayKey : fOverlayKeys) {
+			if (fOverlayKey.fKey.equals(key))
+				return fOverlayKey;
 		}
 		return null;
 	}
 
 	private boolean covers(String key) {
-		return (findOverlayKey(key) != null);
+		return findOverlayKey(key) != null;
 	}
 
 	private void propagateProperty(IPreferenceStore orgin, OverlayKey key, IPreferenceStore target) {
@@ -117,8 +118,8 @@ public class OverlayPreferenceStore  implements IPreferenceStore {
 	}
 
 	public void propagate() {
-		for (int i = 0; i < fOverlayKeys.length; i++)
-			propagateProperty(fStore, fOverlayKeys[i], fParent);
+		for (OverlayKey fOverlayKey : fOverlayKeys)
+			propagateProperty(fStore, fOverlayKey, fParent);
 	}
 
 	private void loadProperty(IPreferenceStore orgin, OverlayKey key, IPreferenceStore target, boolean forceInitialization) {
@@ -169,16 +170,16 @@ public class OverlayPreferenceStore  implements IPreferenceStore {
 	}
 
 	public void load() {
-		for (int i = 0; i < fOverlayKeys.length; i++)
-			loadProperty(fParent, fOverlayKeys[i], fStore, true);
+		for (OverlayKey fOverlayKey : fOverlayKeys)
+			loadProperty(fParent, fOverlayKey, fStore, true);
 
 		fLoaded= true;
 
 	}
 
 	public void loadDefaults() {
-		for (int i = 0; i < fOverlayKeys.length; i++)
-			setToDefault(fOverlayKeys[i].fKey);
+		for (OverlayKey fOverlayKey : fOverlayKeys)
+			setToDefault(fOverlayKey.fKey);
 	}
 
 	public void start() {
@@ -195,142 +196,174 @@ public class OverlayPreferenceStore  implements IPreferenceStore {
 		}
 	}
 
+	@Override
 	public void addPropertyChangeListener(IPropertyChangeListener listener) {
 		fStore.addPropertyChangeListener(listener);
 	}
 
+	@Override
 	public void removePropertyChangeListener(IPropertyChangeListener listener) {
 		fStore.removePropertyChangeListener(listener);
 	}
 
+	@Override
 	public void firePropertyChangeEvent(String name, Object oldValue, Object newValue) {
 		fStore.firePropertyChangeEvent(name, oldValue, newValue);
 	}
 
+	@Override
 	public boolean contains(String name) {
 		return fStore.contains(name);
 	}
 
+	@Override
 	public boolean getBoolean(String name) {
 		return fStore.getBoolean(name);
 	}
 
+	@Override
 	public boolean getDefaultBoolean(String name) {
 		return fStore.getDefaultBoolean(name);
 	}
 
+	@Override
 	public double getDefaultDouble(String name) {
 		return fStore.getDefaultDouble(name);
 	}
 
+	@Override
 	public float getDefaultFloat(String name) {
 		return fStore.getDefaultFloat(name);
 	}
 
+	@Override
 	public int getDefaultInt(String name) {
 		return fStore.getDefaultInt(name);
 	}
 
+	@Override
 	public long getDefaultLong(String name) {
 		return fStore.getDefaultLong(name);
 	}
 
+	@Override
 	public String getDefaultString(String name) {
 		return fStore.getDefaultString(name);
 	}
 
+	@Override
 	public double getDouble(String name) {
 		return fStore.getDouble(name);
 	}
 
+	@Override
 	public float getFloat(String name) {
 		return fStore.getFloat(name);
 	}
 
+	@Override
 	public int getInt(String name) {
 		return fStore.getInt(name);
 	}
 
+	@Override
 	public long getLong(String name) {
 		return fStore.getLong(name);
 	}
 
+	@Override
 	public String getString(String name) {
 		return fStore.getString(name);
 	}
 
+	@Override
 	public boolean isDefault(String name) {
 		return fStore.isDefault(name);
 	}
 
+	@Override
 	public boolean needsSaving() {
 		return fStore.needsSaving();
 	}
 
+	@Override
 	public void putValue(String name, String value) {
 		if (covers(name))
 			fStore.putValue(name, value);
 	}
 
+	@Override
 	public void setDefault(String name, double value) {
 		if (covers(name))
 			fStore.setDefault(name, value);
 	}
 
+	@Override
 	public void setDefault(String name, float value) {
 		if (covers(name))
 			fStore.setDefault(name, value);
 	}
 
+	@Override
 	public void setDefault(String name, int value) {
 		if (covers(name))
 			fStore.setDefault(name, value);
 	}
 
+	@Override
 	public void setDefault(String name, long value) {
 		if (covers(name))
 			fStore.setDefault(name, value);
 	}
 
+	@Override
 	public void setDefault(String name, String value) {
 		if (covers(name))
 			fStore.setDefault(name, value);
 	}
 
+	@Override
 	public void setDefault(String name, boolean value) {
 		if (covers(name))
 			fStore.setDefault(name, value);
 	}
 
+	@Override
 	public void setToDefault(String name) {
 		fStore.setToDefault(name);
 	}
 
+	@Override
 	public void setValue(String name, double value) {
 		if (covers(name))
 			fStore.setValue(name, value);
 	}
 
+	@Override
 	public void setValue(String name, float value) {
 		if (covers(name))
 			fStore.setValue(name, value);
 	}
 
+	@Override
 	public void setValue(String name, int value) {
 		if (covers(name))
 			fStore.setValue(name, value);
 	}
 
+	@Override
 	public void setValue(String name, long value) {
 		if (covers(name))
 			fStore.setValue(name, value);
 	}
 
+	@Override
 	public void setValue(String name, String value) {
 		if (covers(name))
 			fStore.setValue(name, value);
 	}
 
+	@Override
 	public void setValue(String name, boolean value) {
 		if (covers(name))
 			fStore.setValue(name, value);

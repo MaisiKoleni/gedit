@@ -4,15 +4,6 @@
  */
 package gedit.editor;
 
-import gedit.GrammarEditorPlugin;
-import gedit.model.Document;
-import gedit.model.ModelBase;
-import gedit.model.ModelType;
-import gedit.model.ModelUtils;
-import gedit.model.Node;
-import gedit.model.NodeVisitor;
-import gedit.model.Section;
-
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -30,14 +21,24 @@ import org.eclipse.jface.text.source.Annotation;
 import org.eclipse.jface.text.source.projection.ProjectionAnnotation;
 import org.eclipse.jface.text.source.projection.ProjectionAnnotationModel;
 
+import gedit.GrammarEditorPlugin;
+import gedit.model.Document;
+import gedit.model.ModelBase;
+import gedit.model.ModelType;
+import gedit.model.ModelUtils;
+import gedit.model.Node;
+import gedit.model.NodeVisitor;
+import gedit.model.Section;
+
 public class GrammarFoldingStructureProvider {
-	private class RegionFinder extends NodeVisitor {
+	private static class RegionFinder extends NodeVisitor {
 		private List fResult = new ArrayList();
 
 		protected RegionFinder(Document document, BitSet filter) {
 			super(document, filter);
 		}
-		
+
+		@Override
 		protected boolean doVisit(Node node, ModelBase element) {
 			if (!node.spansMultipleNodes())
 				return false;
@@ -50,18 +51,18 @@ public class GrammarFoldingStructureProvider {
 			document.getRoot().accept(this);
 			return fResult;
 		}
-		
-	};
-	
-	private class FoldingOptions {
+
+	}
+
+	private static class FoldingOptions {
 		FoldingOptions(IPreferenceStore store) {
 			ModelType[] allTypes = ModelType.getAllTypes();
 			fFoldSections = new HashMap();
 			BitSet values = ModelUtils.createBitSetFromString(store.getString(PreferenceConstants.EDITOR_FOLD_SECTIONS), PreferenceConstants.EDITOR_FOLDING_SEPARATOR);
-			for (int i = 0; i < allTypes.length; i++) {
-				String section = allTypes[i].getString();
-				fFoldSections.put(section.toLowerCase(), values.get(allTypes[i].getBitPosition())
-						? new Object() : null); 
+			for (ModelType type : allTypes) {
+				String section = type.getString();
+				fFoldSections.put(section.toLowerCase(), values.get(type.getBitPosition())
+						? new Object() : null);
 			}
 			fFoldRules = store.getBoolean(PreferenceConstants.EDITOR_FOLD_RULES);
 			fFoldMacros = store.getBoolean(PreferenceConstants.EDITOR_FOLD_MACROS);
@@ -77,8 +78,8 @@ public class GrammarFoldingStructureProvider {
 		boolean fFoldRules;
 		boolean fFoldMacros;
 		boolean fFoldComments;
-	};
-	
+	}
+
 	private IDocument fDocument;
 	private Map fPositionToElement = new HashMap();
 	private GrammarEditor fEditor;
@@ -88,7 +89,7 @@ public class GrammarFoldingStructureProvider {
 	}
 
 	public void setDocument(IDocument document) {
-		fDocument = document;		
+		fDocument = document;
 	}
 
 	private void updateFoldingRegions(ProjectionAnnotationModel model,
@@ -96,8 +97,7 @@ public class GrammarFoldingStructureProvider {
 		Annotation[] deletions = computeDifferences(model, currentRegions);
 
 		Map additionsMap = new HashMap();
-		for (Iterator it = currentRegions.iterator(); it.hasNext(); ) {
-			Object position = it.next();
+		for (Object position : currentRegions) {
 			ModelBase node = (ModelBase) fPositionToElement.get(position);
 			ModelType type = node.getType();
 			boolean collapseRules = initial && type == ModelType.RULE && options.fFoldRules;
@@ -108,7 +108,7 @@ public class GrammarFoldingStructureProvider {
 			additionsMap.put(new ProjectionAnnotation(collapse), position);
 		}
 
-		if ((deletions.length != 0 || additionsMap.size() != 0)) {
+		if (deletions.length != 0 || additionsMap.size() != 0) {
 			model.modifyAnnotations(deletions, additionsMap, new Annotation[] {});
 		}
 	}
@@ -154,7 +154,7 @@ public class GrammarFoldingStructureProvider {
 	private void addFoldingRegions(Set regions, List children) throws BadLocationException {
 
 		for (Iterator it = children.iterator(); it.hasNext(); ) {
-			
+
 			ModelBase element = (ModelBase) it.next();
 			Node node = (Node) element.getUserData("node");
 			if (node == null)

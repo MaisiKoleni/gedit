@@ -10,7 +10,7 @@ import java.util.ResourceBundle;
 public class SyntaxMessages {
 
 	private final static ResourceBundle BUNDLE = ResourceBundle.getBundle("gedit.model.SyntaxMessages");
-	
+
 
 	public static String getError(String key) {
 		try {

@@ -19,23 +19,24 @@ public class Problem {
 		this.length = length;
 		this.message = message;
 	}
-	
+
 	public int getType() {
 		return type;
 	}
-	
+
 	public int getOffset() {
 		return offset;
 	}
-	
+
 	public int getLength() {
 		return length;
 	}
-	
+
 	public String getMessage() {
 		return message;
 	}
-	
+
+	@Override
 	public String toString() {
 		return "[" + offset + ", " + length + "] " + message;
 	}

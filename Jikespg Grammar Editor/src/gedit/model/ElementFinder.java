@@ -4,11 +4,11 @@
  */
 package gedit.model;
 
-import gedit.StringUtils;
-
 import java.util.BitSet;
 import java.util.SortedMap;
 import java.util.TreeMap;
+
+import gedit.StringUtils;
 
 public class ElementFinder {
 	public static class OffsetFinder extends NodeVisitor {
@@ -21,13 +21,14 @@ public class ElementFinder {
 			this.restrictToLeafs = restrictToLeafs;
 			result = new TreeMap();
 		}
-		
+
+		@Override
 		public boolean visit(Node node) {
 			if (restrictToLeafs && node.spansMultipleNodes())
 				return true;
 			ModelBase element = getElement(node);
 			if (offset >= node.offset && offset <= node.offset + node.length)
-				result.put(new Integer(node.length), element);
+				result.put(Integer.valueOf(node.length), element);
 
 			return super.visit(node);
 		}
@@ -35,7 +36,7 @@ public class ElementFinder {
 		public ModelBase getNearest() {
 			return !result.isEmpty() ? (ModelBase) result.get(result.firstKey()) : null;
 		}
-	};
+	}
 
 	public static class IdFinder extends NodeVisitor {
 		private String id;
@@ -48,11 +49,12 @@ public class ElementFinder {
 			if (!s.equals(id))
 				trimmedId = s;
 		}
-		
+
 		public ModelBase getFirstHit() {
 			return firstHit;
 		}
 
+		@Override
 		protected boolean doVisit(Node node, ModelBase element) {
 			if (firstHit != null)
 				return false;
@@ -62,13 +64,13 @@ public class ElementFinder {
 			}
 			return true;
 		}
-		
+
 		protected boolean matches(String text) {
 			return text.equals(id) || text.equals(trimmedId)
 				|| StringUtils.trimQuotes(text, '\'').equals(trimmedId != null ? trimmedId : id);
 		}
 
-	};
+	}
 
 	public static ModelBase findElementAt(ModelBase start, int offset, boolean restrictToLeafs) {
 		Document document = start.getDocument();

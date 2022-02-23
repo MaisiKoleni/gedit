@@ -12,6 +12,7 @@ public class GenericModel extends ModelBase {
 		this.modelType = type;
 	}
 
+	@Override
 	public ModelType getType() {
 		return modelType;
 	}

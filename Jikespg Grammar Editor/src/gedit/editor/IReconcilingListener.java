@@ -6,5 +6,5 @@ package gedit.editor;
 
 public interface IReconcilingListener {
 
-	public void reconciled();
+	void reconciled();
 }

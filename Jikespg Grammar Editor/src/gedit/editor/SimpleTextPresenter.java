@@ -4,8 +4,8 @@
  */
 package gedit.editor;
 
-import org.eclipse.jface.text.TextPresentation;
 import org.eclipse.jface.text.DefaultInformationControl.IInformationPresenter;
+import org.eclipse.jface.text.TextPresentation;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.widgets.Display;
@@ -17,6 +17,7 @@ public class SimpleTextPresenter implements IInformationPresenter {
 	public final static char INDENT = 3;
 	public final static char BULLET = 4;
 
+	@Override
 	public String updatePresentation(Display display, String hoverInfo, TextPresentation presentation, int maxWidth, int maxHeight) {
 		StringBuffer sb = new StringBuffer(hoverInfo);
 		applyBold(sb, presentation);
@@ -24,10 +25,10 @@ public class SimpleTextPresenter implements IInformationPresenter {
 		applyCr(sb, presentation);
 		applyIndent(sb, presentation);
 		applyBullet(sb, presentation);
-		
+
 		return sb.toString();
 	}
-	
+
 	private void applyBold(StringBuffer text, TextPresentation presentation) {
 		applyFontStyle(text, presentation, SWT.BOLD);
 	}
@@ -35,7 +36,7 @@ public class SimpleTextPresenter implements IInformationPresenter {
 	private void applyItalic(StringBuffer text, TextPresentation presentation) {
 		applyFontStyle(text, presentation, SWT.ITALIC);
 	}
-	
+
 	private void applyFontStyle(StringBuffer text, TextPresentation presentation, int fontStyle) {
 		String s = text.toString();
 		int index1 = s.indexOf(fontStyle);

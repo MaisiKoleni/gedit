@@ -4,8 +4,6 @@
  */
 package gedit.editor;
 
-import gedit.GrammarEditorPlugin;
-
 import java.io.InputStreamReader;
 import java.io.Reader;
 
@@ -21,6 +19,8 @@ import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 
+import gedit.GrammarEditorPlugin;
+
 public class GrammarTextViewer extends Viewer {
 	private SourceViewer fSourceViewer;
 	private Object fInput;
@@ -35,11 +35,13 @@ public class GrammarTextViewer extends Viewer {
 		if (font != null)
 			fSourceViewer.getTextWidget().setFont(font);
 	}
-		
+
+	@Override
 	public Control getControl() {
 		return fSourceViewer.getControl();
 	}
-	
+
+	@Override
 	public void setInput(Object input) {
 		if (input instanceof IStreamContentAccessor) {
 			Document document = new Document(getString(input));
@@ -48,23 +50,27 @@ public class GrammarTextViewer extends Viewer {
 		}
 		fInput = input;
 	}
-	
+
+	@Override
 	public Object getInput() {
 		return fInput;
 	}
-	
+
+	@Override
 	public ISelection getSelection() {
 		return null;
 	}
-	
+
+	@Override
 	public void setSelection(ISelection s, boolean reveal) {
 	}
-	
+
+	@Override
 	public void refresh() {
 	}
-	
+
 	static String getString(Object input) {
-		
+
 		if (input instanceof IStreamContentAccessor) {
 			String charSet = null;
 			IStreamContentAccessor accessor = (IStreamContentAccessor) input;
@@ -74,7 +80,7 @@ public class GrammarTextViewer extends Viewer {
 				} catch (Exception e) {
 				}
 			}
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			try {
 				Reader reader = charSet == null ? new InputStreamReader(accessor.getContents())
 						: new InputStreamReader(accessor.getContents(), charSet);

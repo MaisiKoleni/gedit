@@ -4,11 +4,6 @@
  */
 package gedit.editor;
 
-import gedit.GrammarEditorPlugin;
-import gedit.model.Document;
-import gedit.model.ModelBase;
-import gedit.model.ModelType;
-
 import java.io.UnsupportedEncodingException;
 
 import org.eclipse.compare.CompareConfiguration;
@@ -29,44 +24,52 @@ import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 
+import gedit.GrammarEditorPlugin;
+import gedit.model.Document;
+import gedit.model.ModelBase;
+import gedit.model.ModelType;
+
 public class GrammarStructureDiffViewer extends StructureDiffViewer {
 	private class GrammarStructureCreator implements IStructureCreator {
+		@Override
 		public String getName() {
 			return "Grammar Structure Compare";
 		}
 
+		@Override
 		public IStructureComparator getStructure(Object input) {
 			IDocument document = CompareUI.getDocument(input);
-			if (document == null) {
-				if (input instanceof IStreamContentAccessor) {
-					IStreamContentAccessor sca = (IStreamContentAccessor) input;			
-					String contents = GrammarTextViewer.getString(sca);
-					if (contents != null) {
-						int n = contents.length();
-						char[] buffer = new char[n];
-						contents.getChars(0, n, buffer, 0);
-						
-						document = new org.eclipse.jface.text.Document(contents);
-						GrammarDocumentSetupParticipant.setupDocument(document);
-					}
+			if ((document == null) && (input instanceof IStreamContentAccessor)) {
+				IStreamContentAccessor sca = (IStreamContentAccessor) input;
+				String contents = GrammarTextViewer.getString(sca);
+				if (contents != null) {
+					int n = contents.length();
+					char[] buffer = new char[n];
+					contents.getChars(0, n, buffer, 0);
+
+					document = new org.eclipse.jface.text.Document(contents);
+					GrammarDocumentSetupParticipant.setupDocument(document);
 				}
 			}
 			Document model = GrammarEditorPlugin.getDocumentModel(document, null, true);
 			return new GrammarNode(ModelType.DOCUMENT.getBitPosition(), document, model);
 		}
 
+		@Override
 		public IStructureComparator locate(Object path, Object input) {
 			return null;
 		}
 
+		@Override
 		public String getContents(Object node, boolean ignoreWhitespace) {
 			if (!(node instanceof IStreamContentAccessor))
 				return null;
-				
+
 			IStreamContentAccessor sca = (IStreamContentAccessor) node;
 			return GrammarTextViewer.getString(sca);
 		}
 
+		@Override
 		public void save(IStructureComparator node, Object input) {
 			if (node instanceof GrammarNode && input instanceof IEditableContent) {
 				IDocument document = ((GrammarNode) node).getDocument();
@@ -81,18 +84,18 @@ public class GrammarStructureDiffViewer extends StructureDiffViewer {
 				}
 				if (charSet == null)
 					charSet= ResourcesPlugin.getEncoding();
-				byte[] bytes;				
+				byte[] bytes;
 				try {
 					bytes = contents.getBytes(charSet);
 				} catch (UnsupportedEncodingException e) {
-					bytes = contents.getBytes();	
+					bytes = contents.getBytes();
 				}
 				bca.setContent(bytes);
 			}
 		}
 
-	};
-	
+	}
+
 	private class GrammarNode extends DocumentRangeNode implements ITypedElement {
 		private ModelBase fModel;
 
@@ -101,7 +104,7 @@ public class GrammarStructureDiffViewer extends StructureDiffViewer {
 			fModel = model;
 			adaptRange();
 		}
-		
+
 		private void adaptRange() {
 			Position range = getRange();
 			ModelType type = fModel.getType();
@@ -110,7 +113,8 @@ public class GrammarStructureDiffViewer extends StructureDiffViewer {
 				range.length = fModel.getRangeLength();
 			}
 		}
-		
+
+		@Override
 		public Object[] getChildren() {
 			Object[] children = fModel.getChildren();
 			if (children == null)
@@ -123,18 +127,21 @@ public class GrammarStructureDiffViewer extends StructureDiffViewer {
 			return nodes;
 		}
 
+		@Override
 		public String getName() {
 			return fModel.getLabel();
 		}
 
+		@Override
 		public Image getImage() {
 			return fLabelProvider.getImage(fModel);
 		}
 
+		@Override
 		public String getType() {
 			return "g";
 		}
-	};
+	}
 
 	private ILabelProvider fLabelProvider = new ModelLabelProvider();
 	public GrammarStructureDiffViewer(Composite parent, CompareConfiguration configuration) {

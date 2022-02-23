@@ -4,20 +4,21 @@
  */
 package gedit;
 
-import gedit.editor.PreferenceConstants;
-import gedit.model.ModelType;
-
 import org.eclipse.core.runtime.preferences.AbstractPreferenceInitializer;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.preference.PreferenceConverter;
 import org.eclipse.swt.graphics.RGB;
 
+import gedit.editor.PreferenceConstants;
+import gedit.model.ModelType;
+
 public class GrammarEditorPluginPreferenceInitializer extends AbstractPreferenceInitializer {
 
+	@Override
 	public void initializeDefaultPreferences() {
-		
+
 		IPreferenceStore store = GrammarEditorPlugin.getDefault().getPreferenceStore();
-		
+
 		PreferenceConverter.setDefault(store, PreferenceConstants.GRAMMAR_COLORING_COMMENT, new RGB(128, 128, 128));
 
 		PreferenceConverter.setDefault(store, PreferenceConstants.GRAMMAR_COLORING_OPTION, new RGB(30, 90, 90));
@@ -36,12 +37,12 @@ public class GrammarEditorPluginPreferenceInitializer extends AbstractPreference
 		PreferenceConverter.setDefault(store, PreferenceConstants.GRAMMAR_COLORING_ALIAS, new RGB(0, 128, 0));
 
 		PreferenceConverter.setDefault(store, PreferenceConstants.GRAMMAR_COLORING_TERMINAL, new RGB(0, 0, 0));
-		
+
 		PreferenceConverter.setDefault(store, PreferenceConstants.GRAMMAR_COLORING_NON_TERMINAL, new RGB(0, 0, 128));
-		
+
 
 		store.setDefault(PreferenceConstants.EDITOR_MAXIMUM_PROBLEMS_REPORTED, 100);
-		
+
 		store.setDefault(PreferenceConstants.SECTION_ORDERING, createDefaultSectionOrdering());
 	}
 
@@ -70,7 +71,7 @@ public class GrammarEditorPluginPreferenceInitializer extends AbstractPreference
 				ModelType.RULE,
 				ModelType.TYPE,
 		};
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < types.length; i++) {
 			if (i > 0)
 				sb.append(PreferenceConstants.SECTION_ORDERING_SEPARATOR);

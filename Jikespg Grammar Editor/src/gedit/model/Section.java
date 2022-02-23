@@ -15,23 +15,26 @@ public class Section extends ModelBase {
 		super(parent, childType.getString());
 		this.childType = childType;
 	}
-	
+
 	public ModelType getChildType() {
 		return childType;
 	}
 
+	@Override
 	public ModelType getType() {
 		return ModelType.SECTION;
 	}
 
+	@Override
 	public int compareTo(Object o) {
 		return 0;
 	}
 
+	@Override
 	public Object[] getChildren() {
 		return children != null ? children : createChildrenArray(0);
 	}
-	
+
 	public void setChildren(ModelBase[] newChildren) {
 		int length = newChildren != null ? newChildren.length : 0;
 		if (newChildren.getClass().getComponentType() != getChildModelClass()) {
@@ -45,12 +48,12 @@ public class Section extends ModelBase {
 	protected ModelBase getElementById(String id, BitSet filter) {
 		return ElementFinder.findElement(this, id, filter);
 	}
-	
+
 	private Class getChildModelClass() {
 		return childType != null && childType.getModelClass() != null ?
 				childType.getModelClass() : ModelBase.class;
 	}
-	
+
 	private ModelBase[] createChildrenArray(int size) {
 		return (ModelBase[]) Array.newInstance(getChildModelClass(), size);
 	}
@@ -64,5 +67,5 @@ public class Section extends ModelBase {
 		children = array;
 		return terminal;
 	}
-	
+
 }

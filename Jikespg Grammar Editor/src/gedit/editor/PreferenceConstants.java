@@ -32,7 +32,7 @@ public class PreferenceConstants {
 
 	public static final String GRAMMAR_INCLUDE_DIRECTORIES = "grammar_include_directories";
 	public static final String INCLUDE_DIRECTORIES_SEPARATOR = ";";
-	
+
 	public static final String SECTION_ORDERING = "section_ordering";
 	public static final String SECTION_ORDERING_SEPARATOR = ",";
 

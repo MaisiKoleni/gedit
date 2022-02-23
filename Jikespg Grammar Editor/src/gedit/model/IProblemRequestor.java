@@ -6,7 +6,7 @@ package gedit.model;
 
 public interface IProblemRequestor {
 
-	public void beginReporting();
-	public void accept(Problem problem);
-	public void endReporting();
+	void beginReporting();
+	void accept(Problem problem);
+	void endReporting();
 }

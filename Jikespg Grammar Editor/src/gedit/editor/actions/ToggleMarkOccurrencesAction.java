@@ -4,15 +4,15 @@
  */
 package gedit.editor.actions;
 
-import gedit.GrammarEditorPlugin;
-import gedit.editor.GrammarEditor;
-import gedit.editor.PreferenceConstants;
-
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.texteditor.TextEditorAction;
+
+import gedit.GrammarEditorPlugin;
+import gedit.editor.GrammarEditor;
+import gedit.editor.PreferenceConstants;
 
 public class ToggleMarkOccurrencesAction extends TextEditorAction implements IPropertyChangeListener {
 	private IPreferenceStore fStore;
@@ -22,10 +22,12 @@ public class ToggleMarkOccurrencesAction extends TextEditorAction implements IPr
 		setImageDescriptor(GrammarEditorPlugin.getImageDescriptor("icons/mark_occurrences.gif")); //$NON-NLS-1$
 	}
 
+	@Override
 	public void run() {
 		fStore.setValue(PreferenceConstants.EDITOR_MARK_OCCURRENCES, isChecked());
 	}
 
+	@Override
 	public void update() {
 		ITextEditor editor = getTextEditor();
 
@@ -37,6 +39,7 @@ public class ToggleMarkOccurrencesAction extends TextEditorAction implements IPr
 		setEnabled(editor != null);
 	}
 
+	@Override
 	public void setEditor(ITextEditor editor) {
 		super.setEditor(editor);
 		if (editor != null) {
@@ -54,8 +57,9 @@ public class ToggleMarkOccurrencesAction extends TextEditorAction implements IPr
 		update();
 	}
 
+	@Override
 	public void propertyChange(PropertyChangeEvent event) {
-		if (event.getProperty().equals(PreferenceConstants.EDITOR_MARK_OCCURRENCES))
-			setChecked(Boolean.valueOf(event.getNewValue().toString()).booleanValue());
+		if (PreferenceConstants.EDITOR_MARK_OCCURRENCES.equals(event.getProperty()))
+			setChecked(Boolean.parseBoolean(event.getNewValue().toString()));
 	}
 }

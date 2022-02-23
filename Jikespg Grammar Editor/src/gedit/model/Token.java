@@ -6,7 +6,8 @@ public class Token {
     protected int offset;
     protected int length;
 
-    public String toString() {
+    @Override
+	public String toString() {
     	return name + "[" + kind + "]";
     }
 }

@@ -4,19 +4,13 @@
  */
 package gedit.editor;
 
-import gedit.GrammarEditorPlugin;
-import gedit.editor.actions.FilterAction;
-import gedit.model.Document;
-import gedit.model.ModelUtils;
-import gedit.model.Document.IModelListener;
-
+import org.eclipse.core.runtime.ListenerList;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.preference.IPreferenceStore;
-import org.eclipse.core.runtime.ListenerList;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.util.SafeRunnable;
 import org.eclipse.jface.viewers.ISelection;
@@ -24,6 +18,11 @@ import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.views.contentoutline.ContentOutlinePage;
+
+import gedit.GrammarEditorPlugin;
+import gedit.editor.actions.FilterAction;
+import gedit.model.Document;
+import gedit.model.ModelUtils;
 
 public class GrammarOutlinePage extends ContentOutlinePage {
 	private class LinkAction extends Action  {
@@ -34,11 +33,12 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 			setChecked(GrammarEditorPlugin.getDefault().getPreferenceStore().getBoolean(PREFERENCE_LINKED));
 		}
 
+		@Override
 		public void run() {
 			boolean checked = isChecked();
 			GrammarEditorPlugin.getDefault().getPreferenceStore().setValue(PREFERENCE_LINKED, checked);
 		}
-	};
+	}
 	private class SortAction extends Action {
 		public SortAction() {
 			super("Sort");
@@ -47,13 +47,14 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 			setChecked(GrammarEditorPlugin.getDefault().getPreferenceStore().getBoolean(PREFERENCE_SORTER));
 		}
 
+		@Override
 		public void run() {
 			boolean checked = isChecked();
 			GrammarEditorPlugin.getDefault().getPreferenceStore().setValue(PREFERENCE_SORTER, checked);
 			((ModelSorter) getTreeViewer().getSorter()).setEnabled(checked);
 			refreshWithoutSelectionChangePropagation();
 		}
-	};
+	}
 	private class CollapseAllAction extends Action {
 		public CollapseAllAction() {
 			super("Collapse All");
@@ -61,12 +62,13 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 			setImageDescriptor(GrammarEditorPlugin.getImageDescriptor("icons/collapseall.gif"));
 		}
 
+		@Override
 		public void run() {
 			fSuppressSelectionChangePropagation = true;
 			getTreeViewer().collapseAll();
 			fSuppressSelectionChangePropagation = false;
 		}
-	};
+	}
 
 	private boolean fSuppressSelectionChangePropagation;
     private ListenerList selectionChangedListeners = new ListenerList();
@@ -78,6 +80,7 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 	private static final String PREFERENCE_SECTION_FILTERS= PreferenceConstants.SECTION_FILTERS + "_outline_page";
 	private static final String PREFERENCE_FILTER_MACROS = PreferenceConstants.FILTER_MACROS + "_outline_page";
 
+	@Override
 	public void createControl(Composite parent) {
 		super.createControl(parent);
 		getTreeViewer().setContentProvider(new ModelContentProvider());
@@ -90,6 +93,7 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 				store.getBoolean(PREFERENCE_FILTER_MACROS)));
 	}
 
+	@Override
 	public void makeContributions(IMenuManager menuManager, IToolBarManager toolBarManager,
 			IStatusLineManager statusLineManager) {
 		toolBarManager.add(new CollapseAllAction());
@@ -105,44 +109,42 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 
 	public void setInput(Document model) {
 		getTreeViewer().setInput(model);
-		model.addModelListener(new IModelListener() {
-			public void modelChanged(Document model) {
-				refreshWithoutSelectionChangePropagation();
-			}
-		});
+		model.addModelListener(model1 -> refreshWithoutSelectionChangePropagation());
 	}
 
 	protected void refreshWithoutSelectionChangePropagation() {
 		if (getTreeViewer().getControl().isDisposed())
 			return;
-		getTreeViewer().getControl().getDisplay().asyncExec(new Runnable() {
-			public void run() {
-				fSuppressSelectionChangePropagation = true;
-				if (getTreeViewer().getControl().isDisposed())
-					return;
-				getTreeViewer().refresh(true);
-				fSuppressSelectionChangePropagation = false;
-			}
+		getTreeViewer().getControl().getDisplay().asyncExec(() -> {
+			fSuppressSelectionChangePropagation = true;
+			if (getTreeViewer().getControl().isDisposed())
+				return;
+			getTreeViewer().refresh(true);
+			fSuppressSelectionChangePropagation = false;
 		});
 	}
 
-    public void addSelectionChangedListener(ISelectionChangedListener listener) {
+    @Override
+	public void addSelectionChangedListener(ISelectionChangedListener listener) {
         selectionChangedListeners.add(listener);
     }
 
-    public void removeSelectionChangedListener(ISelectionChangedListener listener) {
+    @Override
+	public void removeSelectionChangedListener(ISelectionChangedListener listener) {
         selectionChangedListeners.remove(listener);
     }
 
-    protected void fireSelectionChanged(ISelection selection) {
+    @Override
+	protected void fireSelectionChanged(ISelection selection) {
     	if (fSuppressSelectionChangePropagation)
     		return;
         final SelectionChangedEvent event = new SelectionChangedEvent(this, selection);
         Object[] listeners = selectionChangedListeners.getListeners();
-        for (int i = 0; i < listeners.length; ++i) {
-            final ISelectionChangedListener l = (ISelectionChangedListener) listeners[i];
+        for (Object listener : listeners) {
+            final ISelectionChangedListener l = (ISelectionChangedListener) listener;
             Platform.run(new SafeRunnable() {
-                public void run() {
+                @Override
+				public void run() {
                     l.selectionChanged(event);
                 }
             });

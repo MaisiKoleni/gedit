@@ -4,9 +4,6 @@
  */
 package gedit.editor.actions;
 
-import gedit.GrammarEditorPlugin;
-import gedit.editor.GrammarEditor;
-
 import java.util.ResourceBundle;
 
 import org.eclipse.jface.text.ITextViewer;
@@ -17,6 +14,9 @@ import org.eclipse.ui.editors.text.IFoldingCommandIds;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.texteditor.TextOperationAction;
 
+import gedit.GrammarEditorPlugin;
+import gedit.editor.GrammarEditor;
+
 public class FoldingActionGroup extends ActionGroup {
 	private ProjectionViewer fViewer;
 	private TextOperationAction fToggle;
@@ -25,32 +25,34 @@ public class FoldingActionGroup extends ActionGroup {
 	private TextOperationAction fExpandAll;
 
 	private IProjectionListener fProjectionListener;
-	
+
 	public FoldingActionGroup(ITextEditor editor, ITextViewer viewer) {
 		if (!(viewer instanceof ProjectionViewer))
 			return;
 		fViewer = (ProjectionViewer) viewer;
-		
+
 		fProjectionListener = new IProjectionListener() {
 
+			@Override
 			public void projectionEnabled() {
 				update();
 			}
 
+			@Override
 			public void projectionDisabled() {
 				update();
 			}
 		};
-		
+
 		fViewer.addProjectionListener(fProjectionListener);
-		
+
 		ResourceBundle bundle = GrammarEditorPlugin.getDefault().getResourceBundle();
-		
+
 		fToggle = new TextOperationAction(bundle, "FoldingToggle.", editor, ProjectionViewer.TOGGLE, true); //$NON-NLS-1$
 		fToggle.setChecked(true);
 		fToggle.setActionDefinitionId(IFoldingCommandIds.FOLDING_TOGGLE);
 		editor.setAction(GrammarEditor.ACTION_FOLDING_TOGGLE, fToggle);
-		
+
 		fExpandAll = new TextOperationAction(bundle, "FoldingExpandAll.", editor, ProjectionViewer.EXPAND_ALL, true); //$NON-NLS-1$
 		fExpandAll.setActionDefinitionId(IFoldingCommandIds.FOLDING_EXPAND_ALL);
 		editor.setAction(GrammarEditor.ACTION_FOLDING_EXPAND_ALL, fExpandAll);
@@ -63,11 +65,12 @@ public class FoldingActionGroup extends ActionGroup {
 		fCollapse.setActionDefinitionId(IFoldingCommandIds.FOLDING_COLLAPSE);
 		editor.setAction("FoldingCollapse", fCollapse); //$NON-NLS-1$
 	}
-	
+
 	private boolean isEnabled() {
 		return fViewer != null;
 	}
-	
+
+	@Override
 	public void dispose() {
 		if (isEnabled()) {
 			fViewer.removeProjectionListener(fProjectionListener);
@@ -75,7 +78,7 @@ public class FoldingActionGroup extends ActionGroup {
 		}
 		super.dispose();
 	}
-	
+
 	public void update() {
 		if (isEnabled()) {
 			fToggle.update();
@@ -85,7 +88,8 @@ public class FoldingActionGroup extends ActionGroup {
 			fCollapse.update();
 		}
 	}
-	
+
+	@Override
 	public void updateActionBars() {
 		update();
 	}

@@ -21,27 +21,26 @@ public class MacroKeyRule implements IPredicateRule {
 		fMacroKeyDetector = macroKeyDetector;
 	}
 
+	@Override
 	public IToken evaluate(ICharacterScanner scanner) {
 		int c = scanner.read();
-		if (fMacroKeyDetector.isWordStart((char) c)) {
-			if (fColumn == UNDEFINED || (fColumn == scanner.getColumn() - 1)) {
+		if (fMacroKeyDetector.isWordStart((char) c) && (fColumn == UNDEFINED || fColumn == scanner.getColumn() - 1)) {
 
-				fBuffer.setLength(0);
-				c = scanner.read();
-				for (;;) { 
-					int result = fMacroKeyDetector.isWordPart((char) c, scanner, fBuffer);
-					switch (result) {
-					case MacroKeyDetector.NO_MATCH:
-						scanner.unread();
-						scanner.unread();
-						return Token.UNDEFINED;
-					case MacroKeyDetector.MATCH:
-						scanner.unread();
-						return fDefaultToken;
-					}
-					fBuffer.append((char) c);
-					c = scanner.read();
+			fBuffer.setLength(0);
+			c = scanner.read();
+			for (;;) {
+				int result = fMacroKeyDetector.isWordPart((char) c, scanner, fBuffer);
+				switch (result) {
+				case MacroKeyDetector.NO_MATCH:
+					scanner.unread();
+					scanner.unread();
+					return Token.UNDEFINED;
+				case MacroKeyDetector.MATCH:
+					scanner.unread();
+					return fDefaultToken;
 				}
+				fBuffer.append((char) c);
+				c = scanner.read();
 			}
 		}
 
@@ -49,10 +48,12 @@ public class MacroKeyRule implements IPredicateRule {
 		return Token.UNDEFINED;
 	}
 
+	@Override
 	public IToken evaluate(ICharacterScanner scanner, boolean resume) {
 		return evaluate(scanner);
 	}
 
+	@Override
 	public IToken getSuccessToken() {
 		return fDefaultToken;
 	}

@@ -4,9 +4,6 @@
  */
 package gedit.editor;
 
-import gedit.GrammarEditorPlugin;
-import gedit.model.Document;
-
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.rules.IPredicateRule;
 import org.eclipse.jface.text.rules.IRule;
@@ -14,6 +11,9 @@ import org.eclipse.jface.text.rules.IToken;
 import org.eclipse.jface.text.rules.MultiLineRule;
 import org.eclipse.jface.text.rules.RuleBasedPartitionScanner;
 import org.eclipse.jface.text.rules.Token;
+
+import gedit.GrammarEditorPlugin;
+import gedit.model.Document;
 
 public class GrammarPartitionScanner extends RuleBasedPartitionScanner {
 	private class BlockRule extends MultiLineRule {
@@ -25,7 +25,7 @@ public class GrammarPartitionScanner extends RuleBasedPartitionScanner {
 			fStartSequence = start.toCharArray();
 			fEndSequence = end.toCharArray();
 		}
-	};
+	}
 
 	private BlockRule[] fBlockRules;
 	private MacroKeyRule fMacroRule;
@@ -34,7 +34,7 @@ public class GrammarPartitionScanner extends RuleBasedPartitionScanner {
 	public final static String GRAMMAR_COMMENT = "__grammar_comment";
 	public final static String GRAMMAR_OPTION = "__grammar_option";
 	public final static String GRAMMAR_MACRO = "__grammar_macro";
-	
+
 	public GrammarPartitionScanner() {
 
 		IToken comment = new Token(GRAMMAR_COMMENT);
@@ -50,7 +50,8 @@ public class GrammarPartitionScanner extends RuleBasedPartitionScanner {
 
 		setPredicateRules(rules);
 	}
-	
+
+	@Override
 	public void setPartialRange(IDocument document, int offset, int length, String contentType, int partitionOffset) {
 		super.setPartialRange(document, offset, length, contentType, partitionOffset);
 		if (offset == 0 && length == 0)

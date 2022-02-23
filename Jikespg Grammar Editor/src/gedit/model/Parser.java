@@ -4,20 +4,20 @@
  */
 package gedit.model;
 
-import gedit.GrammarEditorPlugin;
-import gedit.StringUtils;
-import gedit.StringUtils.QuoteDetector;
-import gedit.model.ModelUtils.OptionAmbigousException;
-import gedit.model.ModelUtils.OptionProposal;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import gedit.GrammarEditorPlugin;
+import gedit.StringUtils;
+import gedit.StringUtils.QuoteDetector;
+import gedit.model.ModelUtils.OptionAmbigousException;
+import gedit.model.ModelUtils.OptionProposal;
+
 class Parser extends jpgprs {
-	
+
 	private int state_stack_top,
         stack[],
     	tok_stack_top,
@@ -106,7 +106,7 @@ class Parser extends jpgprs {
     private Token popToken() {
 		return tok_stack[tok_stack_top--];
 	}
-    
+
     private void token_action(Token token) {
     	pushToken(token);
     }
@@ -117,7 +117,7 @@ class Parser extends jpgprs {
         this.fileProzessor = fileProzessor;
         scanner = new Scanner(document, text, true);
 	}
-	
+
 	private Token nextToken() {
 		Token token, prevToken = token = scanner.scanToken();
 		List comments = null;
@@ -137,7 +137,7 @@ class Parser extends jpgprs {
 		scanner.tokenizeLbr = false;
 		if (comments != null)
 			consume_comments((Token[]) comments.toArray(new Token[comments.size()]));
-		
+
 		if (token.kind == TK_OPTION_LINE) {
 			if (optionsProcessed)
 				createProblem("No options definition allowed at this place.", token, Problem.ERROR);
@@ -145,7 +145,7 @@ class Parser extends jpgprs {
 				consume_option_line(token);
 			return nextToken();
 		}
-		
+
 		if (!optionsProcessed) {
 			optionsProcessed = true;
 			if (parse_stack_top > 0) {
@@ -163,7 +163,7 @@ class Parser extends jpgprs {
 	}
 
 	public Node parse() {
-		
+
         stack = new int[80];
         tok_stack = new Token[40];
         parse_stack = new Node[20];
@@ -176,9 +176,9 @@ class Parser extends jpgprs {
     /* Start parsing.                                                */
     /*****************************************************************/
         state_stack_top = tok_stack_top = parse_stack_top = model_stack_top = -1;
-        
+
         Node root = pushAst(new Node(null, 0, 0));
-		
+
 		Token token = nextToken();
 
         int kind = token.kind,
@@ -186,9 +186,9 @@ class Parser extends jpgprs {
 
         ProcessTerminals: for (;;) {
             pushAct(act);
-            
+
             act = t_action(act, kind);
- 
+
             if (act <= NUM_RULES)
                 state_stack_top--; // make reduction look like a shift-reduce
             else if (act == ERROR_ACTION) {
@@ -201,7 +201,7 @@ class Parser extends jpgprs {
    					continue ProcessTerminals;
     			}
     			break ProcessTerminals;
-    			
+
             } else if (act > ERROR_ACTION) {
                 token_action(token);
                 token = nextToken();
@@ -219,14 +219,13 @@ class Parser extends jpgprs {
 
             ProcessNonTerminals: do {
             	consume_rule(act);
-                state_stack_top -= (rhs[act] - 1);
+                state_stack_top -= rhs[act] - 1;
                 act = ntAction(stack[state_stack_top], lhs[act]);
             } while(act <= NUM_RULES);
         }
 
         ModelType[] allTypes = ModelType.getAllTypes();
-        for (int i = 0; i < allTypes.length; i++) {
-        	ModelType type = allTypes[i];
+        for (ModelType type : allTypes) {
         	if (type.getModelClass() != null)
         		document.addChildren(type, getElements(type), true, false);
         }
@@ -234,30 +233,30 @@ class Parser extends jpgprs {
         root.length = scanner.currentTokenOffset;
         return root;
     }
-	
+
 	private List getElements(ModelType elementType) {
 		List list = (List) elements.get(elementType);
 		if (list == null)
 			elements.put(elementType, list = new ArrayList());
 		return list;
 	}
-	
+
 	protected Node mapElementToNode(Node node, ModelBase element, boolean setToElement) {
 		document.register(node, element);
 		if (setToElement && element != null)
 			element.node = node;
 		return node;
 	}
-	
+
 	private Section createSectionNode(ModelType childType) {
 		Token tok = popToken();
 		pushAst(createNodeFromToken(peekAst(), tok));
 		return createSectionNode(childType, tok, true);
 	}
-	
+
 	private Section createSectionNode(ModelType childType, Token token, boolean visible) {
 		Section section = document.getSection(childType); // section may have been created in advance
-		if (section == null) { 
+		if (section == null) {
 			document.setSection(childType, section = new Section(childType, document));
 			section.visible = visible;
 		} else if (section.visible != visible) {
@@ -270,7 +269,7 @@ class Parser extends jpgprs {
 		}
 		return section;
 	}
-	
+
 	private Node createNodeFromToken(Node parent, Token token) {
 		return new Node(parent, token.offset, token.length);
 	}
@@ -278,17 +277,17 @@ class Parser extends jpgprs {
 	private Node createNodeFromTokens(Node parent, Token token1, Token token2) {
 		return new Node(parent, token1.offset, token2.offset + token2.length - token1.offset);
 	}
-	
+
 	private void expandNodeBy(Node node, Node child) {
 		node.length = child.offset + child.length - node.offset;
 	}
-	
+
 	private void consume_comments(Token[] tokens) {
 		if (tokens.length < 2)
 			return;
 		Node multi = createNodeFromToken(peekAst(), tokens[0]);
-		for (int i = 0; i < tokens.length; i++) {
-			expandNodeBy(multi, createNodeFromToken(multi, tokens[i]));
+		for (Token token : tokens) {
+			expandNodeBy(multi, createNodeFromToken(multi, token));
 		}
 		ModelBase parent = document.getElementForNode(peekAst());
 		mapElementToNode(multi, new GenericModel(parent, "#", ModelType.COMMENT), true);
@@ -325,13 +324,13 @@ class Parser extends jpgprs {
 				token.name = line.substring(start, c == ',' ? i : i + 1).trim();
 				token.offset = optionLineToken.offset + start;
 				token.length = token.name.length();
-				
+
 				if (token.name.trim().length() > 0) {
 					Option option = new Option(section, key.name, value.name);
 					getElements(ModelType.OPTION).add(option);
 					mapElementToNode(createNodeFromToken(peekAst(), key), option, true);
 					expandNodeBy(peekAst(), mapElementToNode(value.name != null ? createNodeFromTokens(peekAst(), key, value) : createNodeFromToken(peekAst(), key), option, false));
-	
+
 					processOption(option, key, value, documentOptions, compatMap);
 				}
 				start = i + 1;
@@ -356,33 +355,33 @@ class Parser extends jpgprs {
 			if (value != null && value.length() > 0) {
 				documentOptions.setEscape(StringUtils.trimQuotes(value).charAt(0));
 			}
-		} else if (key.equals("om") || key.startsWith("o")) {
-			if (key.startsWith("ou")|| key.equals("os")) // compatibility
+		} else if ("om".equals(key) || key.startsWith("o")) {
+			if (key.startsWith("ou")|| "os".equals(key)) // compatibility
 				return;
 			if (value != null && value.length() > 0) {
 				documentOptions.setOrMarker(StringUtils.trimQuotes(value).charAt(0));
 			}
 			// compatibility options
-		} else if (key.equals("hblockb") || key.equals("hblocke") || key.equals("blockb") || key.equals("blocke")) {
+		} else if ("hblockb".equals(key) || "hblocke".equals(key) || "blockb".equals(key) || "blocke".equals(key)) {
 			if (value != null && value.length() > 0) {
 				compatMap.put(key, value);
 			}
-		} else if (key.equals("action")) {
+		} else if ("action".equals(key)) {
 			if (value != null) {
 				String[] actionCommand = StringUtils.split(value.substring(1, value.length() - 1), ",");
 				if (actionCommand.length > 2)
 					documentOptions.addBlockPair(StringUtils.trimQuotes(actionCommand[1].trim()), StringUtils.trimQuotes(actionCommand[2].trim()));
 			}
-		} else if (key.equals("pl") || key.startsWith("pro")) {
+		} else if ("pl".equals(key) || key.startsWith("pro")) {
 			if (value != null) {
 				if (documentOptions.getEsape() == DocumentOptions.DEFAULT_ESCAPE &&
-						(value.equals("java") || value.equals("c") || value.equals("c++")
-								|| value.equals("cpp"))) {
+						("java".equals(value) || "c".equals(value) || "c++".equals(value)
+								|| "cpp".equals(value))) {
 					documentOptions.setEscape('$');
 					documentOptions.setLanguage(value);
 				}
 			}
-		} else if (key.equals("id") || key.startsWith("in")) {
+		} else if ("id".equals(key) || key.startsWith("in")) {
 			if (value != null) {
 				documentOptions.setIncludeDirs(StringUtils.split(value, ";"));
 			}
@@ -401,7 +400,7 @@ class Parser extends jpgprs {
 					document.addChildren(ModelType.DEFINITION, Arrays.asList(makros), true, true);
 				}
 			}
-		} else if (key.equals("it") || key.startsWith("impo")) {
+		} else if ("it".equals(key) || key.startsWith("impo")) {
 			if (value != null) {
 				String[] names = StringUtils.split(value, ";");
 				for (int i = 0, offset = valueToken.offset; i < names.length; offset += names[i].length() + 1, i++) {
@@ -415,12 +414,10 @@ class Parser extends jpgprs {
 					document.addChildren(ModelType.TERMINAL, Arrays.asList(terminals), true, true);
 				}
 			}
-		} else if (key.startsWith("filt")) {
-			if (value != null) {
-				processFileOptionValue(option, valueToken.offset, value);
-			}
+		} else if (key.startsWith("filt") && (value != null)) {
+			processFileOptionValue(option, valueToken.offset, value);
 		}
-		
+
 		try {
 			if (ModelUtils.findOptionProposal(key) == null)
 				createProblem(key + " is not a know option.", keyToken, Problem.WARNING);
@@ -428,7 +425,7 @@ class Parser extends jpgprs {
 			OptionProposal[] ambigous = e.getAmbigous();
 			StringBuffer sb = new StringBuffer("The option ").append(key).append(" is ambigous between ");
 			for (int i = 0; i < ambigous.length; i++) {
-				if (i == ambigous.length - 1) sb.append(" and "); else if (i > 0) sb.append(", "); 
+				if (i == ambigous.length - 1) sb.append(" and "); else if (i > 0) sb.append(", ");
 				sb.append(ambigous[i].getKey());
 			}
 			createProblem(sb.toString(), keyToken, Problem.WARNING);
@@ -453,7 +450,7 @@ class Parser extends jpgprs {
 		Token defToken = popToken();
 		Token nameToken = popToken();
 		Node node = createNodeFromTokens(peekAst(), nameToken, defToken);
-		Node nameNode = createNodeFromToken(node, nameToken); 
+		Node nameNode = createNodeFromToken(node, nameToken);
 		Node defNode = createNodeFromToken(node, defToken);
 		String name = nameToken.name.charAt(0) == document.getOptions().getEsape() ? nameToken.name.substring(1) : nameToken.name;
 		Definition definition = new Definition(document.getSection(ModelType.DEFINITION), name, defToken.name);
@@ -609,8 +606,8 @@ class Parser extends jpgprs {
 		popToken(); // produces
 		Token symToken = popToken();
 		Node node = createNodeFromTokens(peekAst(), symToken, nameToken);
-		Node nameNode = createNodeFromToken(node, nameToken); 
-		Node symNode = createNodeFromToken(node, symToken); 
+		Node nameNode = createNodeFromToken(node, nameToken);
+		Node symNode = createNodeFromToken(node, symToken);
 		GenericModel name = new GenericModel(document.getSection(ModelType.NAME), symToken.name, ModelType.NAME);
 		Reference reference = new Reference(name, nameToken.name);
 		mapElementToNode(node, name, true);
@@ -637,9 +634,7 @@ class Parser extends jpgprs {
 	}
 	private String stripEscape(String name) {
 		int escapeIndex = name.indexOf(document.getOptions().getEsape());
-		if (escapeIndex == -1)
-			return null;
-		if (name.substring(1).toLowerCase().equals("empty") ||
+		if ((escapeIndex == -1) || "empty".equals(name.substring(1).toLowerCase()) ||
 				name.charAt(0) == '\'' && name.charAt(name.length() - 1) == '\'')
 			return null;
 		return name.substring(0, escapeIndex);
@@ -655,275 +650,275 @@ class Parser extends jpgprs {
 	protected void consume_rule(int action) {
 		switch (action) {
      	case 25 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("bad_symbol ::= EQUIVALENCE");
-		    report_problem("bad_first_symbol");  
+		    report_problem("bad_first_symbol");
 			break;
 
      	case 26 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("bad_symbol ::= ARROW");
-		    report_problem("bad_first_symbol");  
+		    report_problem("bad_first_symbol");
 			break;
 
      	case 27 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("bad_symbol ::= OR");
-		    report_problem("bad_first_symbol");  
+		    report_problem("bad_first_symbol");
 			break;
 
      	case 28 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("bad_symbol ::= EMPTY_KEY");
-		    report_problem("bad_first_symbol");  
+		    report_problem("bad_first_symbol");
 			break;
 
      	case 29 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("bad_symbol ::= ERROR_KEY");
-		    report_problem("bad_first_symbol");  
+		    report_problem("bad_first_symbol");
 			break;
 
      	case 30 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("bad_symbol ::= MACRO_NAME");
-		    report_problem("bad_first_symbol");  
+		    report_problem("bad_first_symbol");
 			break;
 
      	case 31 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("bad_symbol ::= SYMBOL");
-		    report_problem("bad_first_symbol");  
+		    report_problem("bad_first_symbol");
 			break;
 
      	case 32 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("bad_symbol ::= BLOCK");
-		    report_problem("bad_first_block");  
+		    report_problem("bad_first_block");
 			break;
 
      	case 34 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("include_segment ::= enter_include_segment SYMBOL");
-		    consume_include_segment();  
+		    consume_include_segment();
 			break;
- 
+
      	case 35 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("include_segment ::= enter_include_segment SYMBOL SYMBOL");
-		    report_problem("only_one_include_allowed", Problem.ERROR);  
+		    report_problem("only_one_include_allowed", Problem.ERROR);
 			break;
 
      	case 36 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("enter_include_segment ::= INCLUDE_KEY");
-		    consume_enter_segment(ModelType.INCLUDE);  
+		    consume_enter_segment(ModelType.INCLUDE);
 			break;
- 
+
      	case 37 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("notice_segment ::= NOTICE_KEY");
-		    consume_enter_segment(ModelType.NOTICE);  
+		    consume_enter_segment(ModelType.NOTICE);
 			break;
- 
+
      	case 39 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("define_segment ::= DEFINE_KEY");
-		    consume_enter_segment(ModelType.DEFINITION);  
+		    consume_enter_segment(ModelType.DEFINITION);
 			break;
- 
+
     	case 40 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("define_segment ::= define_segment macro_name_symbol macro_segment");
-		    consume_macro_definition();  
+		    consume_macro_definition();
 			break;
- 
+
      	case 42 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("macro_name_symbol ::= SYMBOL");
-		    report_problem("macro_without_escape", Problem.WARNING);  
+		    report_problem("macro_without_escape", Problem.WARNING);
 			break;
 
      	case 44 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("terminals_segment ::= TERMINALS_KEY");
-		    consume_enter_segment(ModelType.TERMINAL);  
+		    consume_enter_segment(ModelType.TERMINAL);
 			break;
- 
+
      	case 45 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("terminals_segment ::= terminals_segment terminal_symbol");
-		    consume_terminal(ModelType.TERMINAL);  
+		    consume_terminal(ModelType.TERMINAL);
 			break;
- 
+
      	case 46 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("terminals_segment ::= terminals_segment terminal_symbol produces name");
-		    consume_terminal_produces_name(ModelType.TERMINAL);  
+		    consume_terminal_produces_name(ModelType.TERMINAL);
 			break;
- 
+
      	case 47 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("export_segment ::= EXPORT_KEY");
-		    consume_enter_segment(ModelType.EXPORT);  
+		    consume_enter_segment(ModelType.EXPORT);
 			break;
- 
+
      	case 48 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("export_segment ::= export_segment terminal_symbol");
-		    consume_terminal(ModelType.EXPORT);  
+		    consume_terminal(ModelType.EXPORT);
 			break;
- 
+
      	case 50 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("import_segment ::= enter_import_segment SYMBOL {drop_command}");
-		    popToken();  
+		    popToken();
 			break;
- 
+
      	case 51 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("enter_import_segment ::= IMPORT_KEY");
-		    consume_enter_segment(ModelType.IMPORT);  
+		    consume_enter_segment(ModelType.IMPORT);
 			break;
- 
+
      	case 54 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("drop_command ::= DROPACTIONS_KEY");
-		    popToken();  
+		    popToken();
 			break;
- 
+
      	case 55 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("drop_symbols ::= DROPSYMBOLS_KEY");
-		    popToken();  
+		    popToken();
 			break;
- 
+
      	case 56 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("drop_symbols ::= drop_symbols SYMBOL");
-		    consume_terminal(ModelType.IMPORT);  
+		    consume_terminal(ModelType.IMPORT);
 			break;
- 
+
      	case 57 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("drop_rules ::= DROPRULES_KEY");
-		    popToken();  
+		    popToken();
 			break;
- 
+
     	case 59 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("drop_rule ::= drop_rule_symbol produces rhs");
-		    consume_lhs_produces_rhs();  
+		    consume_lhs_produces_rhs();
 			break;
- 
+
      	case 62 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("drop_rule ::= drop_rule | rhs");
-		    consume_or_rhs();  
+		    consume_or_rhs();
 			break;
- 
+
      	case 65 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("keywords_segment ::= KEYWORDS_KEY");
-		    consume_enter_segment(ModelType.KEYWORD);  
+		    consume_enter_segment(ModelType.KEYWORD);
 			break;
- 
+
      	case 66 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("keywords_segment ::= keywords_segment terminal_symbol");
-		    consume_terminal(ModelType.KEYWORD);  
+		    consume_terminal(ModelType.KEYWORD);
 			break;
- 
+
      	case 67 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("keywords_segment ::= keywords_segment terminal_symbol produces name");
-		    consume_terminal_produces_name(ModelType.KEYWORD);  
+		    consume_terminal_produces_name(ModelType.KEYWORD);
 			break;
- 
+
      	case 69 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("error_segment ::= enter_error_segment terminal_symbol");
-		    consume_terminal(ModelType.ERROR_TOK);  
+		    consume_terminal(ModelType.ERROR_TOK);
 			break;
- 
+
      	case 70 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("enter_error_segment ::= ERROR_KEY");
-		    consume_enter_segment(ModelType.ERROR_TOK);  
+		    consume_enter_segment(ModelType.ERROR_TOK);
 			break;
- 
+
      	case 71 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("recover_segment ::= RECOVER_KEY");
-		    consume_enter_segment(ModelType.RECOVER);  
+		    consume_enter_segment(ModelType.RECOVER);
 			break;
- 
+
      	case 73 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("recover_segment ::= recover_segment recover_terminal BLOCK");
-		    consume_action_block();  
+		    consume_action_block();
 			break;
- 
+
      	case 74 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("recover_terminal ::= terminal_symbol");
-		    consume_terminal(ModelType.RECOVER);  
+		    consume_terminal(ModelType.RECOVER);
 			break;
- 
+
      	case 76 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("identifier_segment ::= enter_identifier_segment terminal_symbol");
-		    consume_terminal(ModelType.IDENTIFIER);  
+		    consume_terminal(ModelType.IDENTIFIER);
 			break;
- 
+
      	case 77 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("enter_identifier_segment ::= IDENTIFIER_KEY");
-		    consume_enter_segment(ModelType.IDENTIFIER);  
+		    consume_enter_segment(ModelType.IDENTIFIER);
 			break;
- 
+
      	case 79 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("eol_segment ::= enter_eol_segment terminal_symbol");
-		    consume_terminal(ModelType.EOL_TOK);  
+		    consume_terminal(ModelType.EOL_TOK);
 			break;
- 
+
      	case 80 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("enter_eol_segment ::= EOL_KEY");
-		    consume_enter_segment(ModelType.EOL_TOK);  
+		    consume_enter_segment(ModelType.EOL_TOK);
 			break;
- 
+
      	case 82 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("eof_segment ::= enter_eof_segment terminal_symbol");
-		    consume_terminal(ModelType.EOF_TOK);  
+		    consume_terminal(ModelType.EOF_TOK);
 			break;
- 
+
      	case 83 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("enter_eof_segment ::= EOF_KEY");
-		    consume_enter_segment(ModelType.EOF_TOK);  
+		    consume_enter_segment(ModelType.EOF_TOK);
 			break;
- 
+
      	case 85 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("terminal_symbol ::= MACRO_NAME");
-		    report_problem("bad_symbol_prefix", Problem.WARNING);  
+		    report_problem("bad_symbol_prefix", Problem.WARNING);
 			break;
 
      	case 86 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("alias_segment ::= ALIAS_KEY");
-		    consume_enter_segment(ModelType.ALIAS);  
+		    consume_enter_segment(ModelType.ALIAS);
 			break;
- 
+
      	case 87 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("alias_segment ::= alias_segment alias_lhs produces alias_rhs");
-		    consume_alias_definition();  
+		    consume_alias_definition();
 			break;
- 
+
      	case 93 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("alias_lhs ::= MACRO_NAME");
-		    report_problem("bad_symbol_prefix", Problem.WARNING);  
+		    report_problem("bad_symbol_prefix", Problem.WARNING);
 			break;
 
      	case 95 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("alias_rhs ::= MACRO_NAME");
-		    report_problem("bad_symbol_prefix", Problem.WARNING);  
+		    report_problem("bad_symbol_prefix", Problem.WARNING);
 			break;
 
      	case 102 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("enter_start_segment ::= START_KEY");
-		    consume_enter_segment(ModelType.START_TOK);  
+		    consume_enter_segment(ModelType.START_TOK);
 			break;
- 
+
      	case 103 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("headers_segment ::= HEADERS_KEY");
-		    consume_enter_segment(ModelType.HEADER);  
+		    consume_enter_segment(ModelType.HEADER);
 			break;
- 
+
      	case 107 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("enter_ast_segment ::= AST_KEY");
-		    consume_enter_segment(ModelType.AST);  
+		    consume_enter_segment(ModelType.AST);
 			break;
- 
+
      	case 108 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("globals_segment ::= GLOBALS_KEY");
-		    consume_enter_segment(ModelType.GLOBAL);  
+		    consume_enter_segment(ModelType.GLOBAL);
 			break;
- 
+
      	case 110 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("trailers_segment ::= TRAILERS_KEY");
-		    consume_enter_segment(ModelType.TRAILER);  
+		    consume_enter_segment(ModelType.TRAILER);
 			break;
- 
+
      	case 112 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("start_symbol ::= SYMBOL");
-		    consume_start_symbol();  
+		    consume_start_symbol();
 			break;
-  
+
      	case 113 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("start_symbol ::= MACRO_NAME");
-		    consume_start_symbol();  
+		    consume_start_symbol();
 			break;
-  
+
      	case 116 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("enter_rules_segment ::= RULES_KEY");
-		    consume_enter_segment(ModelType.RULE);  
+		    consume_enter_segment(ModelType.RULE);
 			break;
- 
+
     	case 117 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("rules ::= rule_symbol produces rhs");
-		    consume_lhs_produces_rhs();  
+		    consume_lhs_produces_rhs();
 			break;
- 
+
      	case 118 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("rules ::= rules | rhs");
-		    consume_or_rhs();  
+		    consume_or_rhs();
 			break;
- 
+
      	case 130 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("rhs ::= rhs rhs_symbol");
-		    consume_rhs_symbol();  
+		    consume_rhs_symbol();
 			break;
- 
+
      	case 132 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("action_segment ::= BLOCK");
-		    consume_action_block();  
+		    consume_action_block();
 			break;
- 
+
      	case 133 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("types_segment ::= TYPES_KEY");
-		    consume_enter_segment(ModelType.TYPE);  
+		    consume_enter_segment(ModelType.TYPE);
 			break;
- 
+
      	case 135 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("type_declarations ::= SYMBOL produces type_rhs");
-		    consume_lhs_produces_rhs();  
+		    consume_lhs_produces_rhs();
 			break;
- 
+
      	case 136 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("type_declarations ::= type_declarations | type_rhs");
-		    consume_or_rhs();  
+		    consume_or_rhs();
 			break;
- 
+
      	case 137 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("type_rhs ::= SYMBOL");
-		    consume_rhs_symbol();  
+		    consume_rhs_symbol();
 			break;
- 
+
      	case 138 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("names_segment ::= NAMES_KEY");
-		    consume_enter_segment(ModelType.NAME);  
+		    consume_enter_segment(ModelType.NAME);
 			break;
- 
+
      	case 139 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("names_segment ::= names_segment name produces name");
-		    consume_names_definition();  
+		    consume_names_definition();
 			break;
- 
+
      	case 141 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("name ::= MACRO_NAME");
-		    report_problem("bad_symbol_prefix", Problem.WARNING);  
+		    report_problem("bad_symbol_prefix", Problem.WARNING);
 			break;
 
      	case 146 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("[END_KEY] ::= $Empty");
-		    consume_end_key(false); 
+		    consume_end_key(false);
 			break;
 
      	case 147 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("[END_KEY] ::= END_KEY");
-		    consume_end_key(true); 
+		    consume_end_key(true);
 			break;
 		}
 	}
@@ -939,10 +934,11 @@ class Parser extends jpgprs {
 		createProblem(message, token.offset, token.length, problemType);
 	}
 
+	@Override
 	public String toString() {
 		final String leftMarker = "--->"; //$NON-NLS-1$
 		final String rightMarker = "<---"; //$NON-NLS-1$
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("TOKEN_STACK:"); //$NON-NLS-1$
 		if (tok_stack_top == -1) {
 			sb.append(leftMarker);

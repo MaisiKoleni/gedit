@@ -4,11 +4,6 @@
  */
 package gedit.editor.actions;
 
-import gedit.GrammarEditorPlugin;
-import gedit.editor.GrammarEditor;
-import gedit.model.ModelBase;
-import gedit.model.Node;
-
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
@@ -21,32 +16,38 @@ import org.eclipse.jface.text.link.LinkedPositionGroup;
 import org.eclipse.jface.text.source.ISourceViewer;
 import org.eclipse.ui.texteditor.link.EditorLinkedModeUI;
 
+import gedit.GrammarEditorPlugin;
+import gedit.editor.GrammarEditor;
+import gedit.model.ModelBase;
+import gedit.model.Node;
+
 public class RenameInFileAction extends Action {
 	private GrammarEditor fEditor;
-	
+
 	public RenameInFileAction(GrammarEditor editor) {
 		super("Rena&me in File");
 		fEditor = editor;
 		setDescription("Rename the element in the current file");
 		setToolTipText("Rename the element in the current file");
 	}
-	
+
+	@Override
 	public void run() {
 		if (fEditor == null)
 			return;
 		ModelBase element = fEditor.getSelectedElement();
 		if (element == null)
 			return;
-		
+
 		ISourceViewer viewer = fEditor.getViewer();
 		IDocument document = viewer.getDocument();
 		int offset = ((ITextSelection) viewer.getSelectionProvider().getSelection()).getOffset();
 		LinkedPositionGroup group = new LinkedPositionGroup();
 		Node[] occurrences = fEditor.findOccurrences(element.getLabel());
-	
+
 		addPositionsToGroup(offset, occurrences, document, group);
 		if (group.isEmpty()) {
-		    return;         
+		    return;
         }
 		try {
 			LinkedModeModel model = new LinkedModeModel();
@@ -60,29 +61,31 @@ public class RenameInFileAction extends Action {
 			GrammarEditorPlugin.logError("Cannot rename in file", e);
 		}
 	}
-	
-    
+
+
     private void addPositionsToGroup(int offset, Node[] occurrences, IDocument document, LinkedPositionGroup group) {
 		int i = 0;
 		int j = 0;
         int firstPosition = -1;
         try {
-        	for (int k = 0; k < occurrences.length; k++) {
-                Node node = occurrences[k];
+        	for (Node node : occurrences) {
                 if (firstPosition == -1) {
                     if (new Position(node.getOffset(), node.getLength()).overlapsWith(offset, 0)) {
                         firstPosition = i;
-                        group.addPosition(new LinkedPosition(document, node.getOffset(), node.getLength(), j++));
+                        group.addPosition(new LinkedPosition(document, node.getOffset(), node.getLength(), j));
+						j++;
                     }
                 } else {
-                    group.addPosition(new LinkedPosition(document, node.getOffset(), node.getLength(), j++));
+                    group.addPosition(new LinkedPosition(document, node.getOffset(), node.getLength(), j));
+					j++;
                 }
                 i++;
             }
-            
+
             for (i = 0; i < firstPosition; i++) {
                 Node node = occurrences[i];
-                group.addPosition(new LinkedPosition(document, node.getOffset(), node.getLength(), j++));
+                group.addPosition(new LinkedPosition(document, node.getOffset(), node.getLength(), j));
+				j++;
             }
         } catch (BadLocationException be) {
             GrammarEditorPlugin.logError("Cannot add the position", be);

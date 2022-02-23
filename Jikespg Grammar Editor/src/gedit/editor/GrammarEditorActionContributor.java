@@ -4,9 +4,6 @@
  */
 package gedit.editor;
 
-import gedit.GrammarEditorPlugin;
-import gedit.editor.actions.ToggleMarkOccurrencesAction;
-
 import java.util.ResourceBundle;
 
 import org.eclipse.jface.action.IMenuManager;
@@ -21,6 +18,9 @@ import org.eclipse.ui.texteditor.ITextEditorActionDefinitionIds;
 import org.eclipse.ui.texteditor.RetargetTextEditorAction;
 import org.eclipse.ui.texteditor.TextEditorAction;
 
+import gedit.GrammarEditorPlugin;
+import gedit.editor.actions.ToggleMarkOccurrencesAction;
+
 public class GrammarEditorActionContributor extends TextEditorActionContributor {
 	private class GotoAnnotationAction extends TextEditorAction {
 		private boolean fForward;
@@ -30,20 +30,23 @@ public class GrammarEditorActionContributor extends TextEditorActionContributor 
 			fForward = forward;
 		}
 
+		@Override
 		public void run() {
 			GrammarEditor editor = (GrammarEditor) getTextEditor();
 			editor.gotoError(fForward);
 		}
 
+		@Override
 		public void setEditor(ITextEditor editor) {
 			super.setEditor(editor);
 			update();
 		}
 
+		@Override
 		public void update() {
 			setEnabled(getTextEditor() instanceof GrammarEditor);
 		}
-	};
+	}
 
 	private RetargetTextEditorAction fShowOutlineAction;
 	private RetargetTextEditorAction fContentAssistProposal;
@@ -53,7 +56,7 @@ public class GrammarEditorActionContributor extends TextEditorActionContributor 
 	private GotoAnnotationAction fNextAnnotationAction;
 	private RetargetTextEditorAction fFindOccurrencesAction;
 	private ToggleMarkOccurrencesAction fToggleMarkOccurrencesAction;
-	
+
 	public GrammarEditorActionContributor() {
 		ResourceBundle bundle = GrammarEditorPlugin.getDefault().getResourceBundle();
 
@@ -74,7 +77,8 @@ public class GrammarEditorActionContributor extends TextEditorActionContributor 
 		fToggleMarkOccurrencesAction = new ToggleMarkOccurrencesAction();
 		fToggleMarkOccurrencesAction.setActionDefinitionId(IGrammarEditorActionDefinitionIds.TOGGLE_MARK_OCCURRENCES);
 	}
-	
+
+	@Override
 	public void init(IActionBars bars) {
 		super.init(bars);
 		bars.setGlobalActionHandler(ITextEditorActionDefinitionIds.GOTO_NEXT_ANNOTATION, fNextAnnotationAction);
@@ -86,7 +90,8 @@ public class GrammarEditorActionContributor extends TextEditorActionContributor 
 		bars.setGlobalActionHandler(IGrammarEditorActionDefinitionIds.FIND_OCCURRENCES, fFindOccurrencesAction);
 		bars.setGlobalActionHandler(IGrammarEditorActionDefinitionIds.TOGGLE_MARK_OCCURRENCES, fToggleMarkOccurrencesAction);
 	}
-	
+
+	@Override
 	public void dispose() {
 		fPreviousAnnotationAction.setEditor(null);
 		fNextAnnotationAction.setEditor(null);
@@ -94,6 +99,7 @@ public class GrammarEditorActionContributor extends TextEditorActionContributor 
 		super.dispose();
 	}
 
+	@Override
 	public void contributeToMenu(IMenuManager menu) {
 		super.contributeToMenu(menu);
 
@@ -115,6 +121,7 @@ public class GrammarEditorActionContributor extends TextEditorActionContributor 
 		}
 	}
 
+	@Override
 	public void setActiveEditor(IEditorPart part) {
 		if (part instanceof ITextEditor) {
 			ITextEditor editor = (ITextEditor) part;

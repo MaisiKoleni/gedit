@@ -4,13 +4,6 @@
  */
 package gedit.editor;
 
-import gedit.GrammarEditorPlugin;
-import gedit.model.ModelBase;
-import gedit.model.ModelType;
-import gedit.model.Problem;
-import gedit.model.Reference;
-import gedit.model.Section;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,6 +17,13 @@ import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
+
+import gedit.GrammarEditorPlugin;
+import gedit.model.ModelBase;
+import gedit.model.ModelType;
+import gedit.model.Problem;
+import gedit.model.Reference;
+import gedit.model.Section;
 
 public class ModelLabelProvider extends LabelProvider {
 	private class OverlayIcon extends CompositeImageDescriptor {
@@ -45,6 +45,7 @@ public class ModelLabelProvider extends LabelProvider {
 			fSize = size;
 		}
 
+		@Override
 		public boolean equals(Object o) {
 			if (o == this)
 				return true;
@@ -54,7 +55,8 @@ public class ModelLabelProvider extends LabelProvider {
 			return fBase.equals(other.fBase) && Arrays.equals(fOverlays, other.fOverlays) &&
 					Arrays.equals(fLocations, other.fLocations);
 		}
-		
+
+		@Override
 		public int hashCode() {
 			int code = fBase.hashCode();
 			for (int i = 0; i < fOverlays.length; i++) {
@@ -70,39 +72,41 @@ public class ModelLabelProvider extends LabelProvider {
 				ImageData overlayData = overlay.getImageData();
 				switch (locations[i]) {
 					case TOP_LEFT:
-						drawImage(overlayData, 0, 0);			
+						drawImage(overlayData, 0, 0);
 						break;
 					case TOP_RIGHT:
-						drawImage(overlayData, size.x - overlayData.width, 0);			
+						drawImage(overlayData, size.x - overlayData.width, 0);
 						break;
 					case BOTTOM_LEFT:
-						drawImage(overlayData, 0, size.y - overlayData.height);			
+						drawImage(overlayData, 0, size.y - overlayData.height);
 						break;
 					case BOTTOM_RIGHT:
-						drawImage(overlayData, size.x - overlayData.width, size.y - overlayData.height);			
+						drawImage(overlayData, size.x - overlayData.width, size.y - overlayData.height);
 						break;
 				}
 			}
 		}
 
+		@Override
 		protected void drawCompositeImage(int width, int height) {
 			ImageData bg = fBase.getImageData();
 			drawImage(bg, 0, 0);
-			
+
 			drawOverlays(fOverlays, fLocations);
 		}
+		@Override
 		protected Point getSize() {
 			return fSize;
 		}
-	};
-	
+	}
+
 	private final static int DEFAULT_WIDTH = 16;
 	private final static int DEFAULT_HEIGHT = 16;
 	private final static int TOP_LEFT = 1;
 	private final static int TOP_RIGHT = 2;
 	private final static int BOTTOM_LEFT = 3;
 	private final static int BOTTOM_RIGHT = 4;
-	
+
 	private final static Map LABELS = createLabels();
 	private final static Map MODEL_IMAGES = createModelImages();
 	private final static Map SECTION_IMAGES = createSectionImages();
@@ -113,7 +117,7 @@ public class ModelLabelProvider extends LabelProvider {
 	};
 
 	private final static int MAX_LABEL_LENGTH = 32;
-	
+
 	private static Map createLabels() {
 		Map map = new HashMap();
 		map.put(ModelType.OPTION, "Options");
@@ -143,7 +147,7 @@ public class ModelLabelProvider extends LabelProvider {
 		map.put(ModelType.DROP_RULE, "DropRules");
 		return Collections.unmodifiableMap(map);
 	}
-	
+
     private static Map createModelImages() {
 		Map map = new HashMap();
 		map.put(ModelType.OPTION, GrammarEditorPlugin.getImageDescriptor("icons/option.gif")); //$NON-NLS-1$
@@ -186,15 +190,16 @@ public class ModelLabelProvider extends LabelProvider {
 		return Collections.unmodifiableMap(map);
 	}
 
+	@Override
 	public String getText(Object element) {
     	if (element instanceof ModelBase)
-    		return getModelLabel(((ModelBase) element));
+    		return getModelLabel((ModelBase) element);
     	if (element instanceof ModelType) {
     		return getTypeLabel((ModelType) element);
     	}
         return super.getText(element);
     }
-    
+
 	private String getModelLabel(ModelBase model) {
 		return model.getType() == ModelType.SECTION ? getTypeLabel(((Section) model).getChildType())
 				: checkModelLabel(model.getLabel());
@@ -209,7 +214,8 @@ public class ModelLabelProvider extends LabelProvider {
 		return label != null && label.length() > MAX_LABEL_LENGTH ? label.substring(0, MAX_LABEL_LENGTH) + " ..." : label;
 	}
 
-    public Image getImage(Object element) {
+    @Override
+	public Image getImage(Object element) {
     	ImageDescriptor descriptor = null;
     	if (element instanceof ModelBase)
     		descriptor = decorateImage(getModelImageDescriptor((ModelBase) element), element);
@@ -217,7 +223,7 @@ public class ModelLabelProvider extends LabelProvider {
     		descriptor = decorateImage(getModelTypeImageDescriptor((ModelType) element), element);
    		return descriptor != null ? GrammarEditorPlugin.getImage(descriptor) : null;
     }
-    
+
 	private ImageDescriptor getModelImageDescriptor(ModelBase model) {
     	if (model instanceof Reference) {
     		ModelBase refererrer = ((Reference) model).getReferer();
@@ -250,8 +256,7 @@ public class ModelLabelProvider extends LabelProvider {
 		if (problems.length == 0)
 			return input;
 		int[] locations = { 0, 0 };
-		for (int i = 0; i < problems.length; i++) {
-			Problem problem = problems[i];
+		for (Problem problem : problems) {
 			// error should have higher relevance than warning
 			switch (problem.getType()) {
 			case Problem.ERROR:
@@ -262,7 +267,7 @@ public class ModelLabelProvider extends LabelProvider {
 				break;
 			}
 		}
-		return new OverlayIcon(input, OVERLAYS, locations); 
+		return new OverlayIcon(input, OVERLAYS, locations);
 	}
 
 }

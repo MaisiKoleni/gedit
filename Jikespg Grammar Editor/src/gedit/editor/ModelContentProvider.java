@@ -4,20 +4,21 @@
  */
 package gedit.editor;
 
-import gedit.model.ModelBase;
-
 import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.ui.model.BaseWorkbenchContentProvider;
 
+import gedit.model.ModelBase;
+
 public class ModelContentProvider extends BaseWorkbenchContentProvider {
 
+	@Override
 	public Object[] getChildren(Object element) {
 		if (!(element instanceof ModelBase))
 			return new Object[0];
 		ModelBase modelBase = (ModelBase) element;
-		
+
 		Object[] children = modelBase.getChildren();
 		List filtered = null;
 
@@ -37,12 +38,13 @@ public class ModelContentProvider extends BaseWorkbenchContentProvider {
 			return children;
 		return filtered.toArray(new ModelBase[filtered.size()]);
 	}
-	
+
+	@Override
 	public Object getParent(Object element) {
 		if (!(element instanceof ModelBase))
 			return null;
 		ModelBase modelBase = (ModelBase) element;
-		
+
 		return modelBase.getParent();
 	}
 }

@@ -4,10 +4,6 @@
  */
 package gedit.editor;
 
-import gedit.GrammarEditorPlugin;
-import gedit.StringUtils;
-import gedit.model.ModelType;
-
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.jface.viewers.ColumnWeightData;
@@ -32,22 +28,27 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
+import gedit.GrammarEditorPlugin;
+import gedit.StringUtils;
+import gedit.model.ModelType;
+
 public class GrammarEditorPreferencePage extends PreferencePage implements IWorkbenchPreferencePage, Listener {
 	private Text fDirectoryText;
 	private List fDirectoryList;
 	private Table fSectionTable;
 	private Button fBrowseDirButton, fAddDirButton, fRemoveDirButton, fEditDirButton, fDirUpButton, fDirDownButton;
 	private Button fSectionUpButton, fSectionDownButton, fSectionAlphabeticalButton;
-	
+
 	public GrammarEditorPreferencePage() {
 		setPreferenceStore(GrammarEditorPlugin.getDefault().getPreferenceStore());
 	}
-	
+
+	@Override
 	public void init(IWorkbench workbench) {
 	}
 
 	private Control createPage(Composite parent) {
-		
+
 		createIncludeDirectoryGroup(parent);
 		createSectionOrderingGroup(parent);
 
@@ -55,7 +56,7 @@ public class GrammarEditorPreferencePage extends PreferencePage implements IWork
 	}
 
 	private Control createIncludeDirectoryGroup(Composite parent) {
-		
+
 		Group group = new Group(parent, SWT.NONE);
 		group.setLayout(new GridLayout(2, false));
 		group.setLayoutData(new GridData(GridData.FILL_BOTH));
@@ -105,7 +106,7 @@ public class GrammarEditorPreferencePage extends PreferencePage implements IWork
 		fRemoveDirButton.setText("&Remove");
 		setButtonLayoutData(fRemoveDirButton);
 		fRemoveDirButton.addListener(SWT.Selection, this);
-		
+
 		fEditDirButton = new Button(buttons, SWT.PUSH);
 		fEditDirButton.setText("&Edit");
 		setButtonLayoutData(fEditDirButton);
@@ -115,7 +116,7 @@ public class GrammarEditorPreferencePage extends PreferencePage implements IWork
 		fDirUpButton.setText("&Up");
 		setButtonLayoutData(fDirUpButton);
 		fDirUpButton.addListener(SWT.Selection, this);
-		
+
 		fDirDownButton = new Button(buttons, SWT.PUSH);
 		fDirDownButton.setText("D&own");
 		setButtonLayoutData(fDirDownButton);
@@ -125,14 +126,14 @@ public class GrammarEditorPreferencePage extends PreferencePage implements IWork
 		initializeDirectoryGroup(false);
 		return group;
 	}
-	
+
 	private Control createSectionOrderingGroup(Composite parent) {
 
 		Group group = new Group(parent, SWT.NONE);
 		group.setText("&Section ordering:");
 		group.setLayout(new GridLayout(2, false));
 		group.setLayoutData(new GridData(GridData.FILL_BOTH));
-		
+
 		fSectionTable = new Table(group, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
 		GridData data = new GridData(GridData.FILL_BOTH);
 		data.widthHint = convertWidthInCharsToPixels(35);
@@ -143,7 +144,7 @@ public class GrammarEditorPreferencePage extends PreferencePage implements IWork
 		layout.addColumnData(new ColumnWeightData(100));
 		fSectionTable.setLayout(layout);
 		new TableColumn(fSectionTable, SWT.LEFT);
-		
+
 		Composite buttons = new Composite(group, SWT.NONE);
 		GridLayout gridLayout = new GridLayout(1, true);
 		gridLayout.marginHeight = gridLayout.marginWidth = 0;
@@ -159,20 +160,21 @@ public class GrammarEditorPreferencePage extends PreferencePage implements IWork
 		fSectionDownButton.setText("Do&wn");
 		setButtonLayoutData(fSectionDownButton);
 		fSectionDownButton.addListener(SWT.Selection, this);
-		
+
 		Label separator = new Label(buttons, SWT.SEPARATOR | SWT.HORIZONTAL);
 		separator.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		
+
 		fSectionAlphabeticalButton = new Button(buttons, SWT.PUSH);
 		fSectionAlphabeticalButton.setText("Alp&habetical");
 		setButtonLayoutData(fSectionAlphabeticalButton);
 		fSectionAlphabeticalButton.addListener(SWT.Selection, this);
-		
+
 		updateSectionButtons();
 		initializeSectionGroup(false);
 		return group;
 	}
 
+	@Override
 	public void handleEvent(Event event) {
 		switch (event.type) {
 		case SWT.Selection:
@@ -204,7 +206,7 @@ public class GrammarEditorPreferencePage extends PreferencePage implements IWork
 			break;
 		}
 	}
-	
+
 	private void handleDirectoryAdd() {
 		String text = fDirectoryText.getText();
 		if (text.trim().length() == 0)
@@ -284,7 +286,7 @@ public class GrammarEditorPreferencePage extends PreferencePage implements IWork
 		fSectionTable.setSelection(selected);
 		updateSectionButtons();
 	}
-	
+
 	private void handleSectionDown() {
 		int[] selected = fSectionTable.getSelectionIndices();
 		int maxIndex = fSectionTable.getItemCount() - 1;
@@ -342,6 +344,7 @@ public class GrammarEditorPreferencePage extends PreferencePage implements IWork
 		fSectionDownButton.setEnabled(atLeastOneSelected && selected[selected.length - 1] < fSectionTable.getItemCount() - 1);
 	}
 
+	@Override
 	protected Control createContents(Composite parent) {
 
 		Composite contents = new Composite(parent, SWT.NONE);
@@ -350,9 +353,9 @@ public class GrammarEditorPreferencePage extends PreferencePage implements IWork
 		layout.marginWidth = 0;
 		contents.setLayout(layout);
 		contents.setLayoutData(new GridData(GridData.FILL_BOTH));
-		
+
 		createPage(contents);
-		
+
 		Dialog.applyDialogFont(contents);
 		return contents;
 	}
@@ -361,23 +364,20 @@ public class GrammarEditorPreferencePage extends PreferencePage implements IWork
 		fDirectoryList.removeAll();
 		String[] values = StringUtils.split(useDefault ? getPreferenceStore().getDefaultString(PreferenceConstants.GRAMMAR_INCLUDE_DIRECTORIES) : getPreferenceStore().getString(PreferenceConstants.GRAMMAR_INCLUDE_DIRECTORIES),
 				PreferenceConstants.INCLUDE_DIRECTORIES_SEPARATOR);
-		for (int i = 0; i < values.length; i++) {
-			fDirectoryList.add(values[i]);
+		for (String value : values) {
+			fDirectoryList.add(value);
 		}
 	}
-	
+
 	private void initializeSectionGroup(boolean useDefault) {
 		fSectionTable.removeAll();
 		ModelType[] allTypes = ModelType.getAllTypes();
 		String[] values = StringUtils.split(useDefault ? getPreferenceStore().getDefaultString(PreferenceConstants.SECTION_ORDERING) : getPreferenceStore().getString(PreferenceConstants.SECTION_ORDERING),
 				PreferenceConstants.SECTION_ORDERING_SEPARATOR);
 		ModelLabelProvider labelProvider = new ModelLabelProvider();
-		for (int i = 0; i < values.length; i++) {
-			for (int j = 0; j < allTypes.length; j++) {
-				ModelType type = allTypes[j];
-				if (!type.isSectionType())
-					continue;
-				if (!values[i].equals(Integer.toString(type.getBitPosition())))
+		for (String value : values) {
+			for (ModelType type : allTypes) {
+				if (!type.isSectionType() || !value.equals(Integer.toString(type.getBitPosition())))
 					continue;
 				TableItem item = new TableItem(fSectionTable, SWT.NONE);
 				item.setText(labelProvider.getText(type));
@@ -387,11 +387,12 @@ public class GrammarEditorPreferencePage extends PreferencePage implements IWork
 			}
 		}
 	}
-	
+
+	@Override
 	public boolean performOk() {
 		getPreferenceStore().setValue(PreferenceConstants.GRAMMAR_INCLUDE_DIRECTORIES, StringUtils.join(fDirectoryList.getItems(),
 				PreferenceConstants.INCLUDE_DIRECTORIES_SEPARATOR));
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		TableItem[] items = fSectionTable.getItems();
 		for (int i = 0; i < items.length; i++) {
 			if (i > 0)
@@ -402,14 +403,15 @@ public class GrammarEditorPreferencePage extends PreferencePage implements IWork
 		GrammarEditorPlugin.getDefault().savePluginPreferences();
 		return true;
 	}
-	
+
+	@Override
 	protected void performDefaults() {
-		
+
 		initializeDirectoryGroup(true);
 		initializeSectionGroup(true);
 
 		super.performDefaults();
 
 	}
-	
+
 }

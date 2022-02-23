@@ -2,18 +2,18 @@ package gedit.model;
 public class jpgprs implements jpgsym {
 
     public interface IsKeyword {
-        public final static byte isKeyword[] = {0,
+        byte isKeyword[] = {0,
             0,0,0,0,0,0,0,0,0,0,
             0,0,0,0,0,0,0,0,0,0,
             0,0,0,0,0,0,0,0,0,0,
             0,0,0,0,0,0,0,0,0
         };
-    };
+    }
     public final static byte isKeyword[] = IsKeyword.isKeyword;
     public final boolean isKeyword(int index) { return isKeyword[index] != 0; }
 
     public interface BaseCheck {
-        public final static byte baseCheck[] = {0,
+        byte baseCheck[] = {0,
             1,1,0,3,3,3,3,3,3,3,
             3,3,3,3,3,3,3,3,3,3,
             3,3,3,3,1,1,1,1,1,1,
@@ -49,14 +49,14 @@ public class jpgprs implements jpgsym {
             -46,-55,-59,-62,-64,-65,0,0,0,0,
             0,0,0
         };
-    };
+    }
     public final static byte baseCheck[] = BaseCheck.baseCheck;
     public final int baseCheck(int index) { return baseCheck[index]; }
     public final static byte rhs[] = baseCheck;
-    public final int rhs(int index) { return rhs[index]; };
+    public final int rhs(int index) { return rhs[index]; }
 
     public interface BaseAction {
-        public final static char baseAction[] = {
+        char baseAction[] = {
             9,9,9,10,10,10,10,10,10,10,
             10,10,10,10,10,10,10,10,10,10,
             10,10,10,10,10,11,11,11,11,11,
@@ -92,14 +92,14 @@ public class jpgprs implements jpgsym {
             346,398,373,419,447,453,457,335,335,335,
             335,335,87,335,335
         };
-    };
+    }
     public final static char baseAction[] = BaseAction.baseAction;
     public final int baseAction(int index) { return baseAction[index]; }
     public final static char lhs[] = baseAction;
-    public final int lhs(int index) { return lhs[index]; };
+    public final int lhs(int index) { return lhs[index]; }
 
     public interface TermCheck {
-        public final static byte termCheck[] = {0,
+        byte termCheck[] = {0,
             0,1,2,3,4,5,6,7,8,9,
             10,0,1,2,0,15,16,17,18,19,
             20,21,22,23,24,25,26,27,28,29,
@@ -151,12 +151,12 @@ public class jpgprs implements jpgsym {
             0,0,0,0,0,0,0,0,0,0,
             0,0,0,0,0,0
         };
-    };
+    }
     public final static byte termCheck[] = TermCheck.termCheck;
     public final int termCheck(int index) { return termCheck[index]; }
 
     public interface TermAction {
-        public final static char termAction[] = {0,
+        char termAction[] = {0,
             62,326,557,326,326,326,326,326,326,326,
             326,81,419,420,50,326,326,326,326,326,
             326,326,326,326,326,326,326,326,326,326,
@@ -205,12 +205,12 @@ public class jpgprs implements jpgsym {
             408,467,60,3,396,308,122,335,458,335,
             335,335,335,335,335,335,335,335,595
         };
-    };
+    }
     public final static char termAction[] = TermAction.termAction;
     public final int termAction(int index) { return termAction[index]; }
 
     public interface Asb {
-        public final static char asb[] = {0,
+        char asb[] = {0,
             1,179,158,157,157,157,157,157,157,157,
             157,63,118,62,62,62,63,62,62,62,
             62,62,62,28,62,31,118,118,118,118,
@@ -219,12 +219,12 @@ public class jpgprs implements jpgsym {
             23,24,88,88,143,86,86,153,153,88,
             88,152,144,143,149,150,150,150,150
         };
-    };
+    }
     public final static char asb[] = Asb.asb;
     public final int asb(int index) { return asb[index]; }
 
     public interface Asr {
-        public final static byte asr[] = {0,
+        byte asr[] = {0,
             16,17,18,19,20,21,22,23,24,25,
             26,27,28,29,30,31,32,15,11,12,
             9,3,10,4,6,7,8,1,2,0,
@@ -244,12 +244,12 @@ public class jpgprs implements jpgsym {
             18,17,27,26,22,23,8,32,6,7,
             10,21,30,29,20,19,16,31,15,0
         };
-    };
+    }
     public final static byte asr[] = Asr.asr;
     public final int asr(int index) { return asr[index]; }
 
     public interface Nasb {
-        public final static byte nasb[] = {0,
+        byte nasb[] = {0,
             45,23,1,35,35,35,35,35,35,35,
             35,23,27,39,50,50,23,50,51,51,
             51,30,51,37,42,55,27,62,27,27,
@@ -258,12 +258,12 @@ public class jpgprs implements jpgsym {
             70,56,72,72,23,74,74,47,23,61,
             61,23,66,23,23,72,72,61,61
         };
-    };
+    }
     public final static byte nasb[] = Nasb.nasb;
     public final int nasb(int index) { return nasb[index]; }
 
     public interface Nasr {
-        public final static byte nasr[] = {0,
+        byte nasr[] = {0,
             32,53,30,29,52,27,26,25,50,45,
             22,43,46,47,18,36,16,15,14,13,
             33,24,0,39,40,0,1,2,0,1,
@@ -273,23 +273,23 @@ public class jpgprs implements jpgsym {
             7,2,0,35,0,4,0,37,0,49,
             0,6,0,8,0
         };
-    };
+    }
     public final static byte nasr[] = Nasr.nasr;
     public final int nasr(int index) { return nasr[index]; }
 
     public interface TerminalIndex {
-        public final static byte terminalIndex[] = {0,
+        byte terminalIndex[] = {0,
             29,28,30,16,21,13,11,14,35,12,
             31,33,32,34,36,5,6,7,8,9,
             10,15,17,18,19,20,22,23,24,25,
             26,27,2,3,4,37,38,39,40
         };
-    };
+    }
     public final static byte terminalIndex[] = TerminalIndex.terminalIndex;
     public final int terminalIndex(int index) { return terminalIndex[index]; }
 
     public interface NonterminalIndex {
-        public final static byte nonterminalIndex[] = {0,
+        byte nonterminalIndex[] = {0,
             38,38,38,38,38,38,38,38,38,38,
             38,38,38,38,38,38,38,38,38,38,
             38,38,38,38,38,38,38,38,38,38,
@@ -297,7 +297,7 @@ public class jpgprs implements jpgsym {
             38,38,38,38,38,38,38,38,38,38,
             38,38,38,38,38,38,38,0
         };
-    };
+    }
     public final static byte nonterminalIndex[] = NonterminalIndex.nonterminalIndex;
     public final int nonterminalIndex(int index) { return nonterminalIndex[index]; }
     public final static int scopePrefix[] = null;
@@ -326,7 +326,7 @@ public class jpgprs implements jpgsym {
 
 
     public interface Name {
-        public final static String name[] = {
+        String name[] = {
             "",
             "$empty",
             "DROPSYMBOLS_KEY",
@@ -369,7 +369,7 @@ public class jpgprs implements jpgsym {
             "COMMENT",
             "OPTION_LINE"
         };
-    };
+    }
     public final static String name[] = Name.name;
     public final String name(int index) { return name[index]; }
 

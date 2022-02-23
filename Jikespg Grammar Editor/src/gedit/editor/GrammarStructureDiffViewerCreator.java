@@ -11,6 +11,7 @@ import org.eclipse.swt.widgets.Composite;
 
 public class GrammarStructureDiffViewerCreator implements IViewerCreator {
 
+	@Override
 	public Viewer createViewer(Composite parent, CompareConfiguration config) {
 		return new GrammarStructureDiffViewer(parent, config);
 	}

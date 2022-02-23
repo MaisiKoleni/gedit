@@ -12,6 +12,7 @@ import org.eclipse.swt.widgets.Composite;
 
 public class GrammarMergeViewerCreator implements IViewerCreator {
 
+	@Override
 	public Viewer createViewer(Composite parent, CompareConfiguration config) {
 		return new GrammarMergeViewer(parent, SWT.NONE, config);
 	}

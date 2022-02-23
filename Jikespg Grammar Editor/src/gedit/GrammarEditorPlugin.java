@@ -4,15 +4,6 @@
  */
 package gedit;
 
-import gedit.editor.ColorManager;
-import gedit.editor.GrammarDocument;
-import gedit.editor.PreferenceConstants;
-import gedit.model.Document;
-import gedit.model.DocumentAnalyzer;
-import gedit.model.DocumentOptions;
-import gedit.model.FileProzessor;
-import gedit.model.IProblemRequestor;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HashMap;
@@ -37,6 +28,15 @@ import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.texteditor.ChainedPreferenceStore;
 import org.osgi.framework.BundleContext;
 
+import gedit.editor.ColorManager;
+import gedit.editor.GrammarDocument;
+import gedit.editor.PreferenceConstants;
+import gedit.model.Document;
+import gedit.model.DocumentAnalyzer;
+import gedit.model.DocumentOptions;
+import gedit.model.FileProzessor;
+import gedit.model.IProblemRequestor;
+
 public class GrammarEditorPlugin extends AbstractUIPlugin implements IPropertyChangeListener {
 	//The shared instance.
 	private static GrammarEditorPlugin fPlugin;
@@ -49,13 +49,13 @@ public class GrammarEditorPlugin extends AbstractUIPlugin implements IPropertyCh
 	private ColorManager fColorManager;
 	private IPreferenceStore fCombinedPreferenceStore;
 	private DocumentOptions fGlobalDocumentOptions;
-	
-	public final static boolean DEBUG = Boolean.valueOf(Platform.getDebugOption("gedit/debug")).booleanValue();
+
+	public final static boolean DEBUG = Boolean.parseBoolean(Platform.getDebugOption("gedit/debug"));
 	public final static int DEBUG_PARSER_LEVEL = getIntDebugOption("gedit/parser/level");
-	
+
 	private static int getIntDebugOption(String name) {
 		try {
-			return Integer.valueOf(Platform.getDebugOption(name)).intValue();
+			return Integer.parseInt(Platform.getDebugOption(name));
 		} catch (Exception ignore) {
 			return 0;
 		}
@@ -65,13 +65,13 @@ public class GrammarEditorPlugin extends AbstractUIPlugin implements IPropertyCh
 	 * The constructor.
 	 */
 	public GrammarEditorPlugin() {
-		super();
 		fPlugin = this;
 	}
 
 	/**
 	 * This method is called upon plug-in activation
 	 */
+	@Override
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
 		initGlobalDocumentOptions();
@@ -80,6 +80,7 @@ public class GrammarEditorPlugin extends AbstractUIPlugin implements IPropertyCh
 	/**
 	 * This method is called when the plug-in is stopped
 	 */
+	@Override
 	public void stop(BundleContext context) throws Exception {
 		if (fColorManager != null)
 			fColorManager.dispose();
@@ -102,7 +103,7 @@ public class GrammarEditorPlugin extends AbstractUIPlugin implements IPropertyCh
 	public static String getResourceString(String key) {
 		ResourceBundle bundle = getDefault().getResourceBundle();
 		try {
-			return (bundle != null) ? bundle.getString(key) : key;
+			return bundle != null ? bundle.getString(key) : key;
 		} catch (MissingResourceException e) {
 			return key;
 		}
@@ -124,7 +125,7 @@ public class GrammarEditorPlugin extends AbstractUIPlugin implements IPropertyCh
 		}
 		return fResourceBundle;
 	}
-	
+
 	private void disposeImages() {
 		if (fImages == null)
 			return;
@@ -143,6 +144,7 @@ public class GrammarEditorPlugin extends AbstractUIPlugin implements IPropertyCh
 		getPreferenceStore().addPropertyChangeListener(this);
 	}
 
+	@Override
 	public void propertyChange(PropertyChangeEvent event) {
 		if (PreferenceConstants.GRAMMAR_INCLUDE_DIRECTORIES.equals(event.getProperty()))
 			fGlobalDocumentOptions.setIncludeDirs(StringUtils.split((String) event.getNewValue(),
@@ -152,7 +154,7 @@ public class GrammarEditorPlugin extends AbstractUIPlugin implements IPropertyCh
 	public static ImageDescriptor getImageDescriptor(String path) {
 		return imageDescriptorFromPlugin(getDefault().getBundle().getSymbolicName(), path);
 	}
-	
+
 	private static Image doGetImage(Object key) {
 		Map images = getDefault().fImages;
 		if (images == null)
@@ -178,7 +180,7 @@ public class GrammarEditorPlugin extends AbstractUIPlugin implements IPropertyCh
 	public static Image getImage(String path) {
 		return doGetImage(path);
 	}
-	
+
 	public static FileProzessor getFileProzessor() {
 		return getDefault().fFileProzessor != null ? getDefault().fFileProzessor : (getDefault().fFileProzessor = new FileProzessor());
 	}
@@ -191,7 +193,7 @@ public class GrammarEditorPlugin extends AbstractUIPlugin implements IPropertyCh
 		Map models = getDefault().fModels;
 		if (models == null)
 			getDefault().fModels = models = new WeakHashMap();
-		Document doc = null;
+		Document doc;
 		doc = (Document) models.get(document);
 		if (doc != null && !reconcile)
 			return doc;
@@ -218,7 +220,7 @@ public class GrammarEditorPlugin extends AbstractUIPlugin implements IPropertyCh
 
 	public IPreferenceStore getCombinedPreferenceStore() {
 		if (fCombinedPreferenceStore == null) {
-			IPreferenceStore generalTextStore = EditorsUI.getPreferenceStore(); 
+			IPreferenceStore generalTextStore = EditorsUI.getPreferenceStore();
 			fCombinedPreferenceStore = new ChainedPreferenceStore(new IPreferenceStore[] {
 					getPreferenceStore(), generalTextStore });
 		}

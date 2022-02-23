@@ -4,9 +4,6 @@
  */
 package gedit.editor;
 
-import gedit.GrammarEditorPlugin;
-import gedit.model.IProblemRequestor;
-
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
@@ -16,32 +13,40 @@ import org.eclipse.jface.text.reconciler.IReconcilingStrategyExtension;
 import org.eclipse.jface.text.source.IAnnotationModel;
 import org.eclipse.jface.text.source.ISourceViewer;
 
+import gedit.GrammarEditorPlugin;
+import gedit.model.IProblemRequestor;
+
 public class GrammarReconcilingStrategy implements IReconcilingStrategy, IReconcilingStrategyExtension {
 	private IDocument fDocument;
 	private ISourceViewer fSourceViewer;
 	private IReconcilingListener fReconcilingListener;
-	
+
 	public GrammarReconcilingStrategy(ISourceViewer sourceViewer, IReconcilingListener reconcilingListener) {
 		fSourceViewer = sourceViewer;
 		fReconcilingListener = reconcilingListener;
 	}
-	
+
+	@Override
 	public void setDocument(IDocument document) {
 		fDocument = document;
 	}
-	
+
+	@Override
 	public void initialReconcile() {
 		reconcile();
 	}
 
+	@Override
 	public void reconcile(DirtyRegion dirtyRegion, IRegion subRegion) {
 		reconcile();
 	}
 
+	@Override
 	public void reconcile(IRegion partition) {
 		reconcile();
 	}
-	
+
+	@Override
 	public void setProgressMonitor(IProgressMonitor monitor) {
 	}
 

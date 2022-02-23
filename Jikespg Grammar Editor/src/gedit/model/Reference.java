@@ -10,11 +10,12 @@ public class Reference extends ModelBase {
 	public Reference(ModelBase parent, String value) {
 		super(parent, value);
 	}
-	
+
 	public String getValue() {
 		return label;
 	}
-	
+
+	@Override
 	public ModelType getType() {
 		return ModelType.REFERENCE;
 	}

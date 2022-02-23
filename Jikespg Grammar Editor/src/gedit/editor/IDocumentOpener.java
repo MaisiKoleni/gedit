@@ -10,5 +10,5 @@ import gedit.model.Document;
 
 public interface IDocumentOpener {
 
-	public void open(Document document, Document parentDocument, IRegion selectedRegion);
+	void open(Document document, Document parentDocument, IRegion selectedRegion);
 }

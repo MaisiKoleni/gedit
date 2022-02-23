@@ -4,9 +4,6 @@
  */
 package gedit.editor;
 
-import gedit.GrammarEditorPlugin;
-import gedit.model.Document;
-
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.rules.IRule;
 import org.eclipse.jface.text.rules.IToken;
@@ -17,20 +14,24 @@ import org.eclipse.jface.text.rules.WhitespaceRule;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
 
-public class GrammarScanner extends RuleBasedScanner {
-	private class WhitespaceDetector implements IWhitespaceDetector {
+import gedit.GrammarEditorPlugin;
+import gedit.model.Document;
 
+public class GrammarScanner extends RuleBasedScanner {
+	private static class WhitespaceDetector implements IWhitespaceDetector {
+
+		@Override
 		public boolean isWhitespace(char c) {
-			return (c == ' ' || c == '\t' || c == '\n' || c == '\r');
+			return c == ' ' || c == '\t' || c == '\n' || c == '\r';
 		}
-	};
+	}
 
 	private String fPreferenceKey;
 	private PreferenceUtils fUtils;
 	private MacroKeyRule fMacroKeyRule;
 	private boolean fDetectOperators;
 	private boolean fDetectQuotes;
-	
+
 	public GrammarScanner(String preferenceKey, PreferenceUtils utils, boolean detectOperators, boolean detectQuotes) {
 		fPreferenceKey = preferenceKey;
 		fUtils = utils;
@@ -39,7 +40,7 @@ public class GrammarScanner extends RuleBasedScanner {
 
 		setRules();
 	}
-	
+
 	private void setRules() {
 		IToken macroKeyToken = new Token(fUtils.createTextAttribute(PreferenceConstants.GRAMMAR_COLORING_MACRO_KEY));
 		IToken operator = new Token(fUtils.createTextAttribute(PreferenceConstants.GRAMMAR_COLORING_OPERATOR));
@@ -57,7 +58,8 @@ public class GrammarScanner extends RuleBasedScanner {
 		IToken defaultToken = new Token(fUtils.createTextAttribute(fPreferenceKey));
 		setDefaultReturnToken(defaultToken);
 	}
-	
+
+	@Override
 	public void setRange(IDocument document, int offset, int length) {
 		super.setRange(document, offset, length);
 		Document model = GrammarEditorPlugin.getDocumentModel(document, null, false);
@@ -69,7 +71,7 @@ public class GrammarScanner extends RuleBasedScanner {
 			operatorRule.setOrMarker(model.getOptions().getOrMarker());
 		}
 	}
-	
+
 	public void adaptToPreferenceChange(PropertyChangeEvent event) {
 		if (affectsBehavior(event))
 			setRules();
@@ -87,5 +89,5 @@ public class GrammarScanner extends RuleBasedScanner {
 				property.startsWith(fPreferenceKey) ||
 				property.startsWith(PreferenceConstants.GRAMMAR_COLORING_OPERATOR));
 	}
-	
+
 }

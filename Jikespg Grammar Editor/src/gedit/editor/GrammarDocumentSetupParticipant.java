@@ -14,6 +14,7 @@ public class GrammarDocumentSetupParticipant implements IDocumentSetupParticipan
 
 	public static final String GRAMMAR_PARTITION = "___grammar_partitioning";
 
+	@Override
 	public void setup(IDocument document) {
 		setupDocument(document);
 	}

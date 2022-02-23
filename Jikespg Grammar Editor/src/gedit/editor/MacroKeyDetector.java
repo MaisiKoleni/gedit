@@ -4,17 +4,17 @@
  */
 package gedit.editor;
 
-import gedit.GrammarEditorPlugin;
-import gedit.StringUtils.QuoteDetector;
-import gedit.model.Definition;
-import gedit.model.DocumentOptions;
-import gedit.model.ModelType;
-
 import java.util.Iterator;
 import java.util.TreeMap;
 
 import org.eclipse.jface.text.rules.ICharacterScanner;
 import org.eclipse.jface.viewers.ILabelProvider;
+
+import gedit.GrammarEditorPlugin;
+import gedit.StringUtils.QuoteDetector;
+import gedit.model.Definition;
+import gedit.model.DocumentOptions;
+import gedit.model.ModelType;
 
 public class MacroKeyDetector {
 	private TreeMap fMacros = new TreeMap();
@@ -27,23 +27,23 @@ public class MacroKeyDetector {
 	private ILabelProvider fLabelProvider = new ModelLabelProvider();
 
 	private final static String DEF = " "; //$NON-NLS-1$
-	
+
 	public final static int NO_MATCH = 1;
 	public final static int PROBABLE_MATCH = 2;
 	public final static int MATCH = 3;
-	
+
 	public MacroKeyDetector() {
 	}
-	
+
 	public MacroKeyDetector(char escape, Definition[] makros) {
 		setEscape(escape);
 		setMakros(makros);
 	}
-	
+
 	public void setQuoteChars(char[] quoteCharPairs) {
 		fQuoteDetector.setQuoteChars(quoteCharPairs);
 	}
-	
+
 	public boolean isWordStart(char c) {
 		fQuoteDetector.detect(c);
 		if (c == fEscape && !fQuoteDetector.isInQuotes()) {
@@ -60,7 +60,8 @@ public class MacroKeyDetector {
 			if (fCurrentIndex < fCurrentKey.length() && Character.toLowerCase(c) == fCurrentKey.charAt(fCurrentIndex)) {
 				fCurrentIndex++;
 				return PROBABLE_MATCH;
-			} else if (fCurrentIndex == fCurrentKey.length()) {
+			}
+			if (fCurrentIndex == fCurrentKey.length()) {
 				fCurrentKey = null;
 				fCurrentIndex = 0;
 				return MATCH;
@@ -84,7 +85,7 @@ public class MacroKeyDetector {
 		fCurrentIndex++;
 		return PROBABLE_MATCH;
 	}
-	
+
 	private boolean reachedWordEnd(StringBuffer buffer, String word) {
 		return buffer.toString().toLowerCase().equals(word);
 	}
@@ -109,20 +110,18 @@ public class MacroKeyDetector {
 		if (sameAsOnLastInvocation(makros))
 			return;
 		clear(fMacros);
-		for (int i = 0; i < makros.length; i++) {
-			insert(fMacros, makros[i].getLabel(), 0);
+		for (Definition element : makros) {
+			insert(fMacros, element.getLabel(), 0);
 		}
 		ModelType[] allTypes = ModelType.getAllTypes();
-		for (int i = 0; i < allTypes.length; i++) {
-			insert(fMacros, fLabelProvider.getText(allTypes[i]), 0);
+		for (ModelType type : allTypes) {
+			insert(fMacros, fLabelProvider.getText(type), 0);
 		}
 		fMacrosCopy = makros;
 	}
-	
+
 	private boolean sameAsOnLastInvocation(Definition[] makros) {
-		if (fMacrosCopy == null)
-			return false;
-		if (fMacrosCopy.length != makros.length)
+		if ((fMacrosCopy == null) || (fMacrosCopy.length != makros.length))
 			return false;
 		for (int i = 0; i < fMacrosCopy.length; i++) {
 			if (!fMacrosCopy[i].equals(makros[i]))
@@ -164,7 +163,7 @@ public class MacroKeyDetector {
 				String sKey1 = prev.length() <= keyIndex ? DEF : String.valueOf(prev.charAt(keyIndex));
 				String sKey2 = name.length() <= keyIndex ? DEF : String.valueOf(name.charAt(keyIndex));
 				if (sKey1.equals(sKey2)) {
-					p1.put(sKey1, p1 = new TreeMap()); 
+					p1.put(sKey1, p1 = new TreeMap());
 					continue;
 				}
 				p1.put(sKey1, prev);

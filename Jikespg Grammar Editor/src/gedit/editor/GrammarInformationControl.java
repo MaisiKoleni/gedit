@@ -4,13 +4,11 @@
  */
 package gedit.editor;
 
-import gedit.model.Document;
-
+import org.eclipse.jface.text.DefaultInformationControl.IInformationPresenter;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IInformationControl;
 import org.eclipse.jface.text.IInformationControlExtension;
 import org.eclipse.jface.text.TextPresentation;
-import org.eclipse.jface.text.DefaultInformationControl.IInformationPresenter;
 import org.eclipse.jface.text.source.SourceViewer;
 import org.eclipse.jface.text.source.SourceViewerConfiguration;
 import org.eclipse.swt.SWT;
@@ -28,6 +26,8 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+
+import gedit.model.Document;
 
 public class GrammarInformationControl implements IInformationControl, IInformationControlExtension, DisposeListener {
 	private Shell fShell;
@@ -56,7 +56,7 @@ public class GrammarInformationControl implements IInformationControl, IInformat
 
 		Composite composite = fShell;
 		GridLayout layout = new GridLayout(1, false);
-		int border = ((shellStyle & SWT.NO_TRIM) == 0) ? 0 : BORDER;
+		int border = (shellStyle & SWT.NO_TRIM) == 0 ? 0 : BORDER;
 		layout.marginHeight = border;
 		layout.marginWidth = border;
 		composite.setLayout(layout);
@@ -73,6 +73,7 @@ public class GrammarInformationControl implements IInformationControl, IInformat
 				SWT.COLOR_INFO_BACKGROUND));
 
 		fText.addKeyListener(new KeyAdapter() {
+			@Override
 			public void keyPressed(KeyEvent e) {
 				if (e.character == 0x1B) // ESC
 					fShell.dispose();
@@ -90,6 +91,7 @@ public class GrammarInformationControl implements IInformationControl, IInformat
 		return viewer;
 	}
 
+	@Override
 	public void setInformation(String content) {
 		if (fPresenter != null) {
 			fPresentation.clear();
@@ -107,21 +109,26 @@ public class GrammarInformationControl implements IInformationControl, IInformat
 		TextPresentation.applyTextPresentation(fPresentation, fText);
 	}
 
+	@Override
 	public void setSizeConstraints(int maxWidth, int maxHeight) {
 	}
 
+	@Override
 	public Point computeSizeHint() {
 		return fShell.computeSize(SWT.DEFAULT, SWT.DEFAULT);
 	}
 
+	@Override
 	public void setVisible(boolean visible) {
 		fShell.setVisible(visible);
 	}
 
+	@Override
 	public void setSize(int width, int height) {
 		fShell.setSize(width, height);
 	}
 
+	@Override
 	public void setLocation(Point location) {
 		Rectangle trim = fShell.computeTrim(0, 0, 0, 0);
 		Point textLocation = fText.getLocation();
@@ -130,6 +137,7 @@ public class GrammarInformationControl implements IInformationControl, IInformat
 		fShell.setLocation(location);
 	}
 
+	@Override
 	public void dispose() {
 		if (fShell != null && !fShell.isDisposed()) {
 			fShell.dispose();
@@ -139,46 +147,56 @@ public class GrammarInformationControl implements IInformationControl, IInformat
 
 	}
 
+	@Override
 	public void addDisposeListener(DisposeListener listener) {
 		fShell.addDisposeListener(listener);
 
 	}
 
+	@Override
 	public void removeDisposeListener(DisposeListener listener) {
 		fShell.removeDisposeListener(listener);
 	}
 
+	@Override
 	public void setForegroundColor(Color foreground) {
 		fText.setForeground(foreground);
 	}
 
+	@Override
 	public void setBackgroundColor(Color background) {
 		fText.setBackground(background);
 	}
 
+	@Override
 	public boolean isFocusControl() {
 		return fText.isFocusControl();
 	}
 
+	@Override
 	public void setFocus() {
 		fShell.forceFocus();
 		fText.setFocus();
 
 	}
 
+	@Override
 	public void addFocusListener(FocusListener listener) {
 		fText.addFocusListener(listener);
 	}
 
+	@Override
 	public void removeFocusListener(FocusListener listener) {
 		fText.removeFocusListener(listener);
 
 	}
 
+	@Override
 	public boolean hasContents() {
 		return fText.getCharCount() > 0;
 	}
 
+	@Override
 	public void widgetDisposed(DisposeEvent e) {
 		fShell = null;
 		fText = null;

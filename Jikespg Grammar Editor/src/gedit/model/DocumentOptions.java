@@ -12,11 +12,11 @@ public class DocumentOptions {
 	private char escape;
 	private char orMarker;
 	private String language;
-	private String[] blockBeginnings; 
+	private String[] blockBeginnings;
 	private String[] blockEnds;
 	private String[] includeDirs;
 	private boolean global;
-	
+
 	public final static char DEFAULT_ESCAPE = '%';
 	public final static char DEFAULT_OR_MARKER = '|';
 	public final static String DEFAULT_BLOCKB = "/.";
@@ -31,7 +31,7 @@ public class DocumentOptions {
 		blockBeginnings = new String[] { DEFAULT_BLOCKB, DEFAULT_HBLOCKB };
 		blockEnds = new String[] { DEFAULT_BLOCKE, DEFAULT_HBLOCKE };
 	}
-	
+
 	public DocumentOptions(boolean global) {
 		this();
 		this.global = global;
@@ -40,15 +40,15 @@ public class DocumentOptions {
 	public char getEsape() {
 		return escape;
 	}
-	
+
 	public char getOrMarker() {
 		return orMarker;
 	}
-	
+
 	public String getLanguage() {
 		return language;
 	}
-	
+
 	public String[] getBlockBeginnings() {
 		return blockBeginnings;
 	}
@@ -56,11 +56,11 @@ public class DocumentOptions {
 	public String[] getBlockEnds() {
 		return blockEnds;
 	}
-	
+
 	public String[] getIncludeDirs() {
 		return includeDirs;
 	}
-	
+
 	protected void addBlockPair(String beginning, String end) {
 		if (beginning == null || end == null || beginning.length() != end.length() || beginning.length() == 0)
 			return;
@@ -105,13 +105,13 @@ public class DocumentOptions {
 		else {
 			List dirs = globalOptions.includeDirs != null ? new ArrayList(Arrays.asList(globalOptions.includeDirs)) : new ArrayList();
 			if (includeDirs != null) {
-				for (int i = 0; i < includeDirs.length; i++) {
-					int index = dirs.indexOf(includeDirs[i]);
+				for (String includeDir : includeDirs) {
+					int index = dirs.indexOf(includeDir);
 					if (index != -1)
 						dirs.remove(index);
 				}
 			}
-			
+
 			int newLength = dirs.size() + (includeDirs != null ? includeDirs.length : 0);
 			String[] tmp = new String[newLength];
 			if (includeDirs != null)

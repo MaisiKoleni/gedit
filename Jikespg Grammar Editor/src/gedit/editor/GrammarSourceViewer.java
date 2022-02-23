@@ -4,18 +4,7 @@
  */
 package gedit.editor;
 
-import gedit.GrammarEditorPlugin;
-import gedit.NonUISafeRunnable;
-import gedit.model.Definition;
-import gedit.model.Document;
-import gedit.model.FileProzessor;
-import gedit.model.IProblemRequestor;
-import gedit.model.ModelBase;
-import gedit.model.ModelType;
-import gedit.model.ModelUtils;
-import gedit.model.Problem;
-import gedit.model.Reference;
-
+import org.eclipse.core.runtime.ListenerList;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.preference.PreferenceConverter;
@@ -33,7 +22,6 @@ import org.eclipse.jface.text.source.IVerticalRuler;
 import org.eclipse.jface.text.source.SourceViewerConfiguration;
 import org.eclipse.jface.text.source.projection.ProjectionViewer;
 import org.eclipse.jface.util.IPropertyChangeListener;
-import org.eclipse.core.runtime.ListenerList;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.graphics.Color;
@@ -48,6 +36,18 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.texteditor.AbstractDecoratedTextEditorPreferenceConstants;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
 
+import gedit.GrammarEditorPlugin;
+import gedit.NonUISafeRunnable;
+import gedit.model.Definition;
+import gedit.model.Document;
+import gedit.model.FileProzessor;
+import gedit.model.IProblemRequestor;
+import gedit.model.ModelBase;
+import gedit.model.ModelType;
+import gedit.model.ModelUtils;
+import gedit.model.Problem;
+import gedit.model.Reference;
+
 public class GrammarSourceViewer extends ProjectionViewer implements IPropertyChangeListener, IReconcilingListener {
 	private IInformationPresenter fOutlinePresenter;
 	private SemanticHighLighter fSemanticHighLighter;
@@ -58,7 +58,7 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 	private Color fBackgroundColor;
 	private Color fSelectionForegroundColor;
 	private Color fSelectionBackgroundColor;
-	
+
 	public final static int SHOW_OUTLINE = 103;
 	public final static int GOTO_DECLARATION = 104;
 
@@ -67,13 +67,14 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 		super(parent, verticalRuler, overviewRuler, showAnnotationsOverview, styles);
 		fPreferenceStore = store;
 	}
-	
+
+	@Override
 	public void configure(SourceViewerConfiguration configuration) {
 		if (configuration instanceof GrammarSourceViewerConfiguration) {
 			GrammarSourceViewerConfiguration grammarSourceViewerConfiguration = (GrammarSourceViewerConfiguration) configuration;
 			fOutlinePresenter = grammarSourceViewerConfiguration.getOutlinePresenter(this);
 			fOutlinePresenter.install(this);
-			
+
 			fSemanticHighLighter = grammarSourceViewerConfiguration.getSemanticHighlighter(this);
 			addReconcilingListener(fSemanticHighLighter);
 			addTextInputListener(fSemanticHighLighter);
@@ -154,7 +155,8 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
         return null;
     }
 
-    public void unconfigure() {
+    @Override
+	public void unconfigure() {
 		if (fOutlinePresenter != null)
 			fOutlinePresenter.uninstall();
 		removeReconcilingListener(fSemanticHighLighter);
@@ -168,18 +170,20 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 		disposeColor(fSelectionBackgroundColor);
 		super.unconfigure();
 	}
-    
+
 	private void disposeColor(Color color) {
 		if (color != null)
 			color.dispose();
 	}
 
+	@Override
 	public void resetVisibleRegion() {
 		super.resetVisibleRegion();
 		if (fPreferenceStore != null && fPreferenceStore.getBoolean(PreferenceConstants.EDITOR_FOLDING_ENABLED) && !isProjectionMode())
 			enableProjection();
 	}
 
+	@Override
 	public boolean canDoOperation(int operation) {
 		switch (operation) {
 		case SHOW_OUTLINE:
@@ -190,6 +194,7 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 		return super.canDoOperation(operation);
 	}
 
+	@Override
 	public void doOperation(int operation) {
 		switch (operation) {
 		case SHOW_OUTLINE:
@@ -202,7 +207,7 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 		}
 		super.doOperation(operation);
 	}
-	
+
 	public void addReconcilingListener(IReconcilingListener listener) {
 		if (fReconcilingListeners == null)
 			fReconcilingListeners = new ListenerList();
@@ -221,16 +226,17 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 		if (fReconcilingListeners == null)
 			return;
 		Object[] listeners = fReconcilingListeners.getListeners();
-		for (int i = 0; i < listeners.length; i++) {
-			final IReconcilingListener listener = (IReconcilingListener) listeners[i];
+		for (Object listener2 : listeners) {
+			final IReconcilingListener listener = (IReconcilingListener) listener2;
 			Platform.run(new NonUISafeRunnable() {
+				@Override
 				public void run() throws Exception {
 					listener.reconciled();
 				}
 			});
 		}
 	}
-	
+
 	protected GrammarPresentationReconciler getPresentationReconciler() {
 		return (GrammarPresentationReconciler) fPresentationReconciler;
 	}
@@ -297,27 +303,26 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 			selectElement(model);
 		}
 	}
-	
+
 	private void openUsingOpener(Document document, Document parentDocument, IRegion selection) {
 		IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-		IDocumentOpener opener = (IDocumentOpener) page.getActivePart().getAdapter(IDocumentOpener.class);
+		IDocumentOpener opener = page.getActivePart().getAdapter(IDocumentOpener.class);
 		opener.open(document, parentDocument, selection);
 	}
-	
+
 	protected String getContentType(IDocument document, int offset) {
 		try {
 			if (document instanceof IDocumentExtension3)
 				return ((IDocumentExtension3) document).getContentType(GrammarDocumentSetupParticipant.GRAMMAR_PARTITION, offset, false);
-			else
-				return document.getContentType(offset);
+			return document.getContentType(offset);
 		} catch (Exception e) {
 			System.err.println("Cannot get the content type for position: " + offset);
 			return null;
 		}
 	}
-	
+
 	public IRegion getSelectedWord(IDocument document, int anchor) {
-		
+
 		try {
 			String contentType = getContentType(document, anchor);
 			Document model = getModel(false);
@@ -362,33 +367,33 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 					break;
 				++offset;
 			}
-			
+
 			int end = offset;
-			
+
 			String selected = document.get(start, end - start);
 			if ("::=".equals(selected) || "::=?".equals(selected) || "->".equals(selected)
 					|| "->?".equals(selected) || String.valueOf(model.getOptions().getOrMarker()).equals(selected))
 				return null;
-			
+
 			if (start >= end)
 				return new Region(start, 0);
-			else
-				return new Region(start, end - start);
-			
+			return new Region(start, end - start);
+
 		} catch (BadLocationException x) {
 			return null;
 		}
 	}
-	
+
 	public ModelBase getSelectedElement() {
 		return getModel(false).getElementAt(widgetOffset2ModelOffset(getTextWidget().getCaretOffset()));
 	}
-	
+
 	public Problem[] getSelectedProblems() {
 		Point selection = widgetSelection2ModelSelection(getTextWidget().getSelectionRange());
 		return getModel(false).getProblems(selection.x, selection.y);
 	}
-	
+
+	@Override
 	public void propertyChange(PropertyChangeEvent event) {
 		String property = event.getProperty();
 		if (AbstractTextEditor.PREFERENCE_COLOR_FOREGROUND.equals(property)
@@ -403,7 +408,8 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 			initializeViewerColors();
 		}
 	}
-	
+
+	@Override
 	public void reconciled() {
 		notifyReconcilingListeners();
 	}

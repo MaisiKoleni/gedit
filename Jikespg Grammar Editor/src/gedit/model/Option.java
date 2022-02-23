@@ -12,7 +12,7 @@ public class Option extends ModelBase {
 		super(parent, key);
 		this.value = value;
 	}
-	
+
 	protected void addFileReference(Reference fileReference, Node node) {
 		if (fileReferences == null)
 			fileReferences = new Reference[] { fileReference };
@@ -23,7 +23,8 @@ public class Option extends ModelBase {
 		}
 		fileReferences[fileReferences.length - 1].node = node;
 	}
-	
+
+	@Override
 	public ModelType getType() {
 		return ModelType.OPTION;
 	}
@@ -31,7 +32,7 @@ public class Option extends ModelBase {
 	public String getValue() {
 		return value;
 	}
-	
+
 	public Reference[] getFileReferences() {
 		return fileReferences;
 	}

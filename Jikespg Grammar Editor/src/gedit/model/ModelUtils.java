@@ -4,11 +4,6 @@
  */
 package gedit.model;
 
-import gedit.GrammarEditorPlugin;
-import gedit.StringUtils;
-import gedit.editor.GrammarSourceViewer;
-import gedit.editor.MacroKeyDetector;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,6 +22,11 @@ import org.eclipse.jface.text.Position;
 import org.eclipse.jface.text.rules.ICharacterScanner;
 import org.eclipse.jface.text.rules.RuleBasedScanner;
 
+import gedit.GrammarEditorPlugin;
+import gedit.StringUtils;
+import gedit.editor.GrammarSourceViewer;
+import gedit.editor.MacroKeyDetector;
+
 public class ModelUtils {
 	public static class OptionProposal implements Comparable {
 		private String key;
@@ -35,10 +35,10 @@ public class ModelUtils {
 		private boolean isFile;
 		private boolean isDirectory;
 		private int version;
-		
+
 		public final static int JIKESPG = 1;
 		public final static int LPG = 2;
-		
+
 		static OptionProposal createFromLine(String line, int fromVersion) {
 			OptionProposal option = new OptionProposal();
 			option.version = fromVersion;
@@ -52,21 +52,23 @@ public class ModelUtils {
 			String values = line.substring(assignmentIndex + 1);
 			if (values.length() == 0)
 				return option;
-			option.isFile = values.equals("file");
-			option.isDirectory = values.equals("directory");
+			option.isFile = "file".equals(values);
+			option.isDirectory = "directory".equals(values);
 			if (values.charAt(0) == '<' && values.charAt(values.length() - 1) == '>')
 				option.choice = StringUtils.split(values.substring(1, values.length() - 1), "|");
 			return option;
 		}
-		
+
+		@Override
 		public boolean equals(Object obj) {
 			return obj instanceof OptionProposal ? key.equals(((OptionProposal) obj).key) : false;
 		}
-		
+
+		@Override
 		public int compareTo(Object o) {
 			return o instanceof OptionProposal ? key.compareToIgnoreCase(((OptionProposal) o).key) : 0;
 		}
-		
+
 		public String getKey() {
 			return key;
 		}
@@ -74,7 +76,7 @@ public class ModelUtils {
 		public String[] getChoice() {
 			return choice;
 		}
-		
+
 		public int getVersion() {
 			return version;
 		}
@@ -91,22 +93,21 @@ public class ModelUtils {
 			return isFile;
 		}
 	}
-	
+
 	public static class OptionAmbigousException extends Exception {
 		private static final long serialVersionUID = 1L;
 		private OptionProposal[] ambigous;
 		public OptionAmbigousException(OptionProposal[] ambigous) {
-			super();
 			this.ambigous = ambigous;
 		}
-		
+
 		public OptionProposal[] getAmbigous() {
 			return ambigous;
 		}
 	}
 
 	private static Map OPTIONS;
-	private static BitSet ALL_FILTER;;
+	private static BitSet ALL_FILTER;
 
 	public static Definition lookupMacro(int offset, GrammarSourceViewer viewer, RuleBasedScanner macroScanner, Position found) {
 		char c = 0;
@@ -126,7 +127,7 @@ public class ModelUtils {
 			end = start + document.getLineLength(document.getLineOfOffset(start));
 		} catch (BadLocationException ignore) {
 		}
-		
+
 		MacroKeyDetector macroKeyDetector = new MacroKeyDetector(escape, model.getAllMakros());
 		if (!macroKeyDetector.isWordStart(c))
 			return null;
@@ -155,17 +156,17 @@ public class ModelUtils {
 	public static BitSet createBitSetFromString(String string, String separator) {
 		String[] filters = StringUtils.split(string, separator);
 		BitSet set = new BitSet();
-		for (int i = 0; i < filters.length; i++) {
+		for (String filter : filters) {
 			try {
-				set.set(Integer.parseInt(filters[i].trim()));
+				set.set(Integer.parseInt(filter.trim()));
 			} catch (Exception ignore) {
 			}
 		}
 		return set;
 	}
-	
+
 	public static String createStringFromBitSet(BitSet set, String separator) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (int i = 0, lastIndex = 0, n = set.cardinality(); i < n; i++, lastIndex++) {
 			if (i > 0)
 				sb.append(separator);
@@ -177,8 +178,8 @@ public class ModelUtils {
 	protected static Definition[] readPredefinedDefinitions() {
 		String[] lines = readResource("predefined_macros.txt", false);
 		List result = new ArrayList();
-		for (int i = 0; i < lines.length; i++) {
-			result.add(new Definition(null, lines[i], ""));
+		for (String line : lines) {
+			result.add(new Definition(null, line, ""));
 		}
 		return (Definition[]) result.toArray(new Definition[result.size()]);
 	}
@@ -186,12 +187,12 @@ public class ModelUtils {
 	protected static OptionProposal[] readOptions() {
 		String[] lines = readResource("jikespg_options.txt", false);
 		List result = new ArrayList();
-		for (int i = 0; i < lines.length; i++) {
-			result.add(OptionProposal.createFromLine(lines[i], OptionProposal.JIKESPG));
+		for (String line : lines) {
+			result.add(OptionProposal.createFromLine(line, OptionProposal.JIKESPG));
 		}
 		lines = readResource("lpg_options.txt", false);
-		for (int i = 0; i < lines.length; i++) {
-			OptionProposal proposal = OptionProposal.createFromLine(lines[i], OptionProposal.LPG);
+		for (String line : lines) {
+			OptionProposal proposal = OptionProposal.createFromLine(line, OptionProposal.LPG);
 			if (result.contains(proposal))
 				proposal.version |= OptionProposal.JIKESPG;
 			result.add(proposal);
@@ -227,26 +228,26 @@ public class ModelUtils {
 		if (ALL_FILTER == null) {
 			BitSet set = new BitSet();
 			ModelType[] allTypes = ModelType.getAllTypes();
-			for (int i = 0; i < allTypes.length; i++) {
-				set.set(allTypes[i].getBitPosition());
+			for (ModelType type : allTypes) {
+				set.set(type.getBitPosition());
 			}
 			ALL_FILTER = set;
 		}
 		return ALL_FILTER;
 	}
-	
+
 	public static Map getAllOptions() {
 		if (OPTIONS == null) {
 			OptionProposal[] proposals = ModelUtils.readOptions();
 			Map map = new TreeMap();
-			for (int i = 0; i < proposals.length; i++) {
-				map.put(proposals[i].getKey(), proposals[i]);
+			for (OptionProposal proposal : proposals) {
+				map.put(proposal.getKey(), proposal);
 			}
 			OPTIONS = Collections.unmodifiableMap(map);
 		}
 		return OPTIONS;
 	}
-	
+
 	private static OptionProposal getProposal(Map proposals, String key) {
 		OptionProposal proposal = (OptionProposal) proposals.get(key);
 		if (proposal != null)
@@ -266,7 +267,7 @@ public class ModelUtils {
 			proposal = getProposal(proposals, word.substring(2));
 		if (proposal != null)
 			return proposal;
-		
+
 		for (Iterator it = proposals.keySet().iterator(); it.hasNext();) {
 			String key = (String) it.next();
 			if (key.startsWith(word)) {
@@ -280,12 +281,12 @@ public class ModelUtils {
 					if ((found1.version & found2.version) == 0
 							|| found1.hasValue != found2.hasValue)
 						continue;
-					ambigous.add(found2); 
+					ambigous.add(found2);
 				}
 				if (ambigous.isEmpty())
 					return (OptionProposal) proposals.get(key);
 				ambigous.add(found1);
-				throw new OptionAmbigousException((OptionProposal[]) ambigous.toArray(new OptionProposal[ambigous.size()])); 
+				throw new OptionAmbigousException((OptionProposal[]) ambigous.toArray(new OptionProposal[ambigous.size()]));
 			}
 			int sepIndex = key.indexOf('_');
 				if (sepIndex == -1)

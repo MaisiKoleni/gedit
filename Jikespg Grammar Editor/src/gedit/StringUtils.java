@@ -13,7 +13,7 @@ public class StringUtils {
 		private char[] fQuoteChars;
 		private char fInQuotes;
 
-		public final static char[] DEFAULT_QUOTE_CHARS = new char[] { '\'', '\'', '"', '"' };
+		public final static char[] DEFAULT_QUOTE_CHARS = { '\'', '\'', '"', '"' };
 
 		public QuoteDetector() {
 			this(DEFAULT_QUOTE_CHARS);
@@ -53,7 +53,7 @@ public class StringUtils {
 			fQuoteChars = quoteChars;
 			reset();
 		}
-	};
+	}
 
 	public static String[] split(String value, String separator) {
 		if (value == null)
@@ -67,13 +67,8 @@ public class StringUtils {
 	}
 
 	public static String join(String[] values, String separator) {
-		StringBuffer sb = new StringBuffer();
-		for (int i = 0; i < values.length; i++) {
-			if (i > 0)
-				sb.append(separator);
-			sb.append(values[i]);
-		}
-		return sb.toString();
+		String sb = String.join(separator, values);
+		return sb;
 	}
 
 	public static String trimQuotes(String text) {

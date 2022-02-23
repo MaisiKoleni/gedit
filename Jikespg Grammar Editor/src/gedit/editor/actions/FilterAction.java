@@ -4,15 +4,6 @@
  */
 package gedit.editor.actions;
 
-import gedit.GrammarEditorPlugin;
-import gedit.StringUtils;
-import gedit.editor.ModelFilter;
-import gedit.editor.ModelLabelProvider;
-import gedit.editor.ModelSorter;
-import gedit.editor.PreferenceConstants;
-import gedit.model.ModelType;
-import gedit.model.ModelUtils;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -41,6 +32,15 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.actions.CompoundContributionItem;
 
+import gedit.GrammarEditorPlugin;
+import gedit.StringUtils;
+import gedit.editor.ModelFilter;
+import gedit.editor.ModelLabelProvider;
+import gedit.editor.ModelSorter;
+import gedit.editor.PreferenceConstants;
+import gedit.model.ModelType;
+import gedit.model.ModelUtils;
+
 public class FilterAction extends Action {
 	private class FilterDialog extends Dialog {
 		private BitSet fSelectedFilterTypes;
@@ -54,12 +54,14 @@ public class FilterAction extends Action {
 			fFilterMacros = filterMacros;
 			setShellStyle(getShellStyle() | SWT.RESIZE);
 		}
-		
+
+		@Override
 		protected void configureShell(Shell newShell) {
 			super.configureShell(newShell);
 			newShell.setText("Section Type Filters");
 		}
-		
+
+		@Override
 		protected Control createDialogArea(Composite parent) {
 			Composite composite = (Composite) super.createDialogArea(parent);
 
@@ -67,11 +69,11 @@ public class FilterAction extends Action {
 			fFilterMacrosButton.setText("&Filter macro blocks");
 			fFilterMacrosButton.setData(new GridData(GridData.FILL_HORIZONTAL));
 			fFilterMacrosButton.setSelection(fFilterMacros);
-			
+
 			Label label = new Label(composite, SWT.NONE);
 			label.setText("&Select the sections to be excluded from the view");
 			label.setData(new GridData(GridData.FILL_HORIZONTAL));
-			
+
 			fTypeTable = new TableViewer(composite, SWT.BORDER | SWT.CHECK);
 			GridData data = new GridData(GridData.FILL_BOTH);
 			data.heightHint = convertHeightInCharsToPixels(15);
@@ -81,40 +83,38 @@ public class FilterAction extends Action {
 			TableLayout layout = new TableLayout();
 			layout.addColumnData(new ColumnWeightData(100));
 			fTypeTable.getTable().setLayout(layout);
-			
+
 			fTypeTable.setContentProvider(new ArrayContentProvider());
 			fTypeTable.setLabelProvider(new ModelLabelProvider());
 			fTypeTable.setSorter(new ModelSorter());
 			ModelType[] allTypes = ModelType.getAllTypes();
 			List input = new ArrayList();
-			for (int i = 0; i < allTypes.length; i++) {
-				ModelType type = allTypes[i];
+			for (ModelType type : allTypes) {
 				if (!type.isSectionType())
 					continue;
 				input.add(type);
 			}
 			fTypeTable.setInput(input);
 			initTypeTable();
-			
+
 			applyDialogFont(composite);
 			return composite;
 		}
-		
+
 		private void initTypeTable() {
 			TableItem[] items = fTypeTable.getTable().getItems();
-			for (int i = 0; i < items.length; i++) {
-				TableItem item = items[i];
+			for (TableItem item : items) {
 				ModelType type = (ModelType) item.getData();
 				if (fSelectedFilterTypes.get(type.getBitPosition()))
 					item.setChecked(true);
 			}
 		}
 
+		@Override
 		protected void okPressed() {
 			TableItem[] items = fTypeTable.getTable().getItems();
 			BitSet selectedTypes = new BitSet();
-			for (int i = 0; i < items.length; i++) {
-				TableItem item = items[i];
+			for (TableItem item : items) {
 				ModelType type = (ModelType) item.getData();
 				if (item.getChecked())
 					selectedTypes.set(type.getBitPosition());
@@ -127,15 +127,15 @@ public class FilterAction extends Action {
 		public BitSet getSelectedFilterTypes() {
 			return fSelectedFilterTypes;
 		}
-		
+
 		public boolean isFilterMacros() {
 			return fFilterMacros;
 		}
-		
-	};
-	
+
+	}
+
 	private static int MAX_RECENTLY_USED_FILTERS = 5;
-	
+
 	private BitSet fPresetFilter;
 	private BitSet fFilter;
 	private ContentViewer fViewer;
@@ -156,7 +156,7 @@ public class FilterAction extends Action {
 		fPreferenceKeyMacros = preferenceKeyMacros;
 		fStore = GrammarEditorPlugin.getDefault().getPreferenceStore();
 	}
-	
+
 	public FilterAction(ContentViewer viewer, ModelFilter sectionFilter, String preferenceKey, String preferenceKeyRecentlyUsed, String preferenceKeyMacros) {
 		this("&Filters...", viewer, sectionFilter, preferenceKey, preferenceKeyRecentlyUsed, preferenceKeyMacros);
 		setToolTipText("Choose the filter to apply");
@@ -169,6 +169,7 @@ public class FilterAction extends Action {
 		fPresetFilter = filter;
 	}
 
+	@Override
 	public void run() {
 		BitSet previousFilter = (BitSet) (fFilter = ModelUtils.createBitSetFromString(fStore
 				.getString(fPreferenceKey), PreferenceConstants.SECTION_FILTERS_SEPARATOR)).clone();
@@ -194,19 +195,18 @@ public class FilterAction extends Action {
 			fStore.setValue(fPreferenceKeyMacros, newFilterMacros);
 			fSectionFilter.setFilterMacros(newFilterMacros);
 		}
-		
+
 		if (previousFilter.equals(fFilter) && newFilterMacros == previousFilterMacros)
 			return;
 		fViewer.getControl().setRedraw(false);
 		fViewer.refresh();
 		fViewer.getControl().setRedraw(true);
 	}
-	
+
 	private void addToRecentlyUsedFilters(String newFiltersString) {
 		List recentlyUsedFilters = new ArrayList(Arrays.asList(StringUtils.split(fStore.getString(fPreferenceKeyRecentlyUsed), PreferenceConstants.SECTION_FILTERS_SEPARATOR)));
 		String[] newFilters = StringUtils.split(newFiltersString, PreferenceConstants.SECTION_FILTERS_SEPARATOR);
-		for (int i = 0; i < newFilters.length; i++) {
-			String newFilter = newFilters[i];
+		for (String newFilter : newFilters) {
 			if (!recentlyUsedFilters.contains(newFilter))
 				recentlyUsedFilters.add(0, newFilter);
 		}
@@ -217,6 +217,7 @@ public class FilterAction extends Action {
 
 	public IContributionItem getMostRecentlyUsedContributionItem() {
 		return new CompoundContributionItem() {
+			@Override
 			protected IContributionItem[] getContributionItems() {
 				IAction[] actions = getMostRecentlyUsedFilters(fViewer);
 				ActionContributionItem[] items = new ActionContributionItem[actions.length];
@@ -235,11 +236,11 @@ public class FilterAction extends Action {
 		for (int i = 0, lastBitPos = 0; i < actions.length; i++, lastBitPos++) {
 			ModelType type = ModelType.getByBitPosition(lastBitPos = filters.nextSetBit(lastBitPos));
 			BitSet filter = fPresetFilter != null ? fFilter : type.or((BitSet) null);
-			actions[i] = new FilterAction(viewer, fSectionFilter, (i + 1) + " " + labelProvider.getText(type), filter, fPreferenceKey, fPreferenceKeyRecentlyUsed, fPreferenceKeyMacros);
+			actions[i] = new FilterAction(viewer, fSectionFilter, i + 1 + " " + labelProvider.getText(type), filter, fPreferenceKey, fPreferenceKeyRecentlyUsed, fPreferenceKeyMacros);
 		}
 		return actions;
 	}
-	
+
 	public boolean isDialogActive() {
 		return fDialog != null;
 	}

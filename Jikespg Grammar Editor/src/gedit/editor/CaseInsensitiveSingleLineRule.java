@@ -4,8 +4,6 @@
  */
 package gedit.editor;
 
-import gedit.StringUtils.QuoteDetector;
-
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -14,17 +12,15 @@ import org.eclipse.jface.text.rules.IToken;
 import org.eclipse.jface.text.rules.SingleLineRule;
 import org.eclipse.jface.text.rules.Token;
 
+import gedit.StringUtils.QuoteDetector;
+
 public class CaseInsensitiveSingleLineRule extends SingleLineRule {
 	private QuoteDetector fQuoteDetector;
 	private boolean fEndSequenceIncluded;
 	private boolean fEolDetected;
 	private char[][] fLineDelimiters;
 	private char[][] fSortedLineDelimiters;
-	private Comparator fLineDelimiterComparator = new Comparator() {
-		public int compare(Object o1, Object o2) {
-			return ((char[]) o2).length - ((char[]) o1).length;
-		}
-	};
+	private Comparator fLineDelimiterComparator = (o1, o2) -> ((char[]) o2).length - ((char[]) o1).length;
 	public CaseInsensitiveSingleLineRule(String startSequence, String endSequence,
 			IToken token, char escapeCharacter, boolean breaksOnEOF, boolean endSequenceIncluded) {
 		super(startSequence, endSequence, token, escapeCharacter, breaksOnEOF);
@@ -34,6 +30,7 @@ public class CaseInsensitiveSingleLineRule extends SingleLineRule {
 			fStartSequence[i] = Character.toLowerCase(fStartSequence[i]);
 	}
 
+	@Override
 	protected IToken doEvaluate(ICharacterScanner scanner, boolean resume) {
 
 		if (resume) {
@@ -47,14 +44,12 @@ public class CaseInsensitiveSingleLineRule extends SingleLineRule {
 
 			int c= scanner.read();
 			fQuoteDetector.detect(c);
-			if (c == fStartSequence[0]) {
-				if (sequenceDetected(scanner, fStartSequence, true, true)) {
-					if (endSequenceDetected(scanner)) {
-						if (!fEolDetected && !fEndSequenceIncluded && fEndSequence != null)
-							for (int i = 0; i < fEndSequence.length; i++)
-								scanner.unread();
-						return fToken;
-					}
+			if ((c == fStartSequence[0]) && sequenceDetected(scanner, fStartSequence, true, true)) {
+				if (endSequenceDetected(scanner)) {
+					if (!fEolDetected && !fEndSequenceIncluded && fEndSequence != null)
+						for (int i = 0; i < fEndSequence.length; i++)
+							scanner.unread();
+					return fToken;
 				}
 			}
 		}
@@ -63,6 +58,7 @@ public class CaseInsensitiveSingleLineRule extends SingleLineRule {
 		return Token.UNDEFINED;
 	}
 
+	@Override
 	protected boolean endSequenceDetected(ICharacterScanner scanner) {
 
 		char[][] originalDelimiters= scanner.getLegalLineDelimiters();
@@ -87,8 +83,8 @@ public class CaseInsensitiveSingleLineRule extends SingleLineRule {
 				if (fEscapeContinuesLine) {
 					c= scanner.read();
 					fQuoteDetector.detect(c);
-					for (int i= 0; i < fSortedLineDelimiters.length; i++) {
-						if (c == fSortedLineDelimiters[i][0] && sequenceDetected(scanner, fSortedLineDelimiters[i], true, false))
+					for (char[] fSortedLineDelimiter : fSortedLineDelimiters) {
+						if (c == fSortedLineDelimiter[0] && sequenceDetected(scanner, fSortedLineDelimiter, true, false))
 							break;
 					}
 				} else
@@ -101,8 +97,8 @@ public class CaseInsensitiveSingleLineRule extends SingleLineRule {
 			} else if (fBreaksOnEOL) {
 				// Check for end of line since it can be used to terminate the pattern.
 				fEolDetected = false;
-				for (int i= 0; i < fSortedLineDelimiters.length; i++) {
-					if (c == fSortedLineDelimiters[i][0] && sequenceDetected(scanner, fSortedLineDelimiters[i], true, false)) {
+				for (char[] fSortedLineDelimiter : fSortedLineDelimiters) {
+					if (c == fSortedLineDelimiter[0] && sequenceDetected(scanner, fSortedLineDelimiter, true, false)) {
 						fEolDetected = true;
 						return true;
 					}

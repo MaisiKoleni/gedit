@@ -4,10 +4,6 @@
  */
 package gedit.editor;
 
-import gedit.GrammarEditorPlugin;
-import gedit.model.IProblemRequestor;
-import gedit.model.Problem;
-
 import java.util.Iterator;
 import java.util.Map;
 
@@ -25,13 +21,18 @@ import org.eclipse.ui.editors.text.TextFileDocumentProvider;
 import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.eclipse.ui.texteditor.ResourceMarkerAnnotationModel;
 
+import gedit.GrammarEditorPlugin;
+import gedit.model.IProblemRequestor;
+import gedit.model.Problem;
+
 public class GrammarDocumentProvider extends TextFileDocumentProvider {
 	private class AnnotationModel extends ResourceMarkerAnnotationModel implements IProblemRequestor {
 		private int fMaximumProblemsReported;
 		public AnnotationModel(IResource resource) {
 			super(resource);
 		}
-		
+
+		@Override
 		public void beginReporting() {
 			Map annotations = getAnnotationMap();
 			for (Iterator it = annotations.keySet().iterator(); it.hasNext();) {
@@ -43,6 +44,7 @@ public class GrammarDocumentProvider extends TextFileDocumentProvider {
 					PreferenceConstants.EDITOR_MAXIMUM_PROBLEMS_REPORTED);
 		}
 
+		@Override
 		public void accept(Problem problem) {
 			if (getAnnotationMap().size() >= fMaximumProblemsReported)
 				return;
@@ -54,11 +56,12 @@ public class GrammarDocumentProvider extends TextFileDocumentProvider {
 			}
 		}
 
+		@Override
 		public void endReporting() {
 			fireModelChanged(new AnnotationModelEvent(this));
 		}
-	};
-	
+	}
+
 	public class ProblemAnnotation extends Annotation {
 		private Problem fProblem;
 		public ProblemAnnotation(Problem problem) {
@@ -76,30 +79,32 @@ public class GrammarDocumentProvider extends TextFileDocumentProvider {
 			}
 			setText(problem.getMessage());
 		}
-		
+
 		public Problem getProblem() {
 			return fProblem;
 		}
-	};
-	
+	}
+
 	public static final String ANNOTATION_WARNING = "org.eclipse.ui.workbench.texteditor.warning";
 	public static final String ANNOTATION_ERROR = "org.eclipse.ui.workbench.texteditor.error";
 	public static final String ANNOTATION_TASK = "org.eclipse.ui.workbench.texteditor.task";
 	public static final String ANNOTATION_BOOKMARK = "org.eclipse.ui.workbench.texteditor.bookmark";
 	public static final String ANNOTATION_SEARCH_RESULT = "org.eclipse.search.results";
 	public static final String ANNOTATION_OCCURRENCE = "org.eclipse.jdt.ui.occurrences";
-	
+
 	public GrammarDocumentProvider() {
 		IDocumentProvider provider = new TextFileDocumentProvider();
 		provider = new ForwardingDocumentProvider(GrammarDocumentSetupParticipant.GRAMMAR_PARTITION,
 				new GrammarDocumentSetupParticipant(), provider);
 		setParentDocumentProvider(provider);
 	}
-	
+
+	@Override
 	protected IAnnotationModel createAnnotationModel(IFile file) {
 		return new AnnotationModel(file);
 	}
-	
+
+	@Override
 	public void connect(Object element) throws CoreException {
 		super.connect(element);
 		if (!(element instanceof GrammarFileEditorInput))

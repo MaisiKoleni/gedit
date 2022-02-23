@@ -1,5 +1,6 @@
 package gedit.editor;
 
+import org.eclipse.core.runtime.Assert;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocument;
@@ -10,7 +11,6 @@ import org.eclipse.jface.text.TextAttribute;
 import org.eclipse.jface.text.TextPresentation;
 import org.eclipse.jface.text.presentation.IPresentationDamager;
 import org.eclipse.jface.text.presentation.IPresentationRepairer;
-import org.eclipse.core.runtime.Assert;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
@@ -35,6 +35,7 @@ public class NonRuleBasedDamagerRepairer implements IPresentationDamager, IPrese
 	/**
 	 * @see IPresentationRepairer#setDocument(IDocument)
 	 */
+	@Override
 	public void setDocument(IDocument document) {
 		fDocument = document;
 	}
@@ -65,6 +66,7 @@ public class NonRuleBasedDamagerRepairer implements IPresentationDamager, IPrese
 	/**
 	 * @see IPresentationDamager#getDamageRegion(ITypedRegion, DocumentEvent, boolean)
 	 */
+	@Override
 	public IRegion getDamageRegion(
 		ITypedRegion partition,
 		DocumentEvent event,
@@ -105,6 +107,7 @@ public class NonRuleBasedDamagerRepairer implements IPresentationDamager, IPrese
 	/**
 	 * @see IPresentationRepairer#createPresentation(TextPresentation, ITypedRegion)
 	 */
+	@Override
 	public void createPresentation(TextPresentation presentation, ITypedRegion region) {
 		addRange(presentation, region.getOffset(), region.getLength(),
 				fDefaultTextAttribute);
@@ -126,8 +129,8 @@ public class NonRuleBasedDamagerRepairer implements IPresentationDamager, IPrese
 		if (attr != null) {
 			int fontStyle = attr.getStyle() & (SWT.NORMAL | SWT.BOLD | SWT.ITALIC);
 			StyleRange range = new StyleRange(offset, length, attr.getForeground(), attr.getBackground(), fontStyle);
-			range.strikeout = (attr.getStyle() & TextAttribute.STRIKETHROUGH) > 0;
-			range.underline = (attr.getStyle() & TextAttribute.UNDERLINE) > 0;
+			range.strikeout = (attr.getStyle() & TextAttribute.STRIKETHROUGH) != 0;
+			range.underline = (attr.getStyle() & TextAttribute.UNDERLINE) != 0;
 			presentation.addStyleRange(range);
 
 		}

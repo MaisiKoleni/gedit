@@ -9,16 +9,13 @@ import org.eclipse.swt.widgets.Display;
 
 public abstract class NonUISafeRunnable extends SafeRunnable {
 
+	@Override
 	public void handleException(final Throwable e) {
 		if (Thread.currentThread() != Display.getDefault().getSyncThread()) {
-			Display.getDefault().syncExec(new Runnable() {
-				public void run() {
-					NonUISafeRunnable.super.handleException(e);
-				}
-			});
+			Display.getDefault().syncExec(() -> NonUISafeRunnable.super.handleException(e));
 		} else {
 			super.handleException(e);
 		}
 	}
-	
+
 }

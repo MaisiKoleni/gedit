@@ -11,19 +11,21 @@ public class Definition extends ModelBase {
 		super(parent, name);
 		this.value = value;
 	}
-	
+
 	public String getName() {
 		return label;
 	}
-	
+
 	public String getValue() {
 		return value;
 	}
 
+	@Override
 	public ModelType getType() {
 		return ModelType.DEFINITION;
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (o == this)
 			return true;

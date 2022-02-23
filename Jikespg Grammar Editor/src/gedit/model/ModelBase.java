@@ -7,8 +7,8 @@ package gedit.model;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.eclipse.core.runtime.PlatformObject;
 import org.eclipse.core.runtime.Assert;
+import org.eclipse.core.runtime.PlatformObject;
 
 public abstract class ModelBase extends PlatformObject implements Comparable, Cloneable {
 	protected ModelBase parent;
@@ -66,10 +66,11 @@ public abstract class ModelBase extends PlatformObject implements Comparable, Cl
 		return (Document) getAdapter(Document.class);
 	}
 
+	@Override
 	public Object getAdapter(Class adapter) {
 		if (Document.class.equals(adapter)) {
 			if (parent instanceof Document)
-				return (Document) parent;
+				return parent;
 			if (parent != null)
 				return parent.getAdapter(adapter);
 		}
@@ -88,6 +89,7 @@ public abstract class ModelBase extends PlatformObject implements Comparable, Cl
 		return visible;
 	}
 
+	@Override
 	protected Object clone() {
 		ModelBase clone = null;
 		try {
@@ -97,14 +99,17 @@ public abstract class ModelBase extends PlatformObject implements Comparable, Cl
 		return clone;
 	}
 
+	@Override
 	public int compareTo(Object o) {
 		return o instanceof ModelBase ? label.compareToIgnoreCase(((ModelBase) o).label) : 0;
 	}
 
+	@Override
 	public String toString() {
 		return getType()  + ": " + label;
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (this == o)
 			return true;

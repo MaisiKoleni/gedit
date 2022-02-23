@@ -4,9 +4,6 @@
  */
 package gedit.model;
 
-import gedit.GrammarEditorPlugin;
-import gedit.NonUISafeRunnable;
-
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -18,15 +15,18 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 
+import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.IAdaptable;
+import org.eclipse.core.runtime.ListenerList;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.text.Position;
-import org.eclipse.core.runtime.Assert;
-import org.eclipse.core.runtime.ListenerList;
+
+import gedit.GrammarEditorPlugin;
+import gedit.NonUISafeRunnable;
 
 public class Document extends ModelBase implements IAdaptable {
 	public interface IModelListener {
-		public void modelChanged(Document model);
+		void modelChanged(Document model);
 	}
 
 	private Map sections = new HashMap();
@@ -74,16 +74,18 @@ public class Document extends ModelBase implements IAdaptable {
 		return node;
 	}
 
+	@Override
 	public ModelType getType() {
 		return ModelType.DOCUMENT;
 	}
 
+	@Override
 	public Object[] getChildren() {
 		return getSections();
 	}
 
 	public Section[] getSections() {
-		return (Section[]) sections.values().toArray(new Section[sections.values().size()]);
+		return (Section[]) sections.values().toArray(new Section[sections.size()]);
 	}
 
 	public Section getSection(Object childType) {
@@ -104,7 +106,7 @@ public class Document extends ModelBase implements IAdaptable {
 		int length = model.getLength();
 		ModelType modelType = model.getType();
 		if (modelType == ModelType.RULE || modelType == ModelType.ALIAS || modelType == ModelType.NAME
-				|| (modelType == ModelType.SECTION && ((Section) model).getChildType() != ModelType.OPTION)) {
+				|| modelType == ModelType.SECTION && ((Section) model).getChildType() != ModelType.OPTION) {
 			offset = model.getRangeOffset();
 			length = model.getRangeLength();
 		}
@@ -117,9 +119,9 @@ public class Document extends ModelBase implements IAdaptable {
 		for (int i = 0; problems != null && i < problems.size(); i++) {
 			Problem problem = (Problem) problems.get(i);
 			if (problem.getOffset() == offset)
-				result.put(new Integer(2 * problem.getType()), problem);
+				result.put(Integer.valueOf(2 * problem.getType()), problem);
 			else if (position.overlapsWith(problem.getOffset(), problem.getLength()))
-				result.put(new Integer(problem.getType()), problem);
+				result.put(Integer.valueOf(problem.getType()), problem);
 		}
 		return (Problem[]) result.values().toArray(new Problem[result.size()]);
 	}
@@ -159,8 +161,8 @@ public class Document extends ModelBase implements IAdaptable {
 		if (sectionChildrenSize > 0)
 			System.arraycopy(section.children, 0, array, children.size(), sectionChildrenSize);
 		boolean childrenVisible = false;
-		for (int i = 0; i < array.length; i++) {
-			if (!array[i].visible)
+		for (ModelBase element : array) {
+			if (!element.visible)
 				continue;
 			childrenVisible = true;
 			break;
@@ -179,8 +181,8 @@ public class Document extends ModelBase implements IAdaptable {
 		if (includes == null)
 			return null;
 		Object file = FileProzessor.getFileForName(this, name);
-		for (int i = 0; i < includes.size(); i++) {
-			Document document = (Document) includes.get(i);
+		for (Object include : includes) {
+			Document document = (Document) include;
 			if (FileProzessor.getFileForName(this, document.label).equals(file))
 				return document;
 		}
@@ -194,10 +196,11 @@ public class Document extends ModelBase implements IAdaptable {
 		Rule[] rules = new Rule[section.children.length];
 		int size = 0;
 
-		for (int i = 0; i < section.children.length; i++) {
-			ModelBase child = section.children[i];
-			if (child instanceof Rule)
-				rules[size++] = (Rule) child;
+		for (ModelBase child : section.children) {
+			if (child instanceof Rule) {
+				rules[size] = (Rule) child;
+				size++;
+			}
 		}
 		if (size != rules.length)
 			System.arraycopy(rules, 0, rules = new Rule[size], 0, size);
@@ -291,8 +294,8 @@ public class Document extends ModelBase implements IAdaptable {
 		}
 		if (includes == null)
 			return null;
-		for (int i = 0; i < includes.size(); i++) {
-			ModelBase element = ((Document) includes.get(i)).getElementById(id, filter);
+		for (Object include : includes) {
+			ModelBase element = ((Document) include).getElementById(id, filter);
 			if (element != null)
 				return element;
 		}
@@ -303,9 +306,10 @@ public class Document extends ModelBase implements IAdaptable {
 		if (listeners == null)
 			return;
 		Object[] objects = listeners.getListeners();
-		for (int i = 0; i < objects.length; i++) {
-			final IModelListener listener = (IModelListener) objects[i];
+		for (Object object : objects) {
+			final IModelListener listener = (IModelListener) object;
 			Platform.run(new NonUISafeRunnable() {
+				@Override
 				public void run() throws Exception {
 					listener.modelChanged(Document.this);
 				}

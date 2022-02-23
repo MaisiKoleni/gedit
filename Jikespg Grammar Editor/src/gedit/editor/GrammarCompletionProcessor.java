@@ -4,17 +4,6 @@
  */
 package gedit.editor;
 
-import gedit.GrammarEditorPlugin;
-import gedit.model.Definition;
-import gedit.model.Document;
-import gedit.model.DocumentOptions;
-import gedit.model.GenericModel;
-import gedit.model.ModelType;
-import gedit.model.ModelUtils;
-import gedit.model.Rule;
-import gedit.model.ModelUtils.OptionAmbigousException;
-import gedit.model.ModelUtils.OptionProposal;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,13 +25,25 @@ import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 
+import gedit.GrammarEditorPlugin;
+import gedit.model.Definition;
+import gedit.model.Document;
+import gedit.model.DocumentOptions;
+import gedit.model.GenericModel;
+import gedit.model.ModelType;
+import gedit.model.ModelUtils;
+import gedit.model.ModelUtils.OptionAmbigousException;
+import gedit.model.ModelUtils.OptionProposal;
+import gedit.model.Rule;
+
 public class GrammarCompletionProcessor implements IContentAssistProcessor {
 	private GrammarSourceViewer fViewer;
 	private int fOffset;
 	private String fErrorMessage;
-	
+
+	@Override
 	public ICompletionProposal[] computeCompletionProposals(ITextViewer viewer, int offset) {
-		
+
 		if (!(viewer instanceof GrammarSourceViewer))
 			return null;
 		fViewer = (GrammarSourceViewer) viewer;
@@ -51,7 +52,7 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		String word = findWordBegin(text, offset, (char) 0, false);
 		int end = findWordEnd(text, offset, (char) 0);
 		String contentType = fViewer.getContentType(viewer.getDocument(), offset);
-		
+
 		List proposals = new ArrayList();
 		Document model = fViewer.getModel(true);
 
@@ -70,26 +71,26 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		}
 		if (IDocument.DEFAULT_CONTENT_TYPE.equals(contentType))
 			computeKeywordProposals(model, word, end, labelProvider, proposals);
-		
+
 		setErrorMessage(proposals.size() > 0 ? null : "No proposals available");
 
 		return (ICompletionProposal[]) proposals.toArray(new ICompletionProposal[proposals.size()]);
 	}
 
 	private void computeRulesProposals(Document model, String word, int endOffset, List proposals) {
-		
+
 		List list = new ArrayList(Arrays.asList(model.getRules()));
 		Collections.sort(list);
 		Set duplicates = new HashSet();
 		Rule[] rules = (Rule[]) list.toArray(new Rule[list.size()]);
-		for (int i = 0; i < rules.length; i++) {
-			String name = rules[i].getLhs();
+		for (Rule rule : rules) {
+			String name = rule.getLhs();
 			if (duplicates.contains(name))
 				continue;
 			duplicates.add(name);
 			if (!startsWithIgnoreCase(name, word))
 				continue;
-			int length = (endOffset - fOffset);
+			int length = endOffset - fOffset;
 			String replacement = name.substring(word.length());
 			proposals.add(new GrammarCompletionProposal(replacement, name,
 					GrammarEditorPlugin.getImage("icons/production.gif"), //$NON-NLS-1$
@@ -101,11 +102,11 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		List list = new ArrayList(Arrays.asList(model.getTerminals()));
 		Collections.sort(list);
 		GenericModel[] terminals = (GenericModel[]) list.toArray(new GenericModel[list.size()]);
-		for (int i = 0; i < terminals.length; i++) {
-			String name = terminals[i].getLabel();
+		for (GenericModel terminal : terminals) {
+			String name = terminal.getLabel();
 			if (!startsWithIgnoreCase(name, word))
 				continue;
-			int length = (endOffset - fOffset);
+			int length = endOffset - fOffset;
 			String replacement = name.substring(Math.min(word.length(), name.length()));
 			proposals.add(new GrammarCompletionProposal(replacement, name,
 					GrammarEditorPlugin.getImage("icons/terminal.gif"), //$NON-NLS-1$
@@ -123,22 +124,21 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		String[] blockb = model.getOptions().getBlockBeginnings();
 		boolean secondRun = false;
 		do {
-			for (int i = 0; i < definitions.length; i++) {
-				Definition definition = definitions[i];
+			for (Definition definition : definitions) {
 				String name = definition.getName();
 				name = escape + name;
-				for (int j = 0; j < blockb.length; j++) {
-					if (!word.startsWith(blockb[j]))
+				for (String element : blockb) {
+					if (!word.startsWith(element))
 						continue;
-					word = word.substring(blockb[j].length());
+					word = word.substring(element.length());
 				}
 				boolean withEscape = startsWithIgnoreCase(name, word);
 				boolean withoutEscape = startsWithIgnoreCase(name, escape + word);
 				if (!withEscape && !withoutEscape && !secondRun)
 					continue;
-				
+
 				int offset = withEscape ? fOffset : fOffset - word.length();
-				int length = (endOffset - offset);
+				int length = endOffset - offset;
 				String replacement = withEscape ? name.substring(word.length()) : name;
 				String additionalInfo = definition.getValue();
 				if ("".equals(additionalInfo))
@@ -155,8 +155,7 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 	private void computeKeywordProposals(Document model, String word, int endOffset, ILabelProvider labelProvider, List proposals) {
 		ModelType[] allTypes = ModelType.getAllTypes();
 		List sortedProposals = new ArrayList();
-		for (int i = 0; i < allTypes.length; i++) {
-			ModelType type = allTypes[i];
+		for (ModelType type : allTypes) {
 			if (!type.isKeyword())
 				continue;
 			String keyword = labelProvider.getText(type);
@@ -166,7 +165,7 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 			if (!withEscape && !withoutEscape)
 				continue;
 			int offset = withEscape ? fOffset : fOffset - word.length();
-			int length = (endOffset - offset);
+			int length = endOffset - offset;
 			keyword = escape + keyword;
 			String replacement = withEscape ? keyword.substring(word.length()) : keyword;
 			sortedProposals.add(new GrammarCompletionProposal(replacement, keyword,
@@ -176,7 +175,7 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		Collections.sort(sortedProposals);
 		proposals.addAll(sortedProposals);
 	}
-	
+
 	private OptionProposal findOptionProposal(String word) {
 		try {
 			return ModelUtils.findOptionProposal(word);
@@ -188,7 +187,7 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 	private void computeOptionProposals(Document model, String word, String previousWord, int endOffset, List proposals) {
 		Map options = ModelUtils.getAllOptions();
 		int assignmentIndex = word.indexOf('=');
-		if (previousWord.equals("=") || assignmentIndex != -1) {
+		if ("=".equals(previousWord) || assignmentIndex != -1) {
 			String key = assignmentIndex != -1 ? word.substring(0, assignmentIndex) : previousWord;
 			if (assignmentIndex != -1)
 				word = word.substring(assignmentIndex + 1);
@@ -197,7 +196,7 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 				computeOptionValueProposals(model, word, endOffset, proposals, option);
 			return;
 		}
-		
+
 		OptionProposal previousOption = findOptionProposal(previousWord);
 		if (previousOption != null && previousOption.hasValue()) {
 			proposals.add(new GrammarCompletionProposal("=", "=",
@@ -205,7 +204,7 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 					fOffset, 1, 1, null, model, (char) 0));
 			return;
 		}
-		
+
 		OptionProposal optionByWord = findOptionProposal(word);
 		for (Iterator it = options.values().iterator(); it.hasNext(); ) {
 			OptionProposal proposal = (OptionProposal) it.next();
@@ -228,7 +227,7 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 				continue;
 			if (noprefixed)
 				name = "no" + name;
-			int length = (endOffset - fOffset);
+			int length = endOffset - fOffset;
 			String replacement = name.substring(Math.min(word.length(), name.length()));
 			String additionalInfo = "This option is valid for " + getOptionProposalVersionInfo(proposal.getVersion());
 			proposals.add(new GrammarCompletionProposal(replacement, name,
@@ -253,12 +252,11 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 	private void computeOptionValueProposals(Document model, String word, int endOffset, List proposals, OptionProposal option) {
 		String[] choices = option.getChoice();
 		if (choices != null) {
-			for (int i = 0; i < choices.length; i++) {
-				String choice = choices[i];
+			for (String choice : choices) {
 				if (!startsWithIgnoreCase(choice, word))
 					continue;
 				String replacement = choice.substring(Math.min(word.length(), choice.length()));
-				int length = (endOffset - fOffset);
+				int length = endOffset - fOffset;
 				proposals.add(new GrammarCompletionProposal(replacement, choice, null,
 						fOffset, length, replacement.length(), null, model, (char) 0));
 			}
@@ -268,15 +266,15 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 			computeFileSystemProposals(model, word, endOffset, proposals, true);
 		}
 	}
-	
+
 	private void computeFileSystemProposals(Document model, String word, int endOffset, List proposals, boolean suppressFiles) {
 		int separatorIndex = word.lastIndexOf(';');
 		if (separatorIndex != -1)
 			word = word.substring(separatorIndex + 1);
 		String[] dirs = model.getOptions().getIncludeDirs();
 		if (dirs != null) {
-			for (int i = 0; i < dirs.length; i++) {
-				File root = new File(dirs[i]);
+			for (String dir : dirs) {
+				File root = new File(dir);
 				doComputeFileSystemProposals(model, word, endOffset, proposals, root, suppressFiles, false);
 			}
 		}
@@ -311,8 +309,7 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 			prefix = "";
 		boolean first = true;
 		for (int pass = 0; pass < 2; pass++) {
-			for (int i = 0; i < files.length; i++) {
-				File file = files[i];
+			for (File file : files) {
 				if (suppressFiles && file.isFile())
 					continue;
 				if (pass == 0 && !file.isDirectory() || pass == 1 && file.isDirectory())
@@ -322,7 +319,7 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 					continue;
 				String display = file.getName();
 				String replacement = display.substring(prefix.length());
-				int length = (endOffset - fOffset);
+				int length = endOffset - fOffset;
 				if (proposals.size() > 0 && first)
 					proposals.add(new CompletionProposal("", fOffset, 0, 0, null, "----------- " + root.getAbsolutePath(), null, null));
 				proposals.add(new GrammarCompletionProposal(replacement, display,
@@ -362,7 +359,7 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		}
 		return text.length();
 	}
-	
+
 	private boolean startsWithIgnoreCase(String string, String prefix) {
 		if (prefix.length() > string.length())
 			return false;
@@ -373,14 +370,17 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 		return true;
 	}
 
+	@Override
 	public IContextInformation[] computeContextInformation(ITextViewer viewer, int offset) {
 		return null;
 	}
 
+	@Override
 	public char[] getCompletionProposalAutoActivationCharacters() {
 		return null;
 	}
 
+	@Override
 	public char[] getContextInformationAutoActivationCharacters() {
 		return null;
 	}
@@ -391,10 +391,12 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 				.getEditorSite().getActionBars().getStatusLineManager().setErrorMessage(fErrorMessage);
 	}
 
+	@Override
 	public String getErrorMessage() {
 		return fErrorMessage;
 	}
 
+	@Override
 	public IContextInformationValidator getContextInformationValidator() {
 		return null;
 	}

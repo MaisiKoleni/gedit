@@ -28,10 +28,10 @@ import org.eclipse.ui.texteditor.ITextEditor;
 
 public class AnnotationHover implements IAnnotationHover, ITextHover {
 	private List fAnnotations = new ArrayList(1);
-	
+
 	protected final static Map SHOW_IN_OVERVIEW;
 	protected final static Map SHOW_IN_TEXT;
-	
+
 	static {
 		Map map = new HashMap();
 		map.put(GrammarDocumentProvider.ANNOTATION_BOOKMARK, null);
@@ -73,8 +73,8 @@ public class AnnotationHover implements IAnnotationHover, ITextHover {
 		StringBuffer text = null;
 		Annotation previousAnnotation = null;
 		Map posMessages = new HashMap();
-		for (int i = 0; i < fAnnotations.size(); i++) {
-			Annotation annotation = (Annotation) fAnnotations.get(i);
+		for (Object fAnnotation : fAnnotations) {
+			Annotation annotation = (Annotation) fAnnotation;
 			if (!shownTypes.containsKey(annotation.getType()))
 				continue;
 			String msg = annotation.getText();
@@ -85,7 +85,7 @@ public class AnnotationHover implements IAnnotationHover, ITextHover {
 				continue;
 			if (text == null) {
 				text = new StringBuffer(msg);
-				previousAnnotation = annotation;				
+				previousAnnotation = annotation;
 			} else {
 				if (previousAnnotation != null) {
 					String prev = text.toString();
@@ -131,8 +131,7 @@ public class AnnotationHover implements IAnnotationHover, ITextHover {
 				List list = (List) object;
 				if (list.contains(text))
 					return true;
-				else
-					list.add(text);
+				list.add(text);
 			} else {
 				List list = new ArrayList();
 				list.add(object);
@@ -145,6 +144,7 @@ public class AnnotationHover implements IAnnotationHover, ITextHover {
 		return false;
 	}
 
+	@Override
 	public String getHoverInfo(ISourceViewer sourceViewer, int lineNumber) {
 		IDocument document = sourceViewer.getDocument();
 		IRegion region = null;
@@ -156,17 +156,19 @@ public class AnnotationHover implements IAnnotationHover, ITextHover {
 		return getHoverText(sourceViewer.getAnnotationModel(), region, SHOW_IN_OVERVIEW);
 	}
 
+	@Override
 	public String getHoverInfo(ITextViewer textViewer, IRegion hoverRegion) {
 		IAnnotationModel model = textViewer instanceof ISourceViewer ? ((ISourceViewer) textViewer).getAnnotationModel() : null;
-		return getHoverText(model, hoverRegion, SHOW_IN_TEXT); 
+		return getHoverText(model, hoverRegion, SHOW_IN_TEXT);
 	}
 
+	@Override
 	public IRegion getHoverRegion(ITextViewer textViewer, int offset) {
 		IAnnotationModel model = textViewer instanceof ISourceViewer ? ((ISourceViewer) textViewer).
 				getAnnotationModel() : null;
 		findAnnotations(model, new Region(offset, 0));
-		for (int i = 0; i < fAnnotations.size(); i++) {
-			Annotation annotation = (Annotation) fAnnotations.get(i);
+		for (Object fAnnotation : fAnnotations) {
+			Annotation annotation = (Annotation) fAnnotation;
 			if (!SHOW_IN_TEXT.containsKey(annotation.getType()))
 				continue;
 			Position position = model.getPosition(annotation);

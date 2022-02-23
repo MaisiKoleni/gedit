@@ -4,12 +4,6 @@
  */
 package gedit.editor;
 
-import gedit.GrammarEditorPlugin;
-import gedit.StringUtils;
-import gedit.model.ModelBase;
-import gedit.model.ModelType;
-import gedit.model.Section;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,11 +13,17 @@ import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
 
+import gedit.GrammarEditorPlugin;
+import gedit.StringUtils;
+import gedit.model.ModelBase;
+import gedit.model.ModelType;
+import gedit.model.Section;
+
 public class ModelSorter extends ViewerSorter {
 	private List fSectionOrder;
 	private boolean fEnabled;
 	private ILabelProvider fLabelProvider;
-	
+
 	public ModelSorter() {
 		fSectionOrder = new ArrayList();
 		initSectionOrder(GrammarEditorPlugin.getDefault().getPreferenceStore().getString(PreferenceConstants.SECTION_ORDERING));
@@ -35,6 +35,7 @@ public class ModelSorter extends ViewerSorter {
 		fEnabled = GrammarEditorPlugin.getDefault().getPreferenceStore().getBoolean(sortPreferenceKey);
 	}
 
+	@Override
 	public int compare(Viewer viewer, Object e1, Object e2) {
 		ModelType type1 = getModelType(e1);
 		ModelType type2 = getModelType(e2);
@@ -45,10 +46,10 @@ public class ModelSorter extends ViewerSorter {
 			return 0;
 		if (e1 instanceof ModelType && e2 instanceof ModelType)
 			return getLabelProvider().getText(e1).compareToIgnoreCase(getLabelProvider().getText(e2));
-			
+
 		return super.compare(viewer, e1, e2);
 	}
-	
+
 	private ILabelProvider getLabelProvider() {
 		return fLabelProvider != null ? fLabelProvider : (fLabelProvider = new ModelLabelProvider());
 	}
@@ -68,7 +69,7 @@ public class ModelSorter extends ViewerSorter {
 			initSectionOrder((String) event.getNewValue());
 		}
 	}
-	
+
 	protected int getSectionOrder(Section section1, Section section2) {
 		if (fEnabled)
 			return fSectionOrder.indexOf(Integer.toString(section1.getChildType().getBitPosition()))

@@ -4,12 +4,12 @@
  */
 package gedit.editor;
 
-import gedit.StringUtils.QuoteDetector;
-
 import org.eclipse.jface.text.rules.ICharacterScanner;
 import org.eclipse.jface.text.rules.IPredicateRule;
 import org.eclipse.jface.text.rules.IToken;
 import org.eclipse.jface.text.rules.Token;
+
+import gedit.StringUtils.QuoteDetector;
 
 public class OperatorRule implements IPredicateRule {
 	private IToken fToken;
@@ -27,10 +27,12 @@ public class OperatorRule implements IPredicateRule {
 		return Token.UNDEFINED;
 	}
 
+	@Override
 	public IToken evaluate(ICharacterScanner scanner, boolean resume) {
 		return evaluate(scanner);
 	}
 
+	@Override
 	public IToken evaluate(ICharacterScanner scanner) {
 		int c = scanner.read();
 		fQuoteDetector.detect(c);
@@ -41,7 +43,7 @@ public class OperatorRule implements IPredicateRule {
 		}
 		return unread(scanner, 1);
 	}
-	
+
 	private IToken doEvaluate(int c, ICharacterScanner scanner) {
 		switch (c) {
 		default:
@@ -63,7 +65,8 @@ public class OperatorRule implements IPredicateRule {
 					return unread(scanner, 5);
 				scanner.unread();
 				return fToken;
-			} else if (Character.isWhitespace((char) c)) {
+			}
+			if (Character.isWhitespace((char) c)) {
 				scanner.unread();
 				return fToken;
 			}
@@ -77,7 +80,8 @@ public class OperatorRule implements IPredicateRule {
 					return unread(scanner, 4);
 				scanner.unread();
 				return fToken;
-			} else if (Character.isWhitespace((char) c)) {
+			}
+			if (Character.isWhitespace((char) c)) {
 				scanner.unread();
 				return fToken;
 			}
@@ -85,10 +89,11 @@ public class OperatorRule implements IPredicateRule {
 		}
 	}
 
+	@Override
 	public IToken getSuccessToken() {
 		return fToken;
 	}
-	
+
 	public void reset() {
 		fQuoteDetector.reset();
 	}
@@ -96,5 +101,5 @@ public class OperatorRule implements IPredicateRule {
 	public void setOrMarker(char orMarker) {
 		fOrMarker = orMarker;
 	}
-	
+
 }

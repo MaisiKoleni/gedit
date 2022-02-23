@@ -6,17 +6,17 @@ package gedit.editor;
 
 public interface IGrammarEditorActionDefinitionIds {
 
-	public final static String SHOW_OUTLINE = "gedit.ShowOutline";
+	String SHOW_OUTLINE = "gedit.ShowOutline";
 
-	public final static String GOTO_DECLARATION = "gedit.GotoDeclaration";
+	String GOTO_DECLARATION = "gedit.GotoDeclaration";
 
-	public final static String SHOW_DECLARATION = "gedit.ShowDeclaration";
+	String SHOW_DECLARATION = "gedit.ShowDeclaration";
 
-	public final static String TOGGLE_COMMENT = "gedit.ToggleComment";
-	
-	public final static String FIND_OCCURRENCES = "gedit.FindOccurrences";
+	String TOGGLE_COMMENT = "gedit.ToggleComment";
 
-	public final static String TOGGLE_MARK_OCCURRENCES = "gedit.ToggleMarkOccurrences";
+	String FIND_OCCURRENCES = "gedit.FindOccurrences";
 
-	public final static String RENAME_IN_FILE = "gedit.RenameInFile";
+	String TOGGLE_MARK_OCCURRENCES = "gedit.ToggleMarkOccurrences";
+
+	String RENAME_IN_FILE = "gedit.RenameInFile";
 }

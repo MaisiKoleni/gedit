@@ -8,20 +8,21 @@ import java.util.List;
 
 public class Rule extends ModelBase {
 	protected List rhs = new ArrayList(1);
-	
+
 	public Rule(ModelBase parent, String lhs) {
 		super(parent, lhs);
 	}
-	
+
 	protected void addRhs(Rhs rhs) {
 		this.rhs.add(rhs);
 		rhs.parent = this;
 	}
-	
+
 	public Rhs[] getRhs() {
 		return (Rhs[]) rhs.toArray(new Rhs[rhs.size()]);
 	}
-	
+
+	@Override
 	public Object[] getChildren() {
 		return getRhs();
 	}
@@ -29,15 +30,18 @@ public class Rule extends ModelBase {
 	public String getLhs() {
 		return label;
 	}
-	
+
+	@Override
 	public ModelType getType() {
 		return ModelType.RULE;
 	}
 
+	@Override
 	public String toString() {
 		return super.toString() + "->" + rhs;
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (o == this)
 			return true;

@@ -11,6 +11,7 @@ import org.eclipse.jface.text.presentation.PresentationReconciler;
 
 public class GrammarPresentationReconciler extends PresentationReconciler {
 
+	@Override
 	protected TextPresentation createPresentation(IRegion damage, IDocument document) {
 		return super.createPresentation(damage, document);
 	}

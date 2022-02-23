@@ -20,7 +20,7 @@ class Scanner implements jpgsym {
 
 	private static final char EOF = (char) -1;
 	private static final char EOL = (char) -2;
-	
+
 	public Scanner(Document document, String text, boolean tokenizeComments) {
 		this.document = document;
 		this.tokenizeComments = tokenizeComments;
@@ -32,15 +32,15 @@ class Scanner implements jpgsym {
     	peekPos = scanPos;
     	errorMessage = null;
     	current = doScan();
-    	
+
     	scanPos = peekPos;
-    	
+
     	current.offset = currentTokenOffset;
     	current.length = peekPos - currentTokenOffset;
-    	
+
     	return current;
     }
-    
+
     public Token peekToken() {
     	return doScan();
     }
@@ -145,7 +145,7 @@ class Scanner implements jpgsym {
 			|| Character.isWhitespace(c)
 			|| isTokenSeparatorNotWhitespaceChar(c);
     }
-    
+
 	private boolean isTokenSeparatorNotWhitespaceChar(char c) {
 		return c != c;
 	}
@@ -166,8 +166,7 @@ class Scanner implements jpgsym {
     	case 'd':
     		switch (Character.toLowerCase(peekChar(peekPos + 2))) {
 			case 'e':
-	    		if (matches("fine", 3)) //$NON-NLS-1$
-	    			if (isTokenSeparatorChar(peekChar(peekPos + 7))) { peekPos += 7; return TK_DEFINE_KEY; }
+	    		if (matches("fine", 3) && isTokenSeparatorChar(peekChar(peekPos + 7))) { peekPos += 7; return TK_DEFINE_KEY; }
 				break;
 			case 'r':
 	    		switch (Character.toLowerCase(peekChar(peekPos + 3))) {
@@ -176,16 +175,13 @@ class Scanner implements jpgsym {
 		    		case 'p':
 			    		switch (Character.toLowerCase(peekChar(peekPos + 5))) {
 			    		case 's':
-				    		if (matches("ymbols", 6)) //$NON-NLS-1$
-				    			if (isTokenSeparatorChar(peekChar(peekPos + 12))) { peekPos += 12; return TK_DROPSYMBOLS_KEY; }
+				    		if (matches("ymbols", 6) && isTokenSeparatorChar(peekChar(peekPos + 12))) { peekPos += 12; return TK_DROPSYMBOLS_KEY; }
 				    		break;
 			    		case 'a':
-				    		if (matches("ctions", 6)) //$NON-NLS-1$
-				    			if (isTokenSeparatorChar(peekChar(peekPos + 12))) { peekPos += 12; return TK_DROPACTIONS_KEY; }
+				    		if (matches("ctions", 6) && isTokenSeparatorChar(peekChar(peekPos + 12))) { peekPos += 12; return TK_DROPACTIONS_KEY; }
 				    		break;
 			    		case 'r':
-				    		if (matches("ules", 6)) //$NON-NLS-1$
-				    			if (isTokenSeparatorChar(peekChar(peekPos + 10))) { peekPos += 10; return TK_DROPRULES_KEY; }
+				    		if (matches("ules", 6) && isTokenSeparatorChar(peekChar(peekPos + 10))) { peekPos += 10; return TK_DROPRULES_KEY; }
 				    		break;
 			    		}
 			    		break;
@@ -198,68 +194,56 @@ class Scanner implements jpgsym {
     	case 't':
     		switch (Character.toLowerCase(peekChar(peekPos + 2))) {
     		case 'e':
-        		if (matches("rminals", 3)) //$NON-NLS-1$
-        			if (isTokenSeparatorChar(peekChar(peekPos + 10))) { peekPos += 10; return TK_TERMINALS_KEY; }
+        		if (matches("rminals", 3) && isTokenSeparatorChar(peekChar(peekPos + 10))) { peekPos += 10; return TK_TERMINALS_KEY; }
         		break;
     		case 'r':
-        		if (matches("ailers", 3)) //$NON-NLS-1$
-        			if (isTokenSeparatorChar(peekChar(peekPos + 9))) { peekPos += 9; return TK_TRAILERS_KEY; }
+        		if (matches("ailers", 3) && isTokenSeparatorChar(peekChar(peekPos + 9))) { peekPos += 9; return TK_TRAILERS_KEY; }
         		break;
     		case 'y':
-        		if (matches("pes", 3)) //$NON-NLS-1$
-        			if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_TYPES_KEY; }
+        		if (matches("pes", 3) && isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_TYPES_KEY; }
         		break;
     		}
     		break;
     	case 'a':
     		switch (Character.toLowerCase(peekChar(peekPos + 2))) {
 			case 'l':
-	    		if (matches("ias", 3)) //$NON-NLS-1$
-	    			if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_ALIAS_KEY; }
+	    		if (matches("ias", 3) && isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_ALIAS_KEY; }
 				break;
 			case 's':
-	    		if (matches("t", 3)) //$NON-NLS-1$
-	    			if (isTokenSeparatorChar(peekChar(peekPos + 4))) { peekPos += 4; return TK_AST_KEY; }
+	    		if (matches("t", 3) && isTokenSeparatorChar(peekChar(peekPos + 4))) { peekPos += 4; return TK_AST_KEY; }
 				break;
 			}
     		break;
     	case 'r':
     		switch (Character.toLowerCase(peekChar(peekPos + 2))) {
     		case 'e':
-        		if (matches("cover", 3)) //$NON-NLS-1$
-        			if (isTokenSeparatorChar(peekChar(peekPos + 8))) { peekPos += 8; return TK_RECOVER_KEY; }
+        		if (matches("cover", 3) && isTokenSeparatorChar(peekChar(peekPos + 8))) { peekPos += 8; return TK_RECOVER_KEY; }
         		break;
     		case 'u':
-        		if (matches("les", 3)) //$NON-NLS-1$
-        			if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_RULES_KEY; }
+        		if (matches("les", 3) && isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_RULES_KEY; }
         		break;
     		}
     		break;
     	case 's':
-    		if (matches("tart", 2)) //$NON-NLS-1$
-    			if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_START_KEY; }
+    		if (matches("tart", 2) && isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_START_KEY; }
     		break;
     	case 'n':
     		switch (Character.toLowerCase(peekChar(peekPos + 2))) {
     		case 'a':
-    			if (matches("mes", 3)) //$NON-NLS-1$
-    				if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_NAMES_KEY; }
+    			if (matches("mes", 3) && isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_NAMES_KEY; }
     			break;
     		case 'o':
-    			if (matches("tice", 3)) //$NON-NLS-1$
-    				if (isTokenSeparatorChar(peekChar(peekPos + 7))) { peekPos += 7; return TK_NOTICE_KEY; }
+    			if (matches("tice", 3) && isTokenSeparatorChar(peekChar(peekPos + 7))) { peekPos += 7; return TK_NOTICE_KEY; }
     			break;
     		}
     		break;
     	case 'e':
     		switch(Character.toLowerCase(peekChar(peekPos + 2))) {
     		case 'm':
-        		if (matches("pty", 3)) //$NON-NLS-1$
-        			if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_EMPTY_KEY; }
+        		if (matches("pty", 3) && isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_EMPTY_KEY; }
         		break;
     		case 'n':
-    			if (matches("d", 3)) //$NON-NLS-1$
-    				if (isTokenSeparatorChar(peekChar(peekPos + 4))) { peekPos += 4; return TK_END_KEY; }
+    			if (matches("d", 3) && isTokenSeparatorChar(peekChar(peekPos + 4))) { peekPos += 4; return TK_END_KEY; }
     			break;
     		case 'o':
         		switch(Character.toLowerCase(peekChar(peekPos + 3))) {
@@ -272,42 +256,34 @@ class Scanner implements jpgsym {
         		}
         		break;
     		case 'r':
-    			if (matches("ror", 3)) //$NON-NLS-1$
-    				if (isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_ERROR_KEY; }
+    			if (matches("ror", 3) && isTokenSeparatorChar(peekChar(peekPos + 6))) { peekPos += 6; return TK_ERROR_KEY; }
     			break;
     		case 'x':
-    			if (matches("port", 3)) //$NON-NLS-1$
-    				if (isTokenSeparatorChar(peekChar(peekPos + 7))) { peekPos += 7; return TK_EXPORT_KEY; }
+    			if (matches("port", 3) && isTokenSeparatorChar(peekChar(peekPos + 7))) { peekPos += 7; return TK_EXPORT_KEY; }
     			break;
     		}
     		break;
     	case 'i':
     		switch(Character.toLowerCase(peekChar(peekPos + 2))) {
     		case 'd':
-        		if (matches("entifier", 3))
-        			if (isTokenSeparatorChar(peekChar(peekPos + 11))) { peekPos += 11; return TK_IDENTIFIER_KEY; }
+        		if (matches("entifier", 3) && isTokenSeparatorChar(peekChar(peekPos + 11))) { peekPos += 11; return TK_IDENTIFIER_KEY; }
         		break;
     		case 'n':
-        		if (matches("clude", 3))
-        			if (isTokenSeparatorChar(peekChar(peekPos + 8))) { peekPos += 8; return TK_INCLUDE_KEY; }
+        		if (matches("clude", 3) && isTokenSeparatorChar(peekChar(peekPos + 8))) { peekPos += 8; return TK_INCLUDE_KEY; }
         		break;
     		case 'm':
-	    		if (matches("port", 3))
-	    			if (isTokenSeparatorChar(peekChar(peekPos + 7))) { peekPos += 7; return TK_IMPORT_KEY; }
+	    		if (matches("port", 3) && isTokenSeparatorChar(peekChar(peekPos + 7))) { peekPos += 7; return TK_IMPORT_KEY; }
 	    		break;
     		}
     		break;
     	case 'h':
-    		if (matches("eaders", 2))
-    			if (isTokenSeparatorChar(peekChar(peekPos + 8))) { peekPos += 8; return TK_HEADERS_KEY; }
+    		if (matches("eaders", 2) && isTokenSeparatorChar(peekChar(peekPos + 8))) { peekPos += 8; return TK_HEADERS_KEY; }
     		break;
     	case 'k':
-    		if (matches("eywords", 2))
-    			if (isTokenSeparatorChar(peekChar(peekPos + 9))) { peekPos += 9; return TK_KEYWORDS_KEY; }
+    		if (matches("eywords", 2) && isTokenSeparatorChar(peekChar(peekPos + 9))) { peekPos += 9; return TK_KEYWORDS_KEY; }
     		break;
     	case 'g':
-    		if (matches("lobals", 2))
-    			if (isTokenSeparatorChar(peekChar(peekPos + 8))) { peekPos += 8; return TK_GLOBALS_KEY; }
+    		if (matches("lobals", 2) && isTokenSeparatorChar(peekChar(peekPos + 8))) { peekPos += 8; return TK_GLOBALS_KEY; }
     		break;
     	}
 		while ((c = peekChar(++peekPos)) != EOF && !Character.isWhitespace(c)) ;
@@ -330,7 +306,8 @@ class Scanner implements jpgsym {
 		for (int i = 0; i < endSequence.length(); i++) {
 			if (c == EOF || c != endSequence.charAt(i))
 				return false;
-			c = peekChar(++offset + peekPos);
+			offset++;
+			c = peekChar(offset + peekPos);
 		}
 		return true;
 	}
@@ -355,7 +332,7 @@ class Scanner implements jpgsym {
 		}
 		return c;
     }
-    
+
     private int isEol(char c, int pos) {
     	switch (c) {
     	default:
@@ -374,11 +351,12 @@ class Scanner implements jpgsym {
 	protected String get(int offset, int length) {
 		return new String(buf, offset, offset + length);
 	}
-	
+
+	@Override
 	public String toString() {
 		if (buf == null)
 			return "empty";
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		if (peekPos >= 0)
 			sb.append(new String(buf, 0, peekPos < buf.length ? peekPos + 1 : peekPos ));
 		sb.append(">>>>>>>>>>>>>>>>next char: '");

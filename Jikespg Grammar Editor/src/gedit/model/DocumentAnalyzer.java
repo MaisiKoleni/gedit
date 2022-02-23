@@ -4,15 +4,15 @@
  */
 package gedit.model;
 
-import gedit.GrammarEditorPlugin;
-import gedit.StringUtils;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import gedit.GrammarEditorPlugin;
+import gedit.StringUtils;
 
 public class DocumentAnalyzer {
 	private IProblemRequestor problemRequestor;
@@ -25,7 +25,7 @@ public class DocumentAnalyzer {
 		this(probemRequestor, fileProzessor, parentDocument != null ? parentDocument.getOptions() : null);
 		this.parentDocument = parentDocument;
 	}
-	
+
 	public DocumentAnalyzer(IProblemRequestor probemRequestor, FileProzessor fileProzessor, DocumentOptions globalOptions) {
 		this.problemRequestor = probemRequestor;
 		this.fileProzessor = fileProzessor;
@@ -40,14 +40,14 @@ public class DocumentAnalyzer {
 			problemRequestor.beginReporting();
 
 		long time = System.currentTimeMillis();
-		
+
 		Parser parser = new Parser(document, text, problemRequestor, fileProzessor);
 		try {
 			parser.mapElementToNode(parser.parse(), document, true);
 		} catch (Exception e) {
 			GrammarEditorPlugin.logError("Cannot parse the document", e);
 		}
-		
+
 		if (parentDocument != null)
 			mergeMacros(parentDocument, document);
 
@@ -57,31 +57,30 @@ public class DocumentAnalyzer {
 			problemRequestor.endReporting();
 
 		document.notifyModelChanged();
-	
+
 		if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 0)
 			System.out.println("Analyzed " + document + ": " + (System.currentTimeMillis() - time) + "ms");
 		return document;
 	}
-	
+
 	private void mergeMacros(Document source, Document target) {
 		Section sourceSection = source.getSection(ModelType.DEFINITION);
 		if (sourceSection == null || sourceSection.children == null)
 			return;
 		List clonedMacros = new ArrayList();
-		for (int i = 0; i < sourceSection.children.length; i++) {
-			ModelBase clone = (ModelBase) sourceSection.children[i].clone();
+		for (ModelBase child : sourceSection.children) {
+			ModelBase clone = (ModelBase) child.clone();
 			clone.visible = false;
 			clonedMacros.add(clone);
 		}
-		target.addChildren(ModelType.DEFINITION, clonedMacros, false, true); 
+		target.addChildren(ModelType.DEFINITION, clonedMacros, false, true);
 	}
 
 	private void checkConsistency(Document document) {
 
 		Rule[] rules = document.getRules();
 		Map rulesLookup = new HashMap();
-		for (int i = 0; i < rules.length; i++) {
-			Rule rule = rules[i];
+		for (Rule rule : rules) {
 			rulesLookup.put(rule.label, rule);
 			String strippedLabel = stripEscape(document, rule.label);
 			if (strippedLabel != null)
@@ -89,31 +88,25 @@ public class DocumentAnalyzer {
 		}
 		GenericModel[] terminals = document.getTerminals();
 		Map terminalsLookup = new HashMap();
-		for (int i = 0; i < terminals.length; i++) {
-			GenericModel terminal = terminals[i];
+		for (GenericModel terminal : terminals) {
 			terminalsLookup.put(terminal.label, terminal);
 		}
 		Alias[] aliases = document.getAliases();
 		Map aliasLookup = new HashMap();
-		for (int i = 0; i < aliases.length; i++) {
-			Alias alias = aliases[i];
+		for (Alias alias : aliases) {
 			if (aliasLookup.put(StringUtils.trimQuotes(alias.label, '\''), alias) != null)
 				createProblem(document, alias, Problem.WARNING, "Alias " + alias.label + " has already been defined.");
 		}
-		
-		for (int i = 0; i < aliases.length; i++) {
-			Alias alias = aliases[i];
+
+		for (Alias alias : aliases) {
 			String rhs = alias.getRhs().label;
-			if (terminalsLookup.containsKey(rhs))
-				continue;
-			if (rulesLookup.containsKey(rhs))
+			if (terminalsLookup.containsKey(rhs) || rulesLookup.containsKey(rhs))
 				continue;
 			createProblem(document, alias.getRhs(), Problem.WARNING, "Alias reference " + rhs + " is not defined, assuming it is a terminal");
 			createUndeclaredTerminal(document, alias.getRhs(), terminalsLookup);
 		}
-		
-		for (int i = 0; i < rules.length; i++) {
-			Rule rule = rules[i];
+
+		for (Rule rule : rules) {
 			if (lookup(rule.label, terminalsLookup, aliasLookup) != null) {
 				createProblem(document, rule, Problem.ERROR, "Terminal " + rule.label + " cannot be used as left hand side");
 				markAsReferenced(rule);
@@ -127,10 +120,9 @@ public class DocumentAnalyzer {
 						createProblem(document, other, Problem.ERROR, other.getLabel() + " does already exist in " + rule.label);
 				}
 				Reference[] parts = rhs.getParts();
-				for (int k = 0; k < parts.length; k++) {
-					Reference ref = parts[k];
+				for (Reference ref : parts) {
 					String label = ref.label;
-					if (label.equalsIgnoreCase(document.getOptions().getEsape() + ModelType.EMPTY_TOK.getString()))
+					if ((document.getOptions().getEsape() + ModelType.EMPTY_TOK.getString()).equalsIgnoreCase(label))
 						continue;
 					ModelBase referred = lookup(label, rulesLookup, aliasLookup);
 					if (referred != null) {
@@ -150,7 +142,7 @@ public class DocumentAnalyzer {
 					ModelBase strippedIncludeRef = strippedLabel != null ? document.getElementById(strippedLabel) : null;
 					if (includedRef != null && includedRef.getDocument() != document && !isExportingType(((Section) includedRef.parent).getChildType())) {
 						createProblem(document, ref, Problem.WARNING, "Element " + label + " is declared in " + new File(includedRef.getDocument().getFilePath()).getName() + " but not exported there");
-					} else if (includedRef == null && strippedIncludeRef == null && !Parser.name[1].substring(1).equalsIgnoreCase(label.substring(1))) {
+					} else if (includedRef == null && strippedIncludeRef == null && !jpgprs.name[1].substring(1).equalsIgnoreCase(label.substring(1))) {
 						createProblem(document, ref, Problem.WARNING, "Element " + label + " is not defined, assuming it is a terminal");
 						GenericModel terminal = createUndeclaredTerminal(document, ref, terminalsLookup);
 						markAsReferenced(terminal);
@@ -162,8 +154,8 @@ public class DocumentAnalyzer {
 		Section section = document.getSection(ModelType.START_TOK);
 		if (section != null) {
 			ModelBase[] startTokens = (ModelBase[]) section.getChildren();
-			for (int i = 0; i < startTokens.length; i++) {
-				Reference startToken = (Reference) startTokens[i];
+			for (ModelBase startToken2 : startTokens) {
+				Reference startToken = (Reference) startToken2;
 				ModelBase referrer = startToken.getReferer();
 				if (referrer != null) {
 					markAsReferenced(referrer);
@@ -187,14 +179,12 @@ public class DocumentAnalyzer {
 
 		for (Iterator it = terminalsLookup.values().iterator(); it.hasNext(); ) {
 			ModelBase model = (ModelBase) it.next();
-			if (hasBeenReferenced(model))
-				continue;
-			if (aliasLookup.containsKey(((GenericModel) model).label))
+			if (hasBeenReferenced(model) || aliasLookup.containsKey(((GenericModel) model).label))
 				continue;
 			createProblem(document, model, Problem.WARNING, "The terminal " + ((GenericModel) model).label + " is never used");
 		}
 	}
-	
+
 	private GenericModel createUndeclaredTerminal(Document document, ModelBase model, Map terminalsLookup) {
 		ModelBase section = model.parent;
 		GenericModel terminal = new GenericModel(section, model.getLabel(), ModelType.TERMINAL);
@@ -203,16 +193,14 @@ public class DocumentAnalyzer {
 			((Section) section).addChild(terminal).node = section.node;
 		terminal.node = new Node(section.node, model.getOffset(), model.getLength());
 		document.register(terminal.node, terminal);
-		
+
 		terminalsLookup.put(terminal.label, terminal);
 		return terminal;
 	}
-	
+
 	private String stripEscape(Document document, String name) {
 		int escapeIndex = name.indexOf(document.getOptions().getEsape());
-		if (escapeIndex == -1)
-			return null;
-		if (name.substring(1).toLowerCase().equals("empty") ||
+		if ((escapeIndex == -1) || "empty".equals(name.substring(1).toLowerCase()) ||
 				name.charAt(0) == '\'' && name.charAt(name.length() - 1) == '\'')
 			return null;
 		return name.substring(0, escapeIndex);
@@ -228,7 +216,7 @@ public class DocumentAnalyzer {
 	private void markAsReferenced(ModelBase model) {
 		model.setUserData("ref", new Object());
 	}
-	
+
 	private boolean hasBeenReferenced(ModelBase model) {
 		return model.getUserData("ref") != null;
 	}
@@ -252,9 +240,7 @@ public class DocumentAnalyzer {
 	private boolean equals(ModelBase[] base1, ModelBase[] base2) {
         if (base1 == base2)
         	return true;
-        if (base1 == null || base2 == null)
-            return false;
-        if (base1.length != base2.length)
+        if (base1 == null || base2 == null || (base1.length != base2.length))
             return false;
         for (int i = 0; i < base1.length; i++) {
             if (!base1[i].label.equals(base2[i].label))
@@ -272,12 +258,12 @@ public class DocumentAnalyzer {
 		if (node != null)
 			createProblem(document, node.offset, node.length, type, message);
 	}
-	
+
 	private void createProblem(Document document, int offset, int length, int type, String message) {
 		Problem problem = new Problem(type, message, offset, length);
 		document.addProblem(problem);
 		if (problemRequestor != null)
 			problemRequestor.accept(problem);
 	}
-	
+
 }

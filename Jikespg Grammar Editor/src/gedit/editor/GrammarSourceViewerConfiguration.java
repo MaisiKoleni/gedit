@@ -4,13 +4,10 @@
  */
 package gedit.editor;
 
-import gedit.GrammarEditorPlugin;
-
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.text.DefaultInformationControl;
 import org.eclipse.jface.text.IDocument;
-import org.eclipse.jface.text.IInformationControl;
 import org.eclipse.jface.text.IInformationControlCreator;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextHover;
@@ -32,23 +29,27 @@ import org.eclipse.jface.text.source.IAnnotationHover;
 import org.eclipse.jface.text.source.ISourceViewer;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.editors.text.TextSourceViewerConfiguration;
 
+import gedit.GrammarEditorPlugin;
+
 public class GrammarSourceViewerConfiguration extends TextSourceViewerConfiguration {
-	private class ProductionProvider implements IInformationProvider, IInformationProviderExtension {
+	private static class ProductionProvider implements IInformationProvider, IInformationProviderExtension {
+		@Override
 		public IRegion getSubject(ITextViewer textViewer, int offset) {
 			return new Region(offset, 0);
 		}
 
+		@Override
 		public String getInformation(ITextViewer textViewer, IRegion subject) {
 			return null;
 		}
 
+		@Override
 		public Object getInformation2(ITextViewer textViewer, IRegion subject) {
 			return ((GrammarSourceViewer) textViewer).getModel(false);
 		}
-	};
+	}
 
 	private IReconcilingListener fReconcilingListener;
 	private GrammarScanner fDefaultScanner;
@@ -74,6 +75,7 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 			fUseReconciling = true;
 	}
 
+	@Override
 	public String[] getConfiguredContentTypes(ISourceViewer sourceViewer) {
 		return new String[] {
 			IDocument.DEFAULT_CONTENT_TYPE,
@@ -82,13 +84,9 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 			GrammarPartitionScanner.GRAMMAR_MACRO,
 		};
 	}
-	
+
 	public IInformationPresenter getOutlinePresenter(final GrammarSourceViewer viewer) {
-		InformationPresenter presenter = new InformationPresenter(new IInformationControlCreator() {
-			public IInformationControl createInformationControl(Shell parent) {
-				return new OutlineInformationControl(viewer, parent);
-			}
-		});
+		InformationPresenter presenter = new InformationPresenter(parent -> new OutlineInformationControl(viewer, parent));
 		ProductionProvider provider = new ProductionProvider();
 		presenter.setDocumentPartitioning(GrammarDocumentSetupParticipant.GRAMMAR_PARTITION);
 		presenter.setInformationProvider(provider, IDocument.DEFAULT_CONTENT_TYPE);
@@ -99,13 +97,14 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 		presenter.setRestoreInformationControlBounds(getSettingsSection("outlinePresenterBounds"), true, true);
 		return presenter;
 	}
-	
+
 	private IDialogSettings getSettingsSection(String sectionName) {
 		IDialogSettings settings = GrammarEditorPlugin.getDefault().getDialogSettings();
 		IDialogSettings section = settings.getSection(sectionName);
 		return section != null ? section : settings.addNewSection(sectionName);
 	}
-	
+
+	@Override
 	public IContentAssistant getContentAssistant(ISourceViewer sourceViewer) {
 		ContentAssistant fContentAssistant = new ContentAssistant();
 		GrammarCompletionProcessor processor = new GrammarCompletionProcessor();
@@ -117,18 +116,15 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 		fContentAssistant.setProposalPopupOrientation(IContentAssistant.PROPOSAL_OVERLAY);
 		fContentAssistant.setContextInformationPopupOrientation(IContentAssistant.CONTEXT_INFO_ABOVE);
 
-		fContentAssistant.setInformationControlCreator(new IInformationControlCreator() {
-			public IInformationControl createInformationControl(Shell parent) {
-				return new DefaultInformationControl(parent);
-			}
-		});
+		fContentAssistant.setInformationControlCreator(parent -> new DefaultInformationControl(parent));
 		return fContentAssistant;
 	}
 
+	@Override
 	public IPresentationReconciler getPresentationReconciler(ISourceViewer sourceViewer) {
 		PresentationReconciler reconciler = new GrammarPresentationReconciler();
 		reconciler.setDocumentPartitioning(GrammarDocumentSetupParticipant.GRAMMAR_PARTITION);
-		
+
 		DefaultDamagerRepairer dr = new DefaultDamagerRepairer(getDefaultScanner());
 		reconciler.setDamager(dr, IDocument.DEFAULT_CONTENT_TYPE);
 		reconciler.setRepairer(dr, IDocument.DEFAULT_CONTENT_TYPE);
@@ -147,61 +143,59 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 
 		return reconciler;
 	}
-	
+
 	public SemanticHighLighter getSemanticHighlighter(GrammarSourceViewer viewer) {
 		if (fSemanticHighlighter == null)
 			fSemanticHighlighter = new SemanticHighLighter(viewer, fUtils);
 		return fSemanticHighlighter;
 	}
-	
+
+	@Override
 	public String[] getDefaultPrefixes(ISourceViewer sourceViewer, String contentType) {
 		return new String[] { "--", "" }; //$NON-NLS-1$ //$NON-NLS-2$
 	}
-	
+
+	@Override
 	public int[] getConfiguredTextHoverStateMasks(ISourceViewer sourceViewer, String contentType) {
 		return new int[] { SWT.CTRL, 0 };
 	}
-	
+
+	@Override
 	public IInformationControlCreator getInformationControlCreator(ISourceViewer sourceViewer) {
-		return new IInformationControlCreator() {
-			public IInformationControl createInformationControl(Shell parent) {
-				return new DefaultInformationControl(parent, new SimpleTextPresenter());
-			}
-		};
+		return parent -> new DefaultInformationControl(parent, new SimpleTextPresenter());
 	}
-	
+
+	@Override
 	public IInformationPresenter getInformationPresenter(final ISourceViewer sourceViewer) {
-		InformationPresenter presenter = new InformationPresenter(new IInformationControlCreator() {
-			public IInformationControl createInformationControl(Shell parent) {
-				return new GrammarInformationControl(parent, SWT.TOOL | SWT.RESIZE,
-						SWT.V_SCROLL | SWT.H_SCROLL, new SimpleTextPresenter(),
-						sourceViewer instanceof GrammarSourceViewer ? ((GrammarSourceViewer) sourceViewer).getModel(false) : null);
-			}
-		});
+		InformationPresenter presenter = new InformationPresenter(parent -> new GrammarInformationControl(parent, SWT.TOOL | SWT.RESIZE,
+				SWT.V_SCROLL | SWT.H_SCROLL, new SimpleTextPresenter(),
+				sourceViewer instanceof GrammarSourceViewer ? ((GrammarSourceViewer) sourceViewer).getModel(false) : null));
 		presenter.setDocumentPartitioning(getConfiguredDocumentPartitioning(sourceViewer));
 		IInformationProvider provider = new GrammarInformationProvider(new ITextHover[] {
-				getAnnotationHover(), getModelContentHover(), getMacroHover(), 	
+				getAnnotationHover(), getModelContentHover(), getMacroHover(),
 		});
 		presenter.setInformationProvider(provider, IDocument.DEFAULT_CONTENT_TYPE);
 		presenter.setInformationProvider(provider, GrammarPartitionScanner.GRAMMAR_MACRO);
 		presenter.setSizeConstraints(60, 10, true, true);
 		return presenter;
-		
+
 	}
-	
+
+	@Override
 	public IAnnotationHover getAnnotationHover(ISourceViewer sourceViewer) {
 		return getAnnotationHover();
 	}
-	
+
+	@Override
 	public ITextHover getTextHover(ISourceViewer sourceViewer, String contentType, int stateMask) {
-		if ((SWT.CTRL & stateMask) > 0) {
+		if ((SWT.CTRL & stateMask) != 0) {
 			if (GrammarPartitionScanner.GRAMMAR_MACRO.equals(contentType))
 				return getMacroHover();
 			return getModelContentHover();
 		}
 		return getAnnotationHover();
 	}
-	
+
 	private ModelContentHover getModelContentHover() {
 		if (fModelContentHover == null)
 			fModelContentHover = new ModelContentHover();
@@ -221,6 +215,7 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 		return fAnnotationHover;
 	}
 
+	@Override
 	public IReconciler getReconciler(ISourceViewer sourceViewer) {
 		if (!fUseReconciling)
 			return null;
@@ -229,11 +224,11 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 			reconcilingListener = (IReconcilingListener) sourceViewer;
 		return new MonoReconciler(new GrammarReconcilingStrategy(sourceViewer, reconcilingListener), false);
 	}
-	
+
 	public boolean isUseReconciling() {
 		return fUseReconciling;
 	}
-	
+
 	private ITokenScanner getDefaultScanner() {
 		if (fDefaultScanner == null)
 			fDefaultScanner = new GrammarScanner(null, fUtils, true, true);
@@ -246,10 +241,11 @@ public class GrammarSourceViewerConfiguration extends TextSourceViewerConfigurat
 		return fMacroScanner;
 	}
 
+	@Override
 	public String getConfiguredDocumentPartitioning(ISourceViewer sourceViewer) {
 		return GrammarDocumentSetupParticipant.GRAMMAR_PARTITION;
 	}
-	
+
 	public void adaptToPreferenceChange(PropertyChangeEvent event) {
 		if (fDefaultScanner == null)
 			return;

@@ -5,5 +5,5 @@
 package gedit.model;
 
 public interface INodeVisitor {
-	public boolean visit(Node node);
+	boolean visit(Node node);
 }

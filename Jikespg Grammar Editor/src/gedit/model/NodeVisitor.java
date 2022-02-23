@@ -9,7 +9,7 @@ import java.util.BitSet;
 public abstract class NodeVisitor implements INodeVisitor {
 	protected Document document;
 	protected BitSet filter;
-	
+
 	protected NodeVisitor(Document document) {
 		this(document, null);
 	}
@@ -18,7 +18,8 @@ public abstract class NodeVisitor implements INodeVisitor {
 		this.document = document;
 		this.filter = filter;
 	}
-	
+
+	@Override
 	public boolean visit(Node node) {
 		if (filter == null)
 			return true;
@@ -27,11 +28,11 @@ public abstract class NodeVisitor implements INodeVisitor {
 			return doVisit(node, element);
 		return true;
 	}
-	
+
 	protected boolean doVisit(Node node, ModelBase element) {
 		return true;
 	}
-	
+
 	protected ModelBase getElement(Node node) {
 		return document.getElementForNode(node);
 	}

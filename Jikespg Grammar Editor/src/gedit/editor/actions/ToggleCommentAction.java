@@ -1,7 +1,5 @@
 package gedit.editor.actions;
 
-import gedit.GrammarEditorPlugin;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -22,7 +20,10 @@ import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.texteditor.ITextEditor;
+import org.eclipse.ui.texteditor.ResourceAction;
 import org.eclipse.ui.texteditor.TextEditorAction;
+
+import gedit.GrammarEditorPlugin;
 
 public class ToggleCommentAction extends TextEditorAction {
 	/** The text operation target */
@@ -51,15 +52,13 @@ public class ToggleCommentAction extends TextEditorAction {
 	 * Implementation of the <code>IAction</code> prototype. Checks if the selected
 	 * lines are all commented or not and uncomments/comments them respectively.
 	 */
+	@Override
 	public void run() {
 		if (fOperationTarget == null || fDocumentPartitioning == null || fPrefixesMap == null)
 			return;
 
 		ITextEditor editor= getTextEditor();
-		if (editor == null)
-			return;
-
-		if (!validateEditorInputState())
+		if ((editor == null) || !validateEditorInputState())
 			return;
 
 		final int operationCode;
@@ -79,11 +78,7 @@ public class ToggleCommentAction extends TextEditorAction {
 		if (shell != null && !shell.isDisposed())
 			display= shell.getDisplay();
 
-		BusyIndicator.showWhile(display, new Runnable() {
-			public void run() {
-				fOperationTarget.doOperation(operationCode);
-			}
-		});
+		BusyIndicator.showWhile(display, () -> fOperationTarget.doOperation(operationCode));
 	}
 
 	/**
@@ -117,7 +112,7 @@ public class ToggleCommentAction extends TextEditorAction {
 				int offset= regions[i].getOffset() + length;
 				if (length > 0)
 					offset--;
-				lines[j + 1]= (lines[j] == -1 ? -1 : document.getLineOfOffset(offset));
+				lines[j + 1]= lines[j] == -1 ? -1 : document.getLineOfOffset(offset);
 				lineCount += lines[j + 1] - lines[j] + 1;
 			}
 
@@ -151,7 +146,7 @@ public class ToggleCommentAction extends TextEditorAction {
 
 		try {
 			IRegion line= document.getLineInformationOfOffset(selection.getOffset());
-			int length= selection.getLength() == 0 ? line.getLength() : selection.getLength() + (selection.getOffset() - line.getOffset());
+			int length= selection.getLength() == 0 ? line.getLength() : selection.getLength() + selection.getOffset() - line.getOffset();
 			return new Region(line.getOffset(), length);
 
 		} catch (BadLocationException x) {
@@ -180,7 +175,7 @@ public class ToggleCommentAction extends TextEditorAction {
 				return startLine;
 
 			offset= document.getLineOffset(startLine + 1);
-			return (offset > region.getOffset() + region.getLength() ? -1 : startLine + 1);
+			return offset > region.getOffset() + region.getLength() ? -1 : startLine + 1;
 
 		} catch (BadLocationException x) {
 			// should not happen
@@ -242,6 +237,7 @@ public class ToggleCommentAction extends TextEditorAction {
 	 * <code>ITextOperationTarget</code> adapter, and sets the enabled state
 	 * accordingly.
 	 */
+	@Override
 	public void update() {
 		super.update();
 
@@ -252,15 +248,16 @@ public class ToggleCommentAction extends TextEditorAction {
 
 		ITextEditor editor= getTextEditor();
 		if (fOperationTarget == null && editor != null)
-			fOperationTarget= (ITextOperationTarget) editor.getAdapter(ITextOperationTarget.class);
+			fOperationTarget= editor.getAdapter(ITextOperationTarget.class);
 
-		boolean isEnabled= (fOperationTarget != null && fOperationTarget.canDoOperation(ITextOperationTarget.PREFIX) && fOperationTarget.canDoOperation(ITextOperationTarget.STRIP_PREFIX));
+		boolean isEnabled= fOperationTarget != null && fOperationTarget.canDoOperation(ITextOperationTarget.PREFIX) && fOperationTarget.canDoOperation(ITextOperationTarget.STRIP_PREFIX);
 		setEnabled(isEnabled);
 	}
 
 	/*
 	 * @see TextEditorAction#setEditor(ITextEditor)
 	 */
+	@Override
 	public void setEditor(ITextEditor editor) {
 		super.setEditor(editor);
 		fOperationTarget= null;
@@ -271,13 +268,12 @@ public class ToggleCommentAction extends TextEditorAction {
 
 		String[] types= configuration.getConfiguredContentTypes(sourceViewer);
 		Map prefixesMap= new HashMap(types.length);
-		for (int i= 0; i < types.length; i++) {
-			String type= types[i];
+		for (String type : types) {
 			String[] prefixes= configuration.getDefaultPrefixes(sourceViewer, type);
 			if (prefixes != null && prefixes.length > 0) {
 				int emptyPrefixes= 0;
-				for (int j= 0; j < prefixes.length; j++)
-					if (prefixes[j].length() == 0)
+				for (String element : prefixes)
+					if (element.length() == 0)
 						emptyPrefixes++;
 
 				if (emptyPrefixes > 0) {

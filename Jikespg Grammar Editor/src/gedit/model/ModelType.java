@@ -44,16 +44,16 @@ public class ModelType implements Comparable {
 	public final static ModelType DROP_RULE = new ModelType("DropRules", null, false, true);
 	public final static ModelType MACRO_BLOCK = new ModelType("MacroBlock", GenericModel.class, false, false);
 	public final static ModelType AST = new ModelType("Ast", GenericModel.class, true, true);
-	
+
 	private static int NUMBER;
 
 	public static ModelType[] getAllTypes() {
 		return (ModelType[]) ALL_TYPES.toArray(new ModelType[ALL_TYPES.size()]);
 	}
-	
-	public static ModelType getByBitPosition(int position) { 
-		for (int i = 0; i < ALL_TYPES.size(); i++) {
-			ModelType modelType = (ModelType) ALL_TYPES.get(i);
+
+	public static ModelType getByBitPosition(int position) {
+		for (Object element : ALL_TYPES) {
+			ModelType modelType = (ModelType) element;
 			if (modelType.bitSet.get(position))
 				return modelType;
 		}
@@ -74,20 +74,20 @@ public class ModelType implements Comparable {
 		this.modelClass = modelClass;
 		ALL_TYPES.add(this);
 	}
-	
+
 	private BitSet createBitSet() {
 		BitSet set = new BitSet();
 		set.set(NUMBER++);
 		return set;
 	}
-	
+
 	public BitSet or(ModelType type) {
 		BitSet set = new BitSet();
 		if (type != null)
 			set.or(type.bitSet);
 		return or(set);
 	}
-	
+
 	public BitSet or(BitSet set) {
 		if (set == null)
 			set = new BitSet();
@@ -98,34 +98,36 @@ public class ModelType implements Comparable {
 	public boolean matches(BitSet filter) {
 		BitSet set = new BitSet();
 		set.set(bitSet.nextSetBit(0));
-		set.and(filter); 
+		set.and(filter);
 		return !set.isEmpty();
 	}
 
 	public int getBitPosition() {
 		return or((BitSet) null).nextSetBit(0);
 	}
-	
+
 	public String getString() {
 		return string;
 	}
-	
+
 	public boolean isSectionType() {
 		return sectionType;
 	}
-	
+
 	public boolean isKeyword() {
 		return keyword;
 	}
-	
+
 	public Class getModelClass() {
 		return modelClass;
 	}
-	
+
+	@Override
 	public int compareTo(Object o) {
 		return o instanceof ModelType ? string.compareToIgnoreCase(((ModelType) o).string) : 0;
 	}
-	
+
+	@Override
 	public String toString() {
 		return string;
 	}

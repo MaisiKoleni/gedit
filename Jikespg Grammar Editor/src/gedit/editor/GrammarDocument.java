@@ -10,7 +10,6 @@ public class GrammarDocument extends org.eclipse.jface.text.Document {
 	private Document fParentDocument;
 
 	public GrammarDocument() {
-		super();
 	}
 
 	public GrammarDocument(String initialContent) {
@@ -25,7 +24,7 @@ public class GrammarDocument extends org.eclipse.jface.text.Document {
 	public Document getParentDocument() {
 		return fParentDocument;
 	}
-	
+
 	public void setParentDocument(Document parentDocument) {
 		fParentDocument = parentDocument;
 	}

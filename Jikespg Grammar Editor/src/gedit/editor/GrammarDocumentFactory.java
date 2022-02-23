@@ -9,6 +9,7 @@ import org.eclipse.jface.text.IDocument;
 
 public class GrammarDocumentFactory implements IDocumentFactory {
 
+	@Override
 	public IDocument createDocument() {
 		return new GrammarDocument();
 	}

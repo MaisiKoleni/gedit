@@ -12,7 +12,7 @@ public class Alias extends ModelBase {
 		this.rhs = rhs;
 		rhs.parent = this;
 	}
-	
+
 	public String getLhs() {
 		return label;
 	}
@@ -20,15 +20,18 @@ public class Alias extends ModelBase {
 	public Reference getRhs() {
 		return rhs;
 	}
-	
+
+	@Override
 	public ModelType getType() {
 		return ModelType.ALIAS;
 	}
-	
+
+	@Override
 	public String toString() {
 		return super.toString() + "->" + rhs;
 	}
-	
+
+	@Override
 	public boolean equals(Object o) {
 		if (o == this)
 			return true;

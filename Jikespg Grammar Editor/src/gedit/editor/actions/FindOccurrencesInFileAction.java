@@ -4,11 +4,6 @@
  */
 package gedit.editor.actions;
 
-import gedit.editor.GrammarDocumentProvider;
-import gedit.editor.GrammarEditor;
-import gedit.model.ModelBase;
-import gedit.model.Node;
-
 import java.util.Iterator;
 import java.util.ResourceBundle;
 
@@ -18,11 +13,17 @@ import org.eclipse.jface.text.source.IAnnotationModel;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.texteditor.TextEditorAction;
 
+import gedit.editor.GrammarDocumentProvider;
+import gedit.editor.GrammarEditor;
+import gedit.model.ModelBase;
+import gedit.model.Node;
+
 public class FindOccurrencesInFileAction extends TextEditorAction {
 	public FindOccurrencesInFileAction(ResourceBundle bundle, String prefix, ITextEditor editor) {
 		super(bundle, prefix, editor);
 	}
 
+	@Override
 	public final void run() {
 		ITextEditor textEditor = getTextEditor();
 		if (!(textEditor instanceof GrammarEditor))
@@ -42,8 +43,7 @@ public class FindOccurrencesInFileAction extends TextEditorAction {
 		}
 		if (occurrences == null)
 			return;
-		for (int i = 0; i < occurrences.length; i++) {
-			Node occurrence = occurrences[i];
+		for (Node occurrence : occurrences) {
 			annotationModel.addAnnotation(new Annotation(GrammarDocumentProvider.ANNOTATION_SEARCH_RESULT,
 					false, element.getLabel()), new Position(occurrence.getOffset(), occurrence.getLength()));
 		}

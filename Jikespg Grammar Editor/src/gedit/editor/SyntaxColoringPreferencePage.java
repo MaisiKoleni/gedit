@@ -4,8 +4,6 @@
  */
 package gedit.editor;
 
-import gedit.GrammarEditorPlugin;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.eclipse.core.runtime.Assert;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.preference.ColorSelector;
 import org.eclipse.jface.preference.IPreferenceStore;
@@ -23,20 +22,14 @@ import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.source.SourceViewer;
-import org.eclipse.core.runtime.Assert;
 import org.eclipse.jface.util.IPropertyChangeListener;
-import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.IColorProvider;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.LabelProvider;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -55,6 +48,8 @@ import org.eclipse.ui.IWorkbenchPreferencePage;
 import org.eclipse.ui.dialogs.PreferencesUtil;
 import org.eclipse.ui.texteditor.ChainedPreferenceStore;
 
+import gedit.GrammarEditorPlugin;
+
 public class SyntaxColoringPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
 	private static class SourcePreviewerUpdater {
 
@@ -62,32 +57,26 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
 			Assert.isNotNull(viewer);
 			Assert.isNotNull(configuration);
 			Assert.isNotNull(preferenceStore);
-			final IPropertyChangeListener fontChangeListener= new IPropertyChangeListener() {
-				public void propertyChange(PropertyChangeEvent event) {
-					if (event.getProperty().equals(PreferenceConstants.GRAMMAR_EDITOR_TEXT_FONT)) {
-						Font font = JFaceResources.getFont(PreferenceConstants.GRAMMAR_EDITOR_TEXT_FONT);
-						viewer.getTextWidget().setFont(font);
-					}
+			final IPropertyChangeListener fontChangeListener= event -> {
+				if (PreferenceConstants.GRAMMAR_EDITOR_TEXT_FONT.equals(event.getProperty())) {
+					Font font = JFaceResources.getFont(PreferenceConstants.GRAMMAR_EDITOR_TEXT_FONT);
+					viewer.getTextWidget().setFont(font);
 				}
 			};
-			final IPropertyChangeListener propertyChangeListener= new IPropertyChangeListener() {
-				public void propertyChange(PropertyChangeEvent event) {
-					if (configuration.affectsTextPresentation(event)) {
-						configuration.adaptToPreferenceChange(event);
-						viewer.invalidateTextPresentation();
-					}
+			final IPropertyChangeListener propertyChangeListener= event -> {
+				if (configuration.affectsTextPresentation(event)) {
+					configuration.adaptToPreferenceChange(event);
+					viewer.invalidateTextPresentation();
 				}
 			};
-			viewer.getTextWidget().addDisposeListener(new DisposeListener() {
-				public void widgetDisposed(DisposeEvent e) {
-					preferenceStore.removePropertyChangeListener(propertyChangeListener);
-					JFaceResources.getFontRegistry().removeListener(fontChangeListener);
-				}
+			viewer.getTextWidget().addDisposeListener(e -> {
+				preferenceStore.removePropertyChangeListener(propertyChangeListener);
+				JFaceResources.getFontRegistry().removeListener(fontChangeListener);
 			});
 			JFaceResources.getFontRegistry().addListener(fontChangeListener);
 			preferenceStore.addPropertyChangeListener(propertyChangeListener);
 		}
-	};
+	}
 
 	private static class HighlightingColorListItem {
 		private String fDisplayName;
@@ -135,29 +124,32 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
 		public Color getItemColor() {
 			return fItemColor;
 		}
-	};
+	}
 
-	private class ColorListLabelProvider extends LabelProvider implements IColorProvider {
+	private static class ColorListLabelProvider extends LabelProvider implements IColorProvider {
 
+		@Override
 		public String getText(Object element) {
 			return ((HighlightingColorListItem) element).getDisplayName();
 		}
 
+		@Override
 		public Color getForeground(Object element) {
 			return ((HighlightingColorListItem) element).getItemColor();
 		}
 
+		@Override
 		public Color getBackground(Object element) {
 			return null;
 		}
-	};
+	}
 
 	private static final String BOLD = PreferenceConstants.EDITOR_BOLD_SUFFIX;
 	private static final String ITALIC = PreferenceConstants.EDITOR_ITALIC_SUFFIX;
 	private static final String STRIKETHROUGH = PreferenceConstants.EDITOR_STRIKETHROUGH_SUFFIX;
 	private static final String UNDERLINE = PreferenceConstants.EDITOR_UNDERLINE_SUFFIX;
 
-	private final String[][] fSyntaxColorListModel = new String[][] {
+	private final String[][] fSyntaxColorListModel = {
 		{ "Terminal", PreferenceConstants.GRAMMAR_COLORING_TERMINAL },
 		{ "Non-terminal", PreferenceConstants.GRAMMAR_COLORING_NON_TERMINAL },
 		{ "Alias", PreferenceConstants.GRAMMAR_COLORING_ALIAS },
@@ -192,8 +184,8 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
 
 		ArrayList overlayKeys = new ArrayList();
 
-		for (int i = 0; i < fSyntaxColorListModel.length; i++) {
-			String colorKey = fSyntaxColorListModel[i][1];
+		for (String[] element : fSyntaxColorListModel) {
+			String colorKey = element[1];
 			overlayKeys.add(new OverlayPreferenceStore.OverlayKey(OverlayPreferenceStore.STRING, colorKey));
 			overlayKeys.add(new OverlayPreferenceStore.OverlayKey(OverlayPreferenceStore.BOOLEAN, colorKey + BOLD));
 			overlayKeys.add(new OverlayPreferenceStore.OverlayKey(OverlayPreferenceStore.BOOLEAN, colorKey + ITALIC));
@@ -206,6 +198,7 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
 		return keys;
 	}
 
+	@Override
 	public void init(IWorkbench workbench) {
 	}
 
@@ -309,13 +302,10 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
 		previewer.setLayoutData(data);
 
 
-		fHighlightingColorListViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-			public void selectionChanged(SelectionChangedEvent event) {
-				handleSyntaxColorListSelection();
-			}
-		});
+		fHighlightingColorListViewer.addSelectionChangedListener(event -> handleSyntaxColorListSelection());
 
 		foregroundColorButton.addSelectionListener(new SelectionAdapter() {
+			@Override
 			public void widgetSelected(SelectionEvent e) {
 				HighlightingColorListItem item = getHighlightingColorListItem();
 				PreferenceConverter.setValue(fOverlayStore, item.getColorKey(), fSyntaxForegroundColorEditor.getColorValue());
@@ -323,6 +313,7 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
 		});
 
 		fBoldCheckBox.addSelectionListener(new SelectionAdapter() {
+			@Override
 			public void widgetSelected(SelectionEvent e) {
 				HighlightingColorListItem item = getHighlightingColorListItem();
 				fOverlayStore.setValue(item.getBoldKey(), fBoldCheckBox.getSelection());
@@ -330,6 +321,7 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
 		});
 
 		fItalicCheckBox.addSelectionListener(new SelectionAdapter() {
+			@Override
 			public void widgetSelected(SelectionEvent e) {
 				HighlightingColorListItem item = getHighlightingColorListItem();
 				fOverlayStore.setValue(item.getItalicKey(), fItalicCheckBox.getSelection());
@@ -337,6 +329,7 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
 		});
 
 		fStrikethroughCheckBox.addSelectionListener(new SelectionAdapter() {
+			@Override
 			public void widgetSelected(SelectionEvent e) {
 				HighlightingColorListItem item = getHighlightingColorListItem();
 				fOverlayStore.setValue(item.getStrikethroughKey(), fStrikethroughCheckBox.getSelection());
@@ -344,6 +337,7 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
 		});
 
 		fUnderlineCheckBox.addSelectionListener(new SelectionAdapter() {
+			@Override
 			public void widgetSelected(SelectionEvent e) {
 				HighlightingColorListItem item = getHighlightingColorListItem();
 				fOverlayStore.setValue(item.getUnderlineKey(), fUnderlineCheckBox.getSelection());
@@ -375,6 +369,7 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
 		return fPreviewViewer.getControl();
 	}
 
+	@Override
 	protected Control createContents(Composite parent) {
 		fOverlayStore.load();
 		fOverlayStore.start();
@@ -399,6 +394,7 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
 		Link link = new Link(contents, SWT.NONE);
 		link.setText(text);
 		link.addSelectionListener(new SelectionAdapter() {
+			@Override
 			public void widgetSelected(SelectionEvent e) {
 				PreferencesUtil.createPreferenceDialogOn(getShell(), "org.eclipse.ui.preferencePages.GeneralTextEditor", null, null); //$NON-NLS-1$
 			}
@@ -413,8 +409,8 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
 	private void initialize() {
 
 		initializeFields();
-		for (int i = 0, n = fSyntaxColorListModel.length; i < n; i++)
-			fHighlightingColorList.add(new HighlightingColorListItem(fSyntaxColorListModel[i][0], fSyntaxColorListModel[i][1], fSyntaxColorListModel[i][1] + BOLD, fSyntaxColorListModel[i][1] + ITALIC, fSyntaxColorListModel[i][1] + STRIKETHROUGH, fSyntaxColorListModel[i][1] + UNDERLINE, null));
+		for (String[] element : fSyntaxColorListModel)
+			fHighlightingColorList.add(new HighlightingColorListItem(element[0], element[1], element[1] + BOLD, element[1] + ITALIC, element[1] + STRIKETHROUGH, element[1] + UNDERLINE, null));
 
 		fHighlightingColorListViewer.setInput(fHighlightingColorList);
 		fHighlightingColorListViewer.setSelection(new StructuredSelection(fHighlightingColorListViewer.getElementAt(0)));
@@ -428,12 +424,14 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
         }
 	}
 
+	@Override
 	public boolean performOk() {
 		fOverlayStore.propagate();
 		GrammarEditorPlugin.getDefault().savePluginPreferences();
 		return true;
 	}
 
+	@Override
 	protected void performDefaults() {
 
 		fOverlayStore.loadDefaults();
@@ -446,6 +444,7 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
 		fPreviewViewer.invalidateTextPresentation();
 	}
 
+	@Override
 	public void dispose() {
 
 		if (fOverlayStore != null) {
@@ -459,7 +458,7 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
 	private String loadPreviewContentFromFile(String filename) {
 		String line;
 		String separator = System.getProperty("line.separator"); //$NON-NLS-1$
-		StringBuffer buffer = new StringBuffer(512);
+		StringBuilder buffer = new StringBuilder(512);
 		BufferedReader reader = null;
 		try {
 			InputStream in = getClass().getResourceAsStream(filename);

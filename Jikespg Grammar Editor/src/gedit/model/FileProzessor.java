@@ -4,18 +4,18 @@
  */
 package gedit.model;
 
-import gedit.GrammarEditorPlugin;
-import gedit.StringUtils;
-import gedit.editor.GrammarDocument;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.eclipse.jface.text.IDocument;
 import org.eclipse.core.runtime.Assert;
+import org.eclipse.jface.text.IDocument;
+
+import gedit.GrammarEditorPlugin;
+import gedit.StringUtils;
+import gedit.editor.GrammarDocument;
 
 public class FileProzessor {
 	private Map documents;
@@ -26,8 +26,8 @@ public class FileProzessor {
 		File file = null;
 		String[] includeDirs = parentDocument.getOptions().getIncludeDirs();
 		if (includeDirs != null) {
-			for (int i = 0; i < includeDirs.length; i++) {
-				String fullName = includeDirs[i] + "/" + fileName;
+			for (String includeDir : includeDirs) {
+				String fullName = includeDir + "/" + fileName;
 				file = new File(fullName);
 				if (file.exists() && file.isFile())
 					break;

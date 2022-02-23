@@ -1,6 +1,6 @@
 package gedit.model;
 public interface jpgsym {
-    public final static int
+    int
       TK_DROPSYMBOLS_KEY = 33,
       TK_DROPACTIONS_KEY = 34,
       TK_DROPRULES_KEY = 35,
@@ -41,7 +41,7 @@ public interface jpgsym {
       TK_COMMENT = 38,
       TK_OPTION_LINE = 39;
 
-      public final static String orderedTerminalSymbols[] = {
+      String orderedTerminalSymbols[] = {
                  "",
                  "SYMBOL",
                  "MACRO_NAME",
@@ -84,5 +84,5 @@ public interface jpgsym {
                  "OPTION_LINE"
              };
 
-    public final static boolean isValidForParser = true;
+    boolean isValidForParser = true;
 }

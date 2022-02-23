@@ -17,10 +17,10 @@ public class Node {
 		this.offset = offset;
 		this.length = length;
 		this.parent = parent;
-		if (parent != null) 
+		if (parent != null)
 			parent.addChild(this);
 	}
-	
+
 	private void addChild(Node node) {
 		if (children == null)
 			children = new ArrayList(3);
@@ -36,15 +36,15 @@ public class Node {
 	protected void acceptArray(Node[] nodes, INodeVisitor visitor) {
 		if (nodes == null)
 			return;
-		for (int i = 0; i < nodes.length; i++) {
-			nodes[i].accept(visitor);
+		for (Node node : nodes) {
+			node.accept(visitor);
 		}
 	}
-	
+
 	public boolean spansMultipleNodes() {
 		return children != null && children.size() > 0;
 	}
-	
+
 	protected Node[] getChildren() {
 		return children != null ? (Node[]) children.toArray(new Node[children.size()]) : null;
 	}
@@ -52,11 +52,12 @@ public class Node {
 	public int getOffset() {
 		return offset;
 	}
-	
+
 	public int getLength() {
 		return length;
 	}
-	
+
+	@Override
 	public String toString() {
 		return "node@" + hashCode() + "(" + offset + "," + length + ")";
 	}

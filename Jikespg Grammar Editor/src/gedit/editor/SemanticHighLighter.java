@@ -4,14 +4,6 @@
  */
 package gedit.editor;
 
-import gedit.GrammarEditorPlugin;
-import gedit.model.Document;
-import gedit.model.ModelBase;
-import gedit.model.ModelType;
-import gedit.model.Node;
-import gedit.model.NodeVisitor;
-import gedit.model.Reference;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -36,6 +28,14 @@ import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 
+import gedit.GrammarEditorPlugin;
+import gedit.model.Document;
+import gedit.model.ModelBase;
+import gedit.model.ModelType;
+import gedit.model.Node;
+import gedit.model.NodeVisitor;
+import gedit.model.Reference;
+
 public class SemanticHighLighter implements IReconcilingListener, ITextPresentationListener, IDocumentListener, ITextInputListener {
 	private class SemanticPosition extends Position {
 		private TextAttribute fTextAttribute;
@@ -43,11 +43,12 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 			super(offset, length);
 			fTextAttribute = attribute;
 		}
+		@Override
 		public String toString() {
 			return offset + ", " + length + "[" + fTextAttribute.getForeground() + "/" + fTextAttribute.getStyle() + "]";
 		}
-	};
-	
+	}
+
 	private class Styler extends NodeVisitor implements Comparator {
 		private TextPresentation fPresentation;
 		private List fPositions = new ArrayList();
@@ -57,7 +58,8 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 					ModelType.REFERENCE))));
 			fPresentation = new TextPresentation();
 		}
-		
+
+		@Override
 		protected boolean doVisit(Node node, ModelBase element) {
 			if (fCanceled)
 				return false;
@@ -81,8 +83,8 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 			int offset = node.getOffset();
 			int length = node.getLength();
 			if (GrammarEditorPlugin.DEBUG) {
-				for (int i = 0; i < fPositions.size(); i++) {
-					Position position = (Position) fPositions.get(i);
+				for (Object fPosition : fPositions) {
+					Position position = (Position) fPosition;
 					if (!position.overlapsWith(offset, length))
 						continue;
 					System.out.println("new position for: " + element + " has already been added");
@@ -99,14 +101,15 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 			Collections.sort(fPositions, this);
 			return fPositions;
 		}
-		
+
+		@Override
 		public int compare(Object arg0, Object arg1) {
 			Position s1 = (Position) arg0;
 			Position s2 = (Position) arg1;
 			return s1.offset - s2.offset;
 		}
-	};
-	
+	}
+
 	private class PresentationJob extends Job {
 		private TextPresentation fPresentation;
 		public PresentationJob() {
@@ -114,11 +117,12 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 			setSystem(true);
 		}
 
+		@Override
 		protected IStatus run(IProgressMonitor monitor) {
 			updatePresentation(fPresentation);
 			return Status.OK_STATUS;
 		}
-	};
+	}
 
 	private GrammarSourceViewer fViewer;
 	private PreferenceUtils fUtils;
@@ -128,7 +132,7 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 	private List fPositions = new ArrayList();
 	private boolean fCanceled;
 	private PresentationJob fPresentationJob = new PresentationJob();
-	
+
 	public SemanticHighLighter(GrammarSourceViewer viewer, PreferenceUtils utils) {
 		fViewer = viewer;
 		fUtils = utils;
@@ -136,20 +140,22 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 		fNonTerminalTextAttribute = fUtils.createTextAttribute(PreferenceConstants.GRAMMAR_COLORING_NON_TERMINAL);
 		fAliasTextAttribute = fUtils.createTextAttribute(PreferenceConstants.GRAMMAR_COLORING_ALIAS);
 	}
-	
+
 	private void setupDocument(IDocument document) {
 		if (document != null)
 			document.addDocumentListener(this);
 	}
-	
+
 	private void releaseDocument(IDocument document) {
 		if (document != null)
 			document.removeDocumentListener(this);
 	}
-	
+
+	@Override
 	public void reconciled() {
 		fCanceled = false;
 		Job job = new Job("SemanticReconciler") {	{ setSystem(true); }
+			@Override
 			protected IStatus run(IProgressMonitor monitor) {
 				fPresentationJob.fPresentation = createMergedStyles();
 				fPresentationJob.schedule();
@@ -158,25 +164,23 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 		};
 		job.schedule();
 	}
-	
+
 	private void updatePresentation(final TextPresentation presentation) {
 		if (fCanceled || presentation == null ||
 				fViewer.getTextWidget() == null || fViewer.getTextWidget().isDisposed())
 			return;
-		fViewer.getTextWidget().getDisplay().asyncExec(new Runnable() {
-			public void run() {
-				fViewer.removeTextPresentationListener(SemanticHighLighter.this);
-				try {
-					if (!fCanceled)
-						fViewer.changeTextPresentation(presentation, false);
-				} catch (Exception e) {
-					// several situations lead to IndexOutOfBounds if positions have changed
-				}
-				fViewer.addTextPresentationListener(SemanticHighLighter.this);
+		fViewer.getTextWidget().getDisplay().asyncExec(() -> {
+			fViewer.removeTextPresentationListener(SemanticHighLighter.this);
+			try {
+				if (!fCanceled)
+					fViewer.changeTextPresentation(presentation, false);
+			} catch (Exception e) {
+				// several situations lead to IndexOutOfBounds if positions have changed
 			}
+			fViewer.addTextPresentationListener(SemanticHighLighter.this);
 		});
 	}
-	
+
 	protected TextPresentation createMergedStyles() {
 		if (fCanceled || fViewer.getDocument() == null)
 			return null;
@@ -190,7 +194,7 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 		}
 		return original;
 	}
-	
+
 	protected TextPresentation createSemanticStyles() {
 		long time = System.currentTimeMillis();
 		Styler finder = new Styler(fViewer.getModel(false));
@@ -205,14 +209,15 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 		}
 		return finder.fPresentation;
 	}
-	
+
+	@Override
 	public void applyTextPresentation(TextPresentation textPresentation) {
 		if (fPositions.size() == 0)
 			createMergedStyles();
 
 		IRegion region = textPresentation.getExtent();
 		IDocument document = fViewer.getDocument();
-		
+
 		int i = computeIndexAtOffset(fPositions, region.getOffset()), n = computeIndexAtOffset(fPositions, region.getOffset() + region.getLength());
 		if (n - i > 2) {
 			List ranges = new ArrayList(n - i);
@@ -236,12 +241,12 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 			}
 		}
 	}
-	
+
 	private int computeIndexAtOffset(List positions, int offset) {
 		int i = -1;
 		int j = positions.size();
 		while (j - i > 1) {
-			int k = (i + j) >> 1;
+			int k = i + j >> 1;
 			Position position = (Position) positions.get(k);
 			if (position.getOffset() >= offset)
 				j = k;
@@ -254,8 +259,8 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 	private StyleRange createStyleRange(TextAttribute attribute, int offset, int length) {
 		int fontStyle = attribute.getStyle() & (SWT.NORMAL | SWT.BOLD | SWT.ITALIC);
 		StyleRange range = new StyleRange(offset, length, attribute.getForeground(), attribute.getBackground(), fontStyle);
-		range.strikeout = (attribute.getStyle() & TextAttribute.STRIKETHROUGH) > 0;
-		range.underline = (attribute.getStyle() & TextAttribute.UNDERLINE) > 0;
+		range.strikeout = (attribute.getStyle() & TextAttribute.STRIKETHROUGH) != 0;
+		range.underline = (attribute.getStyle() & TextAttribute.UNDERLINE) != 0;
 		return range;
 	}
 
@@ -272,7 +277,7 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 		if (property == null)
 			return;
 		if (property.startsWith(PreferenceConstants.GRAMMAR_COLORING_TERMINAL)) {
-			TextAttribute attribute = fUtils.createTextAttribute(PreferenceConstants.GRAMMAR_COLORING_TERMINAL); 
+			TextAttribute attribute = fUtils.createTextAttribute(PreferenceConstants.GRAMMAR_COLORING_TERMINAL);
 			adaptPositions(fTerminalTextAttribute, attribute);
 			fTerminalTextAttribute = attribute;
 		} else if (property.startsWith(PreferenceConstants.GRAMMAR_COLORING_NON_TERMINAL)) {
@@ -285,37 +290,39 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 			fAliasTextAttribute = attribute;
 		}
 	}
-	
+
 	private void adaptPositions(TextAttribute origin, TextAttribute newAttribute) {
-		for (int i = 0; i < fPositions.size(); i++) {
-			SemanticPosition position = (SemanticPosition) fPositions.get(i);
+		for (Object fPosition : fPositions) {
+			SemanticPosition position = (SemanticPosition) fPosition;
 			if (position.fTextAttribute == origin)
 				position.fTextAttribute = newAttribute;
 		}
 	}
-	
+
+	@Override
 	public void inputDocumentAboutToBeChanged(IDocument oldInput, IDocument newInput) {
 		releaseDocument(oldInput);
 	}
-	
+
+	@Override
 	public void inputDocumentChanged(IDocument oldInput, IDocument newInput) {
 		setupDocument(newInput);
 	}
 
+	@Override
 	public void documentAboutToBeChanged(DocumentEvent event) {
 		int i = computeIndexAtOffset(fPositions, event.getOffset());
 		if (i < 0 || i >= fPositions.size())
 			return;
 		boolean insidePosition = true;
 		SemanticPosition position = (SemanticPosition) fPositions.get(i);
-		if (!position.overlapsWith(event.fOffset, event.fLength)) {
-			if (i > 0) {
-				SemanticPosition pos = (SemanticPosition) fPositions.get(--i);
-				if (!pos.overlapsWith(event.fOffset, event.fLength))
-					insidePosition = false;
-				else
-					position = pos;
-			}
+		if (!position.overlapsWith(event.fOffset, event.fLength) && (i > 0)) {
+			i--;
+			SemanticPosition pos = (SemanticPosition) fPositions.get(i);
+			if (!pos.overlapsWith(event.fOffset, event.fLength))
+				insidePosition = false;
+			else
+				position = pos;
 		}
 		int eventEnd = event.fOffset + event.fLength;
 		int offset = event.fText != null ? event.fText.length() - event.fLength : 0;
@@ -332,6 +339,7 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 		}
 	}
 
+	@Override
 	public void documentChanged(DocumentEvent event) {
 		fCanceled = true;
 	}
