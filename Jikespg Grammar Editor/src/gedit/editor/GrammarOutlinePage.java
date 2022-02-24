@@ -88,7 +88,7 @@ public class GrammarOutlinePage extends ContentOutlinePage {
 		getTreeViewer().setSorter(new ModelSorter(PREFERENCE_SORTER));
 		IPreferenceStore store = GrammarEditorPlugin.getDefault().getPreferenceStore();
 		getTreeViewer().addFilter(fFilter = new ModelFilter(ModelUtils.
-				createBitSetFromString(store.getString(PREFERENCE_SECTION_FILTERS),
+				createModelTypeSetFromString(store.getString(PREFERENCE_SECTION_FILTERS),
 						PreferenceConstants.SECTION_FILTERS_SEPARATOR),
 				store.getBoolean(PREFERENCE_FILTER_MACROS)));
 	}

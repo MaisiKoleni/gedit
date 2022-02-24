@@ -52,7 +52,7 @@ public class GrammarStructureDiffViewer extends StructureDiffViewer {
 				}
 			}
 			Document model = GrammarEditorPlugin.getDocumentModel(document, null, true);
-			return new GrammarNode(ModelType.DOCUMENT.getBitPosition(), document, model);
+			return new GrammarNode(ModelType.DOCUMENT.ordinal(), document, model);
 		}
 
 		@Override
@@ -122,7 +122,7 @@ public class GrammarStructureDiffViewer extends StructureDiffViewer {
 			GrammarNode[] nodes = new GrammarNode[children.length];
 			for (int i = 0; i < nodes.length; i++) {
 				ModelBase model = (ModelBase) children[i];
-				nodes[i] = new GrammarNode(model.getType().getBitPosition(), getDocument(), model);
+				nodes[i] = new GrammarNode(model.getType().ordinal(), getDocument(), model);
 			}
 			return nodes;
 		}

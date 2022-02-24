@@ -6,11 +6,12 @@ package gedit.model;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 
@@ -262,16 +263,17 @@ public class Document extends ModelBase implements IAdaptable {
 	}
 
 	public ModelBase getElementById(String id) {
-		BitSet filter = ModelType.ALIAS.or(
-			ModelType.TERMINAL.or(
-			ModelType.RULE.or(
-			ModelType.EXPORT.or(
-			ModelType.DEFINITION.or(
-			ModelType.ERROR_TOK)))));
+		Set<ModelType> filter = EnumSet.of( //
+				ModelType.ALIAS, //
+				ModelType.TERMINAL, //
+				ModelType.RULE, //
+				ModelType.EXPORT, //
+				ModelType.DEFINITION, //
+				ModelType.ERROR_TOK);
 		return getElementById(id, filter);
 	}
 
-	public ModelBase getElementById(String id, BitSet filter) {
+	public ModelBase getElementById(String id, Set<ModelType> filter) {
 		String key = id + filter;
 		if (elementCache.containsKey(key))
 			return elementCache.get(key);
@@ -280,7 +282,7 @@ public class Document extends ModelBase implements IAdaptable {
 		return model;
 	}
 
-	private ModelBase internalGetElementById(String id, BitSet filter) {
+	private ModelBase internalGetElementById(String id, Set<ModelType> filter) {
 		for (Section section : new ArrayList<>(sections.values())) {
 			if (!section.getChildType().matches(filter))
 				continue;

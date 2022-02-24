@@ -7,10 +7,10 @@ package gedit.editor;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.runtime.CoreException;
@@ -92,6 +92,7 @@ import gedit.editor.actions.ToggleCommentAction;
 import gedit.model.Document;
 import gedit.model.ElementFinder.IdFinder;
 import gedit.model.ModelBase;
+import gedit.model.ModelType;
 import gedit.model.ModelUtils;
 import gedit.model.Node;
 import gedit.model.Problem;
@@ -466,7 +467,7 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 
 	private class OccurrencesFinder extends IdFinder {
 		private List<Node> fResult = new ArrayList<>();
-		public OccurrencesFinder(Document document, String id, BitSet filter) {
+		public OccurrencesFinder(Document document, String id, Set<ModelType> filter) {
 			super(document, id, filter);
 		}
 
@@ -852,8 +853,8 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 		IAnnotationModel model = getDocumentProvider().getAnnotationModel(getEditorInput());
 		if (model == null)
 			return null;
-		for (Iterator it = model.getAnnotationIterator(); it.hasNext(); ) {
-			Annotation annotation = (Annotation) it.next();
+		for (Iterator<Annotation> it = model.getAnnotationIterator(); it.hasNext(); ) {
+			Annotation annotation = it.next();
 			if (!isNavigationTarget(annotation))
 				continue;
 			Position p = model.getPosition(annotation);

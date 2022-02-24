@@ -4,7 +4,8 @@
  */
 package gedit.editor;
 
-import java.util.BitSet;
+import java.util.EnumSet;
+import java.util.Set;
 
 import org.eclipse.jface.text.IInformationControlCreator;
 import org.eclipse.jface.text.IRegion;
@@ -22,7 +23,7 @@ import gedit.model.Rule;
 
 public class ModelContentHover implements ITextHover, ITextHoverExtension {
 	private ModelBase fModel;
-	private BitSet fFilter = ModelType.REFERENCE.or(ModelType.ALIAS.or(ModelType.RULE));
+	private Set<ModelType> fFilter = EnumSet.of(ModelType.REFERENCE, ModelType.ALIAS, ModelType.RULE);
 
 	@Override
 	public String getHoverInfo(ITextViewer textViewer, IRegion hoverRegion) {

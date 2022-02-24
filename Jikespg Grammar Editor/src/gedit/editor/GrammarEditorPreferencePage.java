@@ -371,18 +371,18 @@ public class GrammarEditorPreferencePage extends PreferencePage implements IWork
 
 	private void initializeSectionGroup(boolean useDefault) {
 		fSectionTable.removeAll();
-		ModelType[] allTypes = ModelType.getAllTypes();
+		ModelType[] allTypes = ModelType.values();
 		String[] values = StringUtils.split(useDefault ? getPreferenceStore().getDefaultString(PreferenceConstants.SECTION_ORDERING) : getPreferenceStore().getString(PreferenceConstants.SECTION_ORDERING),
 				PreferenceConstants.SECTION_ORDERING_SEPARATOR);
 		ModelLabelProvider labelProvider = new ModelLabelProvider();
 		for (String value : values) {
 			for (ModelType type : allTypes) {
-				if (!type.isSectionType() || !value.equals(Integer.toString(type.getBitPosition())))
+				if (!type.isSectionType() || !value.equals(Integer.toString(type.ordinal())))
 					continue;
 				TableItem item = new TableItem(fSectionTable, SWT.NONE);
 				item.setText(labelProvider.getText(type));
 				item.setImage(labelProvider.getImage(type));
-				item.setData(Integer.toString(type.getBitPosition()));
+				item.setData(Integer.toString(type.ordinal()));
 				break;
 			}
 		}

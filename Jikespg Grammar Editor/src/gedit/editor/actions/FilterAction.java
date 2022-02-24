@@ -6,7 +6,7 @@ package gedit.editor.actions;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
+import java.util.EnumSet;
 import java.util.List;
 
 import org.eclipse.jface.action.Action;
@@ -43,12 +43,12 @@ import gedit.model.ModelUtils;
 
 public class FilterAction extends Action {
 	private class FilterDialog extends Dialog {
-		private BitSet fSelectedFilterTypes;
+		private EnumSet<ModelType> fSelectedFilterTypes;
 		private boolean fFilterMacros;
 		private TableViewer fTypeTable;
 		private Button fFilterMacrosButton;
 
-		protected FilterDialog(Shell parentShell, BitSet selectedFilterTypes, boolean filterMacros) {
+		protected FilterDialog(Shell parentShell, EnumSet<ModelType> selectedFilterTypes, boolean filterMacros) {
 			super(parentShell);
 			fSelectedFilterTypes = selectedFilterTypes;
 			fFilterMacros = filterMacros;
@@ -87,7 +87,7 @@ public class FilterAction extends Action {
 			fTypeTable.setContentProvider(new ArrayContentProvider());
 			fTypeTable.setLabelProvider(new ModelLabelProvider());
 			fTypeTable.setSorter(new ModelSorter());
-			ModelType[] allTypes = ModelType.getAllTypes();
+			ModelType[] allTypes = ModelType.values();
 			List<ModelType> input = new ArrayList<>();
 			for (ModelType type : allTypes) {
 				if (!type.isSectionType())
@@ -105,7 +105,7 @@ public class FilterAction extends Action {
 			TableItem[] items = fTypeTable.getTable().getItems();
 			for (TableItem item : items) {
 				ModelType type = (ModelType) item.getData();
-				if (fSelectedFilterTypes.get(type.getBitPosition()))
+				if (fSelectedFilterTypes.contains(type))
 					item.setChecked(true);
 			}
 		}
@@ -113,18 +113,18 @@ public class FilterAction extends Action {
 		@Override
 		protected void okPressed() {
 			TableItem[] items = fTypeTable.getTable().getItems();
-			BitSet selectedTypes = new BitSet();
+			EnumSet<ModelType> selectedTypes = EnumSet.noneOf(ModelType.class);
 			for (TableItem item : items) {
 				ModelType type = (ModelType) item.getData();
 				if (item.getChecked())
-					selectedTypes.set(type.getBitPosition());
+					selectedTypes.add(type);
 			}
 			fSelectedFilterTypes = selectedTypes;
 			fFilterMacros = fFilterMacrosButton.getSelection();
 			super.okPressed();
 		}
 
-		public BitSet getSelectedFilterTypes() {
+		public EnumSet<ModelType> getSelectedFilterTypes() {
 			return fSelectedFilterTypes;
 		}
 
@@ -136,8 +136,8 @@ public class FilterAction extends Action {
 
 	private static int MAX_RECENTLY_USED_FILTERS = 5;
 
-	private BitSet fPresetFilter;
-	private BitSet fFilter;
+	private EnumSet<ModelType> fPresetFilter;
+	private EnumSet<ModelType> fFilter;
 	private ContentViewer fViewer;
 	private ModelFilter fSectionFilter;
 	private String fPreferenceKey;
@@ -163,21 +163,24 @@ public class FilterAction extends Action {
 		setImageDescriptor(GrammarEditorPlugin.getImageDescriptor("icons/filter.gif"));
 	}
 
-	private FilterAction(ContentViewer viewer, ModelFilter sectionFilter, String text, BitSet filter, String preferenceKey, String preferenceKeyRecentlyUsed, String preferenceKeyMacros) {
+	private FilterAction(ContentViewer viewer, ModelFilter sectionFilter, String text, EnumSet<ModelType> filter, String preferenceKey, String preferenceKeyRecentlyUsed, String preferenceKeyMacros) {
 		this(text, viewer, sectionFilter, preferenceKey, preferenceKeyRecentlyUsed, preferenceKeyMacros);
-		setChecked(ModelUtils.createBitSetFromString(fStore.getString(preferenceKey), PreferenceConstants.SECTION_FILTERS_SEPARATOR).get(filter.nextSetBit(0)));
+		setChecked(ModelUtils
+				.createModelTypeSetFromString(fStore.getString(preferenceKey),
+						PreferenceConstants.SECTION_FILTERS_SEPARATOR)
+				.contains(ModelUtils.getFirstOrElse(fFilter, null)));
 		fPresetFilter = filter;
 	}
 
 	@Override
 	public void run() {
-		BitSet previousFilter = (BitSet) (fFilter = ModelUtils.createBitSetFromString(fStore
+		EnumSet<ModelType> previousFilter = (fFilter = ModelUtils.createModelTypeSetFromString(fStore
 				.getString(fPreferenceKey), PreferenceConstants.SECTION_FILTERS_SEPARATOR)).clone();
 		boolean previousFilterMacros = fStore.getBoolean(fPreferenceKeyMacros);
 		boolean newFilterMacros = previousFilterMacros;
 		if (fPresetFilter != null) {
-			fFilter.xor(fPresetFilter);
-			setChecked(fFilter.get(fPresetFilter.nextSetBit(0)));
+			fFilter = ModelUtils.disjoint(fFilter, fPresetFilter);
+			setChecked(fFilter.contains(ModelUtils.getFirstOrElse(fPresetFilter, null)));
 		} else {
 			fDialog = new FilterDialog(fViewer.getControl().getShell(), previousFilter, previousFilterMacros);
 			fDialog.open();
@@ -186,7 +189,7 @@ public class FilterAction extends Action {
 			fDialog = null;
 		}
 		if (!previousFilter.equals(fFilter)) {
-			String filterString = ModelUtils.createStringFromBitSet(fFilter, PreferenceConstants.SECTION_FILTERS_SEPARATOR);
+			String filterString = ModelUtils.createStringFromModelTypeSet(fFilter, PreferenceConstants.SECTION_FILTERS_SEPARATOR);
 			fStore.setValue(fPreferenceKey, filterString);
 			addToRecentlyUsedFilters(filterString);
 			fSectionFilter.setFilter(fFilter);
@@ -219,24 +222,23 @@ public class FilterAction extends Action {
 		return new CompoundContributionItem() {
 			@Override
 			protected IContributionItem[] getContributionItems() {
-				IAction[] actions = getMostRecentlyUsedFilters(fViewer);
-				ActionContributionItem[] items = new ActionContributionItem[actions.length];
-				for (int i = 0; i < items.length; i++) {
-					items[i] = new ActionContributionItem(actions[i]);
-				}
-				return items;
+				return getMostRecentlyUsedFilters(fViewer).stream().map(ActionContributionItem::new)
+						.toArray(IContributionItem[]::new);
 			}
 		};
 	}
 
-	private IAction[] getMostRecentlyUsedFilters(ContentViewer viewer) {
-		BitSet filters = ModelUtils.createBitSetFromString(fStore.getString(fPreferenceKeyRecentlyUsed), PreferenceConstants.SECTION_FILTERS_SEPARATOR);
-		IAction[] actions = new IAction[filters.cardinality()];
+	private List<IAction> getMostRecentlyUsedFilters(ContentViewer viewer) {
+		EnumSet<ModelType> filters = ModelUtils.createModelTypeSetFromString(
+				fStore.getString(fPreferenceKeyRecentlyUsed), PreferenceConstants.SECTION_FILTERS_SEPARATOR);
+		List<IAction> actions = new ArrayList<>();
 		ILabelProvider labelProvider = (ILabelProvider) viewer.getLabelProvider();
-		for (int i = 0, lastBitPos = 0; i < actions.length; i++, lastBitPos++) {
-			ModelType type = ModelType.getByBitPosition(lastBitPos = filters.nextSetBit(lastBitPos));
-			BitSet filter = fPresetFilter != null ? fFilter : type.or((BitSet) null);
-			actions[i] = new FilterAction(viewer, fSectionFilter, i + 1 + " " + labelProvider.getText(type), filter, fPreferenceKey, fPreferenceKeyRecentlyUsed, fPreferenceKeyMacros);
+		int index = 1;
+		for (ModelType type : filters) {
+			EnumSet<ModelType> filter = fPresetFilter != null ? fFilter : EnumSet.of(type);
+			actions.add(new FilterAction(viewer, fSectionFilter, index + " " + labelProvider.getText(type), filter,
+					fPreferenceKey, fPreferenceKeyRecentlyUsed, fPreferenceKeyMacros));
+			index++;
 		}
 		return actions;
 	}

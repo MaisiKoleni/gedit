@@ -117,7 +117,7 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 	private void computeMacroProposals(Document model, String word, int endOffset, ILabelProvider labelProvider, List<ICompletionProposal> proposals) {
 		Definition[] definitions = model.getAllMakros();
 		List<Definition> list = new ArrayList<>(Arrays.asList(definitions));
-		list.add(new Definition(null, labelProvider.getText(ModelType.EMPTY_TOK), ""));
+		list.add(new Definition(null, labelProvider.getText(ModelType.EMPTY_TOKEN), ""));
 		Collections.sort(list);
 		definitions = list.toArray(new Definition[list.size()]);
 		char escape = model.getOptions().getEsape();
@@ -153,9 +153,8 @@ public class GrammarCompletionProcessor implements IContentAssistProcessor {
 	}
 
 	private void computeKeywordProposals(Document model, String word, int endOffset, ILabelProvider labelProvider, List<ICompletionProposal> proposals) {
-		ModelType[] allTypes = ModelType.getAllTypes();
 		List<GrammarCompletionProposal> sortedProposals = new ArrayList<>();
-		for (ModelType type : allTypes) {
+		for (ModelType type : ModelType.values()) {
 			if (!type.isKeyword())
 				continue;
 			String keyword = labelProvider.getText(type);

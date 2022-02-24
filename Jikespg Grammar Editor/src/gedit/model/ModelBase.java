@@ -11,7 +11,7 @@ import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.PlatformObject;
 
 public abstract class ModelBase extends PlatformObject implements Comparable<ModelBase>, Cloneable {
-	protected static final ModelBase[] NO_CHILDREN = new ModelBase[0];
+	protected static final ModelBase[] NO_CHILDREN = {};
 
 	protected ModelBase parent;
 	protected String label;

@@ -72,8 +72,8 @@ public class ModelSorter extends ViewerSorter {
 
 	protected int getSectionOrder(Section section1, Section section2) {
 		if (fEnabled)
-			return fSectionOrder.indexOf(Integer.toString(section1.getChildType().getBitPosition()))
-				- fSectionOrder.indexOf(Integer.toString(section2.getChildType().getBitPosition()));
+			return fSectionOrder.indexOf(Integer.toString(section1.getChildType().ordinal()))
+				- fSectionOrder.indexOf(Integer.toString(section2.getChildType().ordinal()));
 		return section1.getOffset() - section2.getOffset();
 	}
 

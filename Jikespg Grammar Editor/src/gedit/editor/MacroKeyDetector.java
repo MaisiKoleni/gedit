@@ -114,7 +114,7 @@ public class MacroKeyDetector {
 		for (Definition element : makros) {
 			insert(fMacros, element.getLabel(), 0);
 		}
-		ModelType[] allTypes = ModelType.getAllTypes();
+		ModelType[] allTypes = ModelType.values();
 		for (ModelType type : allTypes) {
 			insert(fMacros, fLabelProvider.getText(type), 0);
 		}

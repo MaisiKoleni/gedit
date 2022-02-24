@@ -224,8 +224,7 @@ class Parser extends jpgprs {
             } while(act <= NUM_RULES);
         }
 
-        ModelType[] allTypes = ModelType.getAllTypes();
-        for (ModelType type : allTypes) {
+        for (ModelType type : ModelType.values()) {
         	if (type.getModelClass() != null)
         		document.addChildren(type, getElements(type), true, false);
         }
@@ -500,7 +499,7 @@ class Parser extends jpgprs {
 	private void consume_start_symbol() {
 		Token symToken = popToken();
 		Reference startToken = new Reference(peekModel(), symToken.name);
-		getElements(ModelType.START_TOK).add(startToken);
+		getElements(ModelType.START_TOKEN).add(startToken);
 		expandNodeBy(peekAst(), mapElementToNode(createNodeFromToken(peekAst(), symToken), startToken, true));
 	}
 	private void consume_lhs_produces_rhs() {
@@ -838,7 +837,7 @@ class Parser extends jpgprs {
 			break;
 
      	case 102 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("enter_start_segment ::= START_KEY");
-		    consume_enter_segment(ModelType.START_TOK);
+		    consume_enter_segment(ModelType.START_TOKEN);
 			break;
 
      	case 103 :  //if (GrammarEditorPlugin.DEBUG_PARSER_LEVEL > 1) System.out.println("headers_segment ::= HEADERS_KEY");

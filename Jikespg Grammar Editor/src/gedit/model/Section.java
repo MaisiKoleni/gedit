@@ -5,7 +5,7 @@
 package gedit.model;
 
 import java.lang.reflect.Array;
-import java.util.BitSet;
+import java.util.Set;
 
 public class Section extends ModelBase {
 	private ModelType childType;
@@ -45,7 +45,7 @@ public class Section extends ModelBase {
 			children = newChildren;
 	}
 
-	protected ModelBase getElementById(String id, BitSet filter) {
+	protected ModelBase getElementById(String id, Set<ModelType> filter) {
 		return ElementFinder.findElement(this, id, filter);
 	}
 

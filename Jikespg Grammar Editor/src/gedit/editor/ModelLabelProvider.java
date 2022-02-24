@@ -126,12 +126,12 @@ public class ModelLabelProvider extends LabelProvider {
 		map.put(ModelType.ALIAS, "Alias");
 		map.put(ModelType.RULE, "Rules");
 		map.put(ModelType.NAME, "Names");
-		map.put(ModelType.START_TOK, "Start");
-		map.put(ModelType.END_TOK, "End");
+		map.put(ModelType.START_TOKEN, "Start");
+		map.put(ModelType.END_TOKEN, "End");
 		map.put(ModelType.EOF_TOK, "Eof");
 		map.put(ModelType.EOL_TOK, "Eol");
 		map.put(ModelType.ERROR_TOK, "Error");
-		map.put(ModelType.EMPTY_TOK, "empty");
+		map.put(ModelType.EMPTY_TOKEN, "empty");
 		map.put(ModelType.INCLUDE, "Include");
 		map.put(ModelType.NOTICE, "Notice");
 		map.put(ModelType.EXPORT, "Export");
@@ -184,7 +184,7 @@ public class ModelLabelProvider extends LabelProvider {
 		map.put(ModelType.EOF_TOK, GrammarEditorPlugin.getImageDescriptor("icons/eof_tok.gif")); //$NON-NLS-1$
 		map.put(ModelType.ERROR_TOK, PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_OBJS_ERROR_TSK));
 		map.put(ModelType.RECOVER, GrammarEditorPlugin.getImageDescriptor("icons/recover.gif")); //$NON-NLS-1$
-		map.put(ModelType.START_TOK, GrammarEditorPlugin.getImageDescriptor("icons/start_tok.gif")); //$NON-NLS-1$
+		map.put(ModelType.START_TOKEN, GrammarEditorPlugin.getImageDescriptor("icons/start_tok.gif")); //$NON-NLS-1$
 		map.put(ModelType.AST, GrammarEditorPlugin.getImageDescriptor("icons/ast.gif")); //$NON-NLS-1$
 		map.put(ModelType.TYPE, GrammarEditorPlugin.getImageDescriptor("icons/type.gif")); //$NON-NLS-1$
 		return Collections.unmodifiableMap(map);

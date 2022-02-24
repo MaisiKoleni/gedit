@@ -7,6 +7,7 @@ package gedit.editor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -52,10 +53,9 @@ public class SemanticHighLighter implements IReconcilingListener, ITextPresentat
 	private class Styler extends NodeVisitor implements Comparator<Position> {
 		private TextPresentation fPresentation;
 		private List<Position> fPositions = new ArrayList<>();
+
 		public Styler(Document document) {
-			super(document, ModelType.ALIAS.or(
-					ModelType.TERMINAL.or(ModelType.RULE.or(
-					ModelType.REFERENCE))));
+			super(document, EnumSet.of(ModelType.ALIAS, ModelType.TERMINAL, ModelType.RULE, ModelType.REFERENCE));
 			fPresentation = new TextPresentation();
 		}
 

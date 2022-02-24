@@ -4,17 +4,17 @@
  */
 package gedit.model;
 
-import java.util.BitSet;
+import java.util.Set;
 
 public abstract class NodeVisitor implements INodeVisitor {
 	protected Document document;
-	protected BitSet filter;
+	protected Set<ModelType> filter;
 
 	protected NodeVisitor(Document document) {
 		this(document, null);
 	}
 
-	protected NodeVisitor(Document document, BitSet filter) {
+	protected NodeVisitor(Document document, Set<ModelType> filter) {
 		this.document = document;
 		this.filter = filter;
 	}

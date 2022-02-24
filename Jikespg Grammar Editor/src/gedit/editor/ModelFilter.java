@@ -4,7 +4,7 @@
  */
 package gedit.editor;
 
-import java.util.BitSet;
+import java.util.Set;
 
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerFilter;
@@ -14,10 +14,10 @@ import gedit.model.ModelType;
 import gedit.model.Section;
 
 public class ModelFilter extends ViewerFilter {
-	private BitSet fTypedFilter;
+	private Set<ModelType> fTypedFilter;
 	private boolean fFilterMacros;
 
-	public ModelFilter(BitSet set, boolean filterMacros) {
+	public ModelFilter(Set<ModelType> set, boolean filterMacros) {
 		fTypedFilter = set;
 		fFilterMacros = filterMacros;
 	}
@@ -31,7 +31,7 @@ public class ModelFilter extends ViewerFilter {
 		return true;
 	}
 
-	public void setFilter(BitSet set) {
+	public void setFilter(Set<ModelType> set) {
 		fTypedFilter = set;
 	}
 

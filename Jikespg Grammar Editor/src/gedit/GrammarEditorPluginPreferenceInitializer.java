@@ -61,7 +61,7 @@ public class GrammarEditorPluginPreferenceInitializer extends AbstractPreference
 				ModelType.ERROR_TOK,
 				ModelType.RECOVER,
 				ModelType.IDENTIFIER,
-				ModelType.START_TOK,
+				ModelType.START_TOKEN,
 				ModelType.ALIAS,
 				ModelType.NAME,
 				ModelType.HEADER,
@@ -75,7 +75,7 @@ public class GrammarEditorPluginPreferenceInitializer extends AbstractPreference
 		for (int i = 0; i < types.length; i++) {
 			if (i > 0)
 				sb.append(PreferenceConstants.SECTION_ORDERING_SEPARATOR);
-			sb.append(types[i].getBitPosition());
+			sb.append(types[i].ordinal());
 		}
 		return sb.toString();
 	}

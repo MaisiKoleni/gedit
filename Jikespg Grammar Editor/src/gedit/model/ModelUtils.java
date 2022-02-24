@@ -9,11 +9,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
@@ -106,7 +108,6 @@ public class ModelUtils {
 	}
 
 	private static Map<String, OptionProposal> OPTIONS;
-	private static BitSet ALL_FILTER;
 
 	public static Definition lookupMacro(int offset, GrammarSourceViewer viewer, RuleBasedScanner macroScanner, Position found) {
 		char c = 0;
@@ -144,7 +145,7 @@ public class ModelUtils {
 				break Scan;
 			}
 		}
-		Definition definition = (Definition) model.getElementById(buffer.toString(), ModelType.DEFINITION.or((BitSet) null));
+		Definition definition = (Definition) model.getElementById(buffer.toString(), EnumSet.of(ModelType.DEFINITION));
 		if (definition != null && found != null) {
 			found.offset = start;
 			found.length = buffer.length();
@@ -152,26 +153,42 @@ public class ModelUtils {
 		return definition;
 	}
 
-	public static BitSet createBitSetFromString(String string, String separator) {
+	public static EnumSet<ModelType> createModelTypeSetFromString(String string, String separator) {
 		String[] filters = StringUtils.split(string, separator);
-		BitSet set = new BitSet();
-		for (String filter : filters) {
+		EnumSet<ModelType> set = EnumSet.noneOf(ModelType.class);
+		for (String element : filters) {
 			try {
-				set.set(Integer.parseInt(filter.trim()));
+				/*
+				 * Handling of the legacy bit set settings value. Since enum identifiers cannot
+				 * start with numbers, this is a safe discriminator.
+				 */
+				if (Character.isDigit(element.charAt(0)))
+					set.add(ModelType.values()[Integer.parseInt(element.trim())]);
+				else
+					set.add(ModelType.valueOf(element.trim()));
 			} catch (Exception ignore) {
 			}
 		}
 		return set;
 	}
 
-	public static String createStringFromBitSet(BitSet set, String separator) {
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0, lastIndex = 0, n = set.cardinality(); i < n; i++, lastIndex++) {
-			if (i > 0)
-				sb.append(separator);
-			sb.append(lastIndex = set.nextSetBit(lastIndex));
-		}
-		return sb.toString();
+	public static String createStringFromModelTypeSet(Set<ModelType> set, String separator) {
+		return set.stream().map(Enum::name).collect(Collectors.joining(separator));
+	}
+
+	public static EnumSet<ModelType> disjoint(EnumSet<ModelType> a, EnumSet<ModelType> b) {
+		EnumSet<ModelType> result = EnumSet.copyOf(a);
+		result.addAll(b);
+		EnumSet<ModelType> intersection = EnumSet.copyOf(a);
+		intersection.retainAll(b);
+		result.removeAll(intersection);
+		return result;
+	}
+
+	public static ModelType getFirstOrElse(EnumSet<ModelType> set, ModelType fallback) {
+		if (set.isEmpty())
+			return fallback;
+		return set.iterator().next();
 	}
 
 	protected static Definition[] readPredefinedDefinitions() {
@@ -223,16 +240,8 @@ public class ModelUtils {
 		return result.toArray(new String[result.size()]);
 	}
 
-	public static BitSet getAllFilter() {
-		if (ALL_FILTER == null) {
-			BitSet set = new BitSet();
-			ModelType[] allTypes = ModelType.getAllTypes();
-			for (ModelType type : allTypes) {
-				set.set(type.getBitPosition());
-			}
-			ALL_FILTER = set;
-		}
-		return ALL_FILTER;
+	public static Set<ModelType> getAllFilter() {
+		return EnumSet.allOf(ModelType.class);
 	}
 
 	public static Map<String, OptionProposal> getAllOptions() {

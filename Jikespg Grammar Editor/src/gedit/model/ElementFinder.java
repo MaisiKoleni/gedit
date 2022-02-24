@@ -4,7 +4,7 @@
  */
 package gedit.model;
 
-import java.util.BitSet;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -42,7 +42,7 @@ public class ElementFinder {
 		private String id;
 		private String trimmedId;
 		private ModelBase firstHit;
-		public IdFinder(Document document, String id, BitSet filter) {
+		public IdFinder(Document document, String id, Set<ModelType> filter) {
 			super(document, filter);
 			this.id = id;
 			String s = StringUtils.trimQuotes(id, '\'');
@@ -80,7 +80,7 @@ public class ElementFinder {
 		return finder.getNearest();
 	}
 
-	public static ModelBase findElement(ModelBase start, String id, BitSet filter) {
+	public static ModelBase findElement(ModelBase start, String id, Set<ModelType> filter) {
 		Document document = start.getDocument();
 		IdFinder finder = new IdFinder(document, id, filter);
 		Node node = start.node != null ? start.node : null;

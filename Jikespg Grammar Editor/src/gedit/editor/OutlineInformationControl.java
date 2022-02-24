@@ -251,7 +251,7 @@ public class OutlineInformationControl implements IInformationControl,
 		IPreferenceStore store = GrammarEditorPlugin.getDefault().getPreferenceStore();
 		viewer.addFilter(fPatternFilter);
 		viewer.addFilter(fSectionFilter = new ModelFilter(ModelUtils.
-				createBitSetFromString(store.getString(PREFERENCE_SECTION_FILTERS),
+				createModelTypeSetFromString(store.getString(PREFERENCE_SECTION_FILTERS),
 						PreferenceConstants.SECTION_FILTERS_SEPARATOR),
 				store.getBoolean(PREFERENCE_FILTER_MACROS)));
 		return viewer;

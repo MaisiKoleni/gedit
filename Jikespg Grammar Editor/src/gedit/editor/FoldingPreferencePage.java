@@ -5,9 +5,9 @@
 package gedit.editor;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.preference.IPreferenceStore;
@@ -38,7 +38,7 @@ public class FoldingPreferencePage extends PreferencePage implements IWorkbenchP
 	private Button fFoldMacros;
 	private Button fFoldSelectedSection;
 	private TableViewer fSectionsViewer;
-	private BitSet fEnablementState;
+	private Set<ModelType> fEnablementState;
 
 	public FoldingPreferencePage() {
 		setPreferenceStore(GrammarEditorPlugin.getDefault().getPreferenceStore());
@@ -123,9 +123,9 @@ public class FoldingPreferencePage extends PreferencePage implements IWorkbenchP
 	}
 
 	private void initializeSections(IPreferenceStore store, boolean defaultValues) {
-		ModelType[] allTypes = ModelType.getAllTypes();
+		ModelType[] allTypes = ModelType.values();
 		List<ModelType> entries = new ArrayList<>();
-		fEnablementState = ModelUtils.createBitSetFromString(defaultValues ? store.getDefaultString(PreferenceConstants.EDITOR_FOLD_SECTIONS)
+		fEnablementState = ModelUtils.createModelTypeSetFromString(defaultValues ? store.getDefaultString(PreferenceConstants.EDITOR_FOLD_SECTIONS)
 				: store.getString(PreferenceConstants.EDITOR_FOLD_SECTIONS), PreferenceConstants.EDITOR_FOLDING_SEPARATOR);
 		for (ModelType type : allTypes) {
 			if (!type.isSectionType())
@@ -148,7 +148,7 @@ public class FoldingPreferencePage extends PreferencePage implements IWorkbenchP
 	private void updateSectionButton(ModelType entry) {
 		fFoldSelectedSection.setEnabled(entry != null);
 		if (entry != null)
-			fFoldSelectedSection.setSelection(fEnablementState.get(entry.getBitPosition()));
+			fFoldSelectedSection.setSelection(fEnablementState.contains(entry));
 	}
 
 	private void handleSectionsViewerSelectionChanged() {
@@ -163,9 +163,9 @@ public class FoldingPreferencePage extends PreferencePage implements IWorkbenchP
 		if (entry == null)
 			return;
 		if (fFoldSelectedSection.getSelection())
-			fEnablementState.set(entry.getBitPosition());
+			fEnablementState.add(entry);
 		else
-			fEnablementState.clear(entry.getBitPosition());
+			fEnablementState.remove(entry);
 	}
 
 	@Override
@@ -177,7 +177,7 @@ public class FoldingPreferencePage extends PreferencePage implements IWorkbenchP
 		store.setValue(PreferenceConstants.EDITOR_FOLD_COMMENTS, fFoldComments.getSelection());
 		store.setValue(PreferenceConstants.EDITOR_FOLD_MACROS, fFoldMacros.getSelection());
 
-		store.setValue(PreferenceConstants.EDITOR_FOLD_SECTIONS, ModelUtils.createStringFromBitSet(fEnablementState, PreferenceConstants.EDITOR_FOLDING_SEPARATOR));
+		store.setValue(PreferenceConstants.EDITOR_FOLD_SECTIONS, ModelUtils.createStringFromModelTypeSet(fEnablementState, PreferenceConstants.EDITOR_FOLDING_SEPARATOR));
 
 		return super.performOk();
 	}

@@ -5,7 +5,7 @@
 package gedit.editor;
 
 import java.util.ArrayList;
-import java.util.BitSet;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -35,7 +35,7 @@ public class GrammarFoldingStructureProvider {
 	private static class RegionFinder extends NodeVisitor {
 		private List<ModelBase> fResult = new ArrayList<>();
 
-		protected RegionFinder(Document document, BitSet filter) {
+		protected RegionFinder(Document document, Set<ModelType> filter) {
 			super(document, filter);
 		}
 
@@ -57,12 +57,12 @@ public class GrammarFoldingStructureProvider {
 
 	private static class FoldingOptions {
 		FoldingOptions(IPreferenceStore store) {
-			ModelType[] allTypes = ModelType.getAllTypes();
+			ModelType[] allTypes = ModelType.values();
 			fFoldSections = new HashMap<>();
-			BitSet values = ModelUtils.createBitSetFromString(store.getString(PreferenceConstants.EDITOR_FOLD_SECTIONS), PreferenceConstants.EDITOR_FOLDING_SEPARATOR);
+			Set<ModelType> values = ModelUtils.createModelTypeSetFromString(store.getString(PreferenceConstants.EDITOR_FOLD_SECTIONS), PreferenceConstants.EDITOR_FOLDING_SEPARATOR);
 			for (ModelType type : allTypes) {
 				String section = type.getString();
-				fFoldSections.put(section.toLowerCase(), values.get(type.getBitPosition())
+				fFoldSections.put(section.toLowerCase(), values.contains(type)
 						? new Object() : null);
 			}
 			fFoldRules = store.getBoolean(PreferenceConstants.EDITOR_FOLD_RULES);
@@ -139,8 +139,8 @@ public class GrammarFoldingStructureProvider {
 			if (model == null)
 				return;
 
-			BitSet filter = ModelType.SECTION.or(ModelType.RULE.or(
-					ModelType.COMMENT.or(ModelType.MACRO_BLOCK)));
+			Set<ModelType> filter = EnumSet.of(ModelType.SECTION, ModelType.RULE,
+					ModelType.COMMENT, ModelType.MACRO_BLOCK);
 
 			RegionFinder finder = new RegionFinder(document, filter);
 			List<ModelBase> elements = finder.getElements(document);

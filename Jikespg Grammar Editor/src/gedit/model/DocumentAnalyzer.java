@@ -121,7 +121,7 @@ public class DocumentAnalyzer {
 				Reference[] parts = rhs.getParts();
 				for (Reference ref : parts) {
 					String label = ref.label;
-					if ((document.getOptions().getEsape() + ModelType.EMPTY_TOK.getString()).equalsIgnoreCase(label))
+					if ((document.getOptions().getEsape() + ModelType.EMPTY_TOKEN.getString()).equalsIgnoreCase(label))
 						continue;
 					ModelBase referred = lookup(label, rulesLookup, aliasLookup);
 					if (referred != null) {
@@ -150,7 +150,7 @@ public class DocumentAnalyzer {
 			}
 		}
 
-		Section section = document.getSection(ModelType.START_TOK);
+		Section section = document.getSection(ModelType.START_TOKEN);
 		if (section != null) {
 			ModelBase[] startTokens = section.getChildren();
 			for (ModelBase startToken2 : startTokens) {
