@@ -17,7 +17,7 @@ import java.util.WeakHashMap;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.ListenerList;
-import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.SafeRunner;
 import org.eclipse.jface.text.Position;
 
 import gedit.GrammarEditorPlugin;
@@ -306,7 +306,7 @@ public class Document extends ModelBase implements IAdaptable {
 		Object[] objects = listeners.getListeners();
 		for (Object object : objects) {
 			final IModelListener listener = (IModelListener) object;
-			Platform.run(new NonUISafeRunnable() {
+			SafeRunner.run(new NonUISafeRunnable() {
 				@Override
 				public void run() throws Exception {
 					listener.modelChanged(Document.this);

@@ -5,7 +5,7 @@
 package gedit.editor;
 
 import org.eclipse.core.runtime.ListenerList;
-import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.SafeRunner;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.preference.PreferenceConverter;
 import org.eclipse.jface.text.BadLocationException;
@@ -228,7 +228,7 @@ public class GrammarSourceViewer extends ProjectionViewer implements IPropertyCh
 		Object[] listeners = fReconcilingListeners.getListeners();
 		for (Object listener2 : listeners) {
 			final IReconcilingListener listener = (IReconcilingListener) listener2;
-			Platform.run(new NonUISafeRunnable() {
+			SafeRunner.run(new NonUISafeRunnable() {
 				@Override
 				public void run() throws Exception {
 					listener.reconciled();

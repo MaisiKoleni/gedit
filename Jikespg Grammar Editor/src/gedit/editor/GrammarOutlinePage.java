@@ -5,7 +5,7 @@
 package gedit.editor;
 
 import org.eclipse.core.runtime.ListenerList;
-import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.SafeRunner;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IStatusLineManager;
@@ -142,7 +142,7 @@ public class GrammarOutlinePage extends ContentOutlinePage {
         Object[] listeners = selectionChangedListeners.getListeners();
         for (Object listener : listeners) {
             final ISelectionChangedListener l = (ISelectionChangedListener) listener;
-            Platform.run(new SafeRunnable() {
+            SafeRunner.run(new SafeRunnable() {
                 @Override
 				public void run() {
                     l.selectionChanged(event);

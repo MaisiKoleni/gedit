@@ -947,8 +947,8 @@ public class GrammarEditor extends TextEditor implements IProjectionListener, IR
 		if (getDocumentProvider() == null)
 			return;
 		IAnnotationModel annotationModel = getDocumentProvider().getAnnotationModel(getEditorInput());
-		for (Iterator it = annotationModel.getAnnotationIterator(); it.hasNext(); ) {
-			Annotation annotation = (Annotation) it.next();
+		for (Iterator<Annotation> it = annotationModel.getAnnotationIterator(); it.hasNext(); ) {
+			Annotation annotation = it.next();
 			if (GrammarDocumentProvider.ANNOTATION_OCCURRENCE.equals(annotation.getType()))
 				annotationModel.removeAnnotation(annotation);
 		}
