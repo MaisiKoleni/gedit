@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.runtime.Assert;
@@ -49,6 +48,7 @@ import org.eclipse.ui.dialogs.PreferencesUtil;
 import org.eclipse.ui.texteditor.ChainedPreferenceStore;
 
 import gedit.GrammarEditorPlugin;
+import gedit.editor.OverlayPreferenceStore.OverlayKey;
 
 public class SyntaxColoringPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
 	private static class SourcePreviewerUpdater {
@@ -170,8 +170,8 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
 	private Button fStrikethroughCheckBox;
 	private Button fUnderlineCheckBox;
 	private SourceViewer fPreviewViewer;
-	private ArrayList fMasterSlaveListeners = new ArrayList();
-	private final List fHighlightingColorList = new ArrayList();
+	private ArrayList<SelectionListener> fMasterSlaveListeners = new ArrayList<>();
+	private final List<HighlightingColorListItem> fHighlightingColorList = new ArrayList<>();
 	private TableViewer fHighlightingColorListViewer;
 	private ColorManager fColorManager;
 
@@ -182,7 +182,7 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
 
 	private OverlayPreferenceStore.OverlayKey[] createOverlayStoreKeys() {
 
-		ArrayList overlayKeys = new ArrayList();
+		ArrayList<OverlayKey> overlayKeys = new ArrayList<>();
 
 		for (String[] element : fSyntaxColorListModel) {
 			String colorKey = element[1];
@@ -418,8 +418,7 @@ public class SyntaxColoringPreferencePage extends PreferencePage implements IWor
 
 	private void initializeFields() {
         // Update slaves
-        for (Iterator iter= fMasterSlaveListeners.iterator(); iter.hasNext(); ) {
-            SelectionListener listener = (SelectionListener)iter.next();
+        for (SelectionListener listener : fMasterSlaveListeners) {
             listener.widgetSelected(null);
         }
 	}

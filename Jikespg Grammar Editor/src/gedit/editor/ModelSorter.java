@@ -20,12 +20,12 @@ import gedit.model.ModelType;
 import gedit.model.Section;
 
 public class ModelSorter extends ViewerSorter {
-	private List fSectionOrder;
+	private List<String> fSectionOrder;
 	private boolean fEnabled;
 	private ILabelProvider fLabelProvider;
 
 	public ModelSorter() {
-		fSectionOrder = new ArrayList();
+		fSectionOrder = new ArrayList<>();
 		initSectionOrder(GrammarEditorPlugin.getDefault().getPreferenceStore().getString(PreferenceConstants.SECTION_ORDERING));
 		fEnabled = true;
 	}

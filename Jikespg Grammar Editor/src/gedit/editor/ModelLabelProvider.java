@@ -107,9 +107,9 @@ public class ModelLabelProvider extends LabelProvider {
 	private final static int BOTTOM_LEFT = 3;
 	private final static int BOTTOM_RIGHT = 4;
 
-	private final static Map LABELS = createLabels();
-	private final static Map MODEL_IMAGES = createModelImages();
-	private final static Map SECTION_IMAGES = createSectionImages();
+	private final static Map<ModelType, String> LABELS = createLabels();
+	private final static Map<ModelType, ImageDescriptor> MODEL_IMAGES = createModelImages();
+	private final static Map<ModelType, ImageDescriptor> SECTION_IMAGES = createSectionImages();
 
 	private final static ImageDescriptor[] OVERLAYS = {
 		GrammarEditorPlugin.getImageDescriptor("icons/warning_co.gif"), //$NON-NLS-1$
@@ -118,8 +118,8 @@ public class ModelLabelProvider extends LabelProvider {
 
 	private final static int MAX_LABEL_LENGTH = 32;
 
-	private static Map createLabels() {
-		Map map = new HashMap();
+	private static Map<ModelType, String> createLabels() {
+		Map<ModelType, String> map = new HashMap<>();
 		map.put(ModelType.OPTION, "Options");
 		map.put(ModelType.DEFINITION, "Define");
 		map.put(ModelType.TERMINAL, "Terminals");
@@ -148,8 +148,8 @@ public class ModelLabelProvider extends LabelProvider {
 		return Collections.unmodifiableMap(map);
 	}
 
-    private static Map createModelImages() {
-		Map map = new HashMap();
+    private static Map<ModelType, ImageDescriptor> createModelImages() {
+		Map<ModelType, ImageDescriptor> map = new HashMap<>();
 		map.put(ModelType.OPTION, GrammarEditorPlugin.getImageDescriptor("icons/option.gif")); //$NON-NLS-1$
 		map.put(ModelType.ALIAS, GrammarEditorPlugin.getImageDescriptor("icons/alias.gif")); //$NON-NLS-1$
 		map.put(ModelType.DEFINITION, GrammarEditorPlugin.getImageDescriptor("icons/definition.gif")); //$NON-NLS-1$
@@ -162,8 +162,8 @@ public class ModelLabelProvider extends LabelProvider {
 		return Collections.unmodifiableMap(map);
 	}
 
-	private static Map createSectionImages() {
-		Map map = new HashMap();
+	private static Map<ModelType, ImageDescriptor> createSectionImages() {
+		Map<ModelType, ImageDescriptor> map = new HashMap<>();
 		map.put(ModelType.OPTION, GrammarEditorPlugin.getImageDescriptor("icons/options.gif")); //$NON-NLS-1$
 		map.put(ModelType.ALIAS, GrammarEditorPlugin.getImageDescriptor("icons/aliases.gif")); //$NON-NLS-1$
 		map.put(ModelType.DEFINITION, GrammarEditorPlugin.getImageDescriptor("icons/definitions.gif")); //$NON-NLS-1$
@@ -206,7 +206,7 @@ public class ModelLabelProvider extends LabelProvider {
 	}
 
 	private String getTypeLabel(ModelType type) {
-		String label = (String) LABELS.get(type);
+		String label = LABELS.get(type);
 		return label != null ? label : type.getString();
 	}
 
@@ -233,7 +233,7 @@ public class ModelLabelProvider extends LabelProvider {
     	ModelType type = model.getType();
     	if (model instanceof Section) {
     		type = ((Section) model).getChildType();
-        	ImageDescriptor descriptor = (ImageDescriptor) SECTION_IMAGES.get(type);
+        	ImageDescriptor descriptor = SECTION_IMAGES.get(type);
         	if (descriptor != null)
         		return descriptor;
     	}
@@ -243,9 +243,9 @@ public class ModelLabelProvider extends LabelProvider {
     private ImageDescriptor getModelTypeImageDescriptor(ModelType type) {
     	ImageDescriptor descriptor = null;
     	if (type != ModelType.SECTION)
-    		descriptor = (ImageDescriptor) MODEL_IMAGES.get(type);
+    		descriptor = MODEL_IMAGES.get(type);
     	if (descriptor == null)
-    		descriptor = (ImageDescriptor) SECTION_IMAGES.get(type);
+    		descriptor = SECTION_IMAGES.get(type);
     	return descriptor;
 	}
 
