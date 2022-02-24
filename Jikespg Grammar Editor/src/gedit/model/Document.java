@@ -28,7 +28,7 @@ public class Document extends ModelBase implements IAdaptable {
 		void modelChanged(Document model);
 	}
 
-	private Map<Object, Section> sections = new HashMap<>();
+	private Map<ModelType, Section> sections = new HashMap<>();
 	private List<Document> includes;
 	private Map<Node, ModelBase> nodeToElements = new HashMap<>();
 	private List<Problem> problems;
@@ -87,11 +87,11 @@ public class Document extends ModelBase implements IAdaptable {
 		return sections.values().toArray(Section[]::new);
 	}
 
-	public Section getSection(Object childType) {
+	public Section getSection(ModelType childType) {
 		return sections.get(childType);
 	}
 
-	public void setSection(Object childType, Section section) {
+	public void setSection(ModelType childType, Section section) {
 		if (section != null)
 			sections.put(childType, section);
 		else
@@ -155,8 +155,8 @@ public class Document extends ModelBase implements IAdaptable {
 			}
 		}
 		int size = children.size() + sectionChildrenSize;
-    	ModelBase[] array = (ModelBase[]) Array.newInstance(elementType, size);
-    	children.toArray(array);
+		ModelBase[] array = (ModelBase[]) Array.newInstance(elementType, size);
+		children.toArray(array);
 		if (sectionChildrenSize > 0)
 			System.arraycopy(section.children, 0, array, children.size(), sectionChildrenSize);
 		boolean childrenVisible = false;
