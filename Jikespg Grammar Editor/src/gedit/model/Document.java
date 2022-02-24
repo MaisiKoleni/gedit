@@ -273,12 +273,10 @@ public class Document extends ModelBase implements IAdaptable {
 
 	public ModelBase getElementById(String id, BitSet filter) {
 		String key = id + filter;
-		ModelBase model = elementCache.get(key);
-		if (model != null)
-			return model;
-		model = internalGetElementById(id, filter);
-		if (model != null)
-			elementCache.put(key, model);
+		if (elementCache.containsKey(key))
+			return elementCache.get(key);
+		ModelBase model = internalGetElementById(id, filter);
+		elementCache.put(key, model);
 		return model;
 	}
 
