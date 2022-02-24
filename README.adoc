@@ -3,7 +3,6 @@
 The Grammar Editor is a full featured link:https://www.eclipse.org[Eclipse] editor.
 It can be used to edit grammar files that act as input for the Jikes Parser
 Generator or the link:https://sourceforge.net/projects/lpg/[LALR Parser Generator].
-
 The most recent version of the Jikespg parser can be found here:
 https://github.com/jikespg/jikespg/tree/fixes-combined
 
@@ -15,6 +14,9 @@ https://sourceforge.net/projects/jgedit/ by Uwe Voigt from 2005.
 The incentive is to get it working in modern Eclipse versions,
 as the old version crashes due to API changes.
 ====
+
+[centered]
+image::docs/example.png[screenshot of the editor's user interface in eclipse,align="center"]
 
 == Features
 
