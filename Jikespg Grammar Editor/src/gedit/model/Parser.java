@@ -570,10 +570,10 @@ class Parser extends jpgprs {
 		if (rhsNode != null)
 			expandNodeBy(ruleNode, rhsNode);
 		mapElementToNode(ruleNode, currentRule, false);
-		if (currentRule.getUserData(null) == null) {
+		if (currentRule.getUserData(UserData.RULE_ADDED) == null) {
 			if (currentRule.parent instanceof Section)
 				getElements(((Section) currentRule.parent).getChildType()).add(currentRule);
-			currentRule.setUserData(null, new Object());
+			currentRule.setUserData(UserData.RULE_ADDED, Boolean.TRUE);
 		}
 		expandNodeBy(peekAst(), ruleNode);
 	}

@@ -4,18 +4,20 @@
  */
 package gedit.model;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.PlatformObject;
 
 public abstract class ModelBase extends PlatformObject implements Comparable<ModelBase>, Cloneable {
+	protected static final ModelBase[] NO_CHILDREN = new ModelBase[0];
+
 	protected ModelBase parent;
 	protected String label;
 	protected Node node;
 	protected boolean visible = true;
-	private Map<Object, Object> userData;
+	private Map<UserData, Object> userData;
 
 	public ModelBase(ModelBase parent, String label) {
 		Assert.isNotNull(label);
@@ -24,7 +26,7 @@ public abstract class ModelBase extends PlatformObject implements Comparable<Mod
 	}
 
 	public ModelBase[] getChildren() {
-		return new ModelBase[0];
+		return NO_CHILDREN;
 	}
 
 	public abstract ModelType getType();
@@ -52,13 +54,13 @@ public abstract class ModelBase extends PlatformObject implements Comparable<Mod
 		return document.getProblems(this);
 	}
 
-	public void setUserData(Object key, Object value) {
+	public void setUserData(UserData key, Object value) {
 		if (userData == null)
-			userData = new HashMap<>();
+			userData = new EnumMap<>(UserData.class);
 		userData.put(key, value);
 	}
 
-	public Object getUserData(Object key) {
+	public Object getUserData(UserData key) {
 		return userData != null ? userData.get(key) : null;
 	}
 

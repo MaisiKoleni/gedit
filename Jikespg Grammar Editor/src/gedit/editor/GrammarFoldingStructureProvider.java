@@ -29,6 +29,7 @@ import gedit.model.ModelUtils;
 import gedit.model.Node;
 import gedit.model.NodeVisitor;
 import gedit.model.Section;
+import gedit.model.UserData;
 
 public class GrammarFoldingStructureProvider {
 	private static class RegionFinder extends NodeVisitor {
@@ -43,7 +44,7 @@ public class GrammarFoldingStructureProvider {
 			if (!node.spansMultipleNodes())
 				return false;
 			fResult.add(element);
-			element.setUserData("node", node);
+			element.setUserData(UserData.NODE, node);
 			return true;
 		}
 
@@ -155,7 +156,7 @@ public class GrammarFoldingStructureProvider {
 
 		for (ModelBase element : children) {
 
-			Node node = (Node) element.getUserData("node");
+			Node node = (Node) element.getUserData(UserData.NODE);
 			if (node == null)
 				continue;
 			int startLine = fDocument.getLineOfOffset(node.getOffset());

@@ -208,11 +208,11 @@ public class DocumentAnalyzer {
 	}
 
 	private void markAsReferenced(ModelBase model) {
-		model.setUserData("ref", new Object());
+		model.setUserData(UserData.REFERENCED, Boolean.TRUE);
 	}
 
 	private boolean hasBeenReferenced(ModelBase model) {
-		return model.getUserData("ref") != null;
+		return model.getUserData(UserData.REFERENCED) != null;
 	}
 
 	private ModelBase lookup(String value, Map<String, ModelBase> originLookup, Map<String, Alias> aliasLookup) {
