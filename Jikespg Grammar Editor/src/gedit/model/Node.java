@@ -6,6 +6,7 @@ package gedit.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Node {
 	protected int offset;
@@ -23,17 +24,17 @@ public class Node {
 
 	private void addChild(Node node) {
 		if (children == null)
-			children = new ArrayList<>(3);
+			children = new ArrayList<>(8); // average for Java grammar is 4.1, so 8 seems like a good choice
 		children.add(node);
 	}
 
 	public void accept(INodeVisitor visitor) {
 		if (!visitor.visit(this))
 			return;
-		acceptArray(getChildren(), visitor);
+		acceptMultiple(getChildren(), visitor);
 	}
 
-	protected void acceptArray(Node[] nodes, INodeVisitor visitor) {
+	protected static void acceptMultiple(List<Node> nodes, INodeVisitor visitor) {
 		if (nodes == null)
 			return;
 		for (Node node : nodes) {
@@ -42,11 +43,11 @@ public class Node {
 	}
 
 	public boolean spansMultipleNodes() {
-		return children != null && children.size() > 0;
+		return children != null && !children.isEmpty();
 	}
 
-	protected Node[] getChildren() {
-		return children != null ? children.toArray(Node[]::new) : null;
+	protected List<Node> getChildren() {
+		return Objects.requireNonNullElse(children, List.of());
 	}
 
 	public int getOffset() {
