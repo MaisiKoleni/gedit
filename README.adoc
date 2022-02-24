@@ -1,0 +1,48 @@
+= GEdit Grammar Editor
+
+The Grammar Editor is a full featured link:https://www.eclipse.org[Eclipse] editor.
+It can be used to edit grammar files that act as input for the Jikes Parser
+Generator or the link:https://sourceforge.net/projects/lalr[LALR Parser Generator].
+
+The most recent version of the Jikespg parser can be found here:
+https://github.com/jikespg/jikespg/tree/fixes-combined
+
+[IMPORTANT]
+====
+This is a continuation of the Jikespg Grammar Editor project
+https://sourceforge.net/projects/jgedit/ by Uwe Voigt from 2005.
+
+The incentive is to get it working in modern Eclipse versions,
+as the old version crashes due to API changes.
+====
+
+== Features
+
+It supports:
+
+* Content assistance when editing grammar elements, macros or options
+* Editor outline
+* Quick outline
+* Rename in file
+* Find occurrences in file on element basis
+* Element, macro and included file source navigation and lookup using hovers
+* Element folding
+* Syntax and semantic highlighting
+* Syntax and semantic check while typing
+
+[WARNING]
+====
+Some of the above features are currently broken.
+====
+
+== License
+
+Eclipse Public License 2.0, see link:license.txt[license.txt].
+
+The original project's license was the Common Public License Version 1.0,
+which was superseded by the Eclipse Public Licenses.
+
+=== Copyright Notice
+
+* Original work Copyright (c) 2005 Uwe Voigt, All Rights Reserved
+* Modified work Copyright (c) 2022 Christian Femers
