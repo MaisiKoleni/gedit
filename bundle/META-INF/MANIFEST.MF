@@ -5,7 +5,7 @@ Bundle-Name: GEdit Grammar Editor
 Bundle-SymbolicName: gedit;singleton:=true
 Bundle-Version: 1.0.3
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Bundle-Activator: gedit.GrammarEditorPlugin
 Bundle-Vendor: Uwe Voigt, Christian Femers
 Require-Bundle: org.eclipse.ui,
