@@ -18,6 +18,12 @@ as the old version crashes due to API changes.
 [centered]
 image::docs/example.png[screenshot of the editor's user interface in eclipse,align="center"]
 
+== Installing
+
+* Get the code locally
+* `mvn verify`
+* then install content in your IDE with _Help > Install new software..._, pointing to the `repository/target/repository` folder
+
 == Features
 
 It supports:

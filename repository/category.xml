@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <bundle id="gedit" version="0.0.0">
+      <category name="Grammar Editor"/>
+   </bundle>
+   <category-def name="Grammar Editor" label="Grammar Editor"/>
+</site>
